@@ -1,4 +1,8 @@
+
 const jwt = require('../lib/simpleJWT');
+
+
+
 const User = require('../models/users');
 
 exports.getSignUp = (req, res) => {
