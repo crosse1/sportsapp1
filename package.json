@@ -4,7 +4,7 @@
   "description": "IT231 - Final Project: Gamebook Scraper",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "echo \"No tests defined\" && exit 0",
     "start": "nodemon main.js"
   },
   "author": "Christian Rosse",
