@@ -10,7 +10,7 @@ exports.getSignUp = (req, res) => {
 };
 
 exports.getLogin = (req, res) => {
-    res.render('login');
+    res.render('login', { layout: false });
 };
 
 exports.saveUser = async (req, res, next) => {
@@ -20,7 +20,7 @@ exports.saveUser = async (req, res, next) => {
         await newUser.save();
         const token = jwt.sign({ id: newUser._id, name: newUser.name, email: newUser.email, phoneNumber: newUser.phoneNumber }, 'secret');
         res.cookie('token', token, { httpOnly: true });
-        res.redirect('/thanks');
+        res.redirect('/welcome');
     } catch (error) {
         next(error);
     }
@@ -35,7 +35,7 @@ exports.loginUser = async (req, res, next) => {
         if (!match) return res.redirect('/login');
         const token = jwt.sign({ id: user._id, name: user.name, email: user.email, phoneNumber: user.phoneNumber }, 'secret');
         res.cookie('token', token, { httpOnly: true });
-        res.redirect('/thanks');
+        res.redirect('/welcome');
     } catch (error) {
         next(error);
     }
