@@ -10,7 +10,7 @@ const express = require("express"),
     mongoose = require('mongoose');
 
 mongoose.connect(
-    "mongodb+srv://crosse:Zack0018@christiancluster.0ejv5.mongodb.net/scrapeSubs?retryWrites=true&w=majority&appName=ChristianCluster"
+    "mongodb+srv://crosse:Zack0018@christiancluster.0ejv5.mongodb.net/appUsers?retryWrites=true&w=majority&appName=ChristianCluster"
 );
 
 const db = mongoose.connection;
