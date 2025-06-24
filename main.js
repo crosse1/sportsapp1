@@ -59,7 +59,7 @@ const requireAuth = (req, res, next) => {
     next();
 };
 
-app.get('/', homeController.index);
+app.get('/',requireAuth, homeController.index);
 app.get('/signup', profileController.getSignUp);
 app.get('/login', profileController.getLogin);
 app.post('/signup', profileController.saveUser);
@@ -72,9 +72,9 @@ app.get('/thanks', requireAuth, profileController.getProfile);
 
 app.get("/users", requireAuth, profileController.getAllUsers);
 
-app.get('/tutorial', homeController.showTutorial);
+app.get('/tutorial', requireAuth, homeController.showTutorial);
 
-app.get('/about', homeController.showAbout);
+app.get('/about', requireAuth, homeController.showAbout);
 
 
 app.get('/projects', requireAuth, projectsController.getProjects);
