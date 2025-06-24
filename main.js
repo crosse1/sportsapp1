@@ -7,7 +7,9 @@ const express = require("express"),
     profileController = require("./controllers/profileController"),
     projectsController = require("./controllers/projectsController"),
     layouts = require('express-ejs-layouts'),
-    mongoose = require('mongoose');
+    mongoose = require('mongoose'),
+    cookieParser = require('cookie-parser'),
+    jwt = require('./lib/simpleJWT');
 
 mongoose.connect(
     "mongodb+srv://crosse:Zack0018@christiancluster.0ejv5.mongodb.net/appUsers?retryWrites=true&w=majority&appName=ChristianCluster"
@@ -22,6 +24,7 @@ app.set('port', process.env.PORT || 3000);
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 app.use(layouts);
+app.use(cookieParser());
 app.use(express.urlencoded({
     extended:false,
 })
@@ -29,21 +32,50 @@ app.use(express.urlencoded({
 
 app.use(express.json());
 
-app.get('/', homeController.index);
-app.get('/contact', profileController.getSignIn);
-app.get('/thanks', profileController.getProfile);
+// Middleware to authenticate token
+app.use((req, res, next) => {
+    const token = req.cookies.token;
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, 'secret');
+            req.user = decoded;
+        } catch (err) {
+            req.user = null;
+        }
+    } else {
+        req.user = null;
+    }
+    res.locals.user = req.user;
+    next();
+});
 
-app.get("/users", profileController.getAllUsers);
+const requireAuth = (req, res, next) => {
+    if (!req.user) {
+        return res.redirect('/login');
+    }
+    next();
+};
+
+app.get('/', homeController.index);
+app.get('/signup', profileController.getSignUp);
+app.get('/login', profileController.getLogin);
+app.post('/signup', profileController.saveUser);
+app.post('/login', profileController.loginUser);
+app.get('/logout', (req, res) => {
+    res.clearCookie('token');
+    res.redirect('/login');
+});
+app.get('/thanks', requireAuth, profileController.getProfile);
+
+app.get("/users", requireAuth, profileController.getAllUsers);
 
 app.get('/tutorial', homeController.showTutorial);
 
 app.get('/about', homeController.showAbout);
 
 
-app.post('/thanks', profileController.saveUser);
-
-app.get('/projects', projectsController.getProjects);
-app.get('/newProject', projectsController.getNewProject);
+app.get('/projects', requireAuth, projectsController.getProjects);
+app.get('/newProject', requireAuth, projectsController.getNewProject);
 
 
 app.use(homeController.logRequestPaths);
