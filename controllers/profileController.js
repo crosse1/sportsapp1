@@ -1,19 +1,37 @@
+const jwt = require('jsonwebtoken');
 const User = require('../models/users');
 
-exports.getSignIn= (req, res) => {
+exports.getSignUp = (req, res) => {
     res.render('contact');
 };
 
+exports.getLogin = (req, res) => {
+    res.render('login');
+};
+
 exports.saveUser = async (req, res, next) => {
-    const { name, email, phoneNumber } = req.body;
+    const { name, email, phoneNumber, password } = req.body;
     try {
-        const newUser = new User({
-            name, email, phoneNumber
-        });
+        const newUser = new User({ name, email, phoneNumber, password });
         await newUser.save();
-        
-        
-        res.redirect(`/thanks?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&phoneNumber=${encodeURIComponent(phoneNumber)}`);
+        const token = jwt.sign({ id: newUser._id, name: newUser.name, email: newUser.email, phoneNumber: newUser.phoneNumber }, 'secret');
+        res.cookie('token', token, { httpOnly: true });
+        res.redirect('/thanks');
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.loginUser = async (req, res, next) => {
+    const { email, password } = req.body;
+    try {
+        const user = await User.findOne({ email });
+        if (!user) return res.redirect('/login');
+        const match = await user.comparePassword(password);
+        if (!match) return res.redirect('/login');
+        const token = jwt.sign({ id: user._id, name: user.name, email: user.email, phoneNumber: user.phoneNumber }, 'secret');
+        res.cookie('token', token, { httpOnly: true });
+        res.redirect('/thanks');
     } catch (error) {
         next(error);
     }
@@ -22,13 +40,9 @@ exports.saveUser = async (req, res, next) => {
 
 
 exports.getProfile = (req, res) => {
-    const { name, email, phoneNumber } = req.query;
-
-    if (!name || !email || !phoneNumber) {
-        return res.redirect('/contact');
-    }
-
-    res.render('thanks', { name, email, phoneNumber });
+    const user = req.user;
+    if (!user) return res.redirect('/login');
+    res.render('thanks', { name: user.name, email: user.email, phoneNumber: user.phoneNumber });
 };
 
 exports.getAllUsers = async (req, res, next) => {
