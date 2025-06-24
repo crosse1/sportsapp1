@@ -9,7 +9,7 @@ const express = require("express"),
     layouts = require('express-ejs-layouts'),
     mongoose = require('mongoose'),
     cookieParser = require('cookie-parser'),
-    jwt = require('jsonwebtoken');
+    jwt = require('./lib/simpleJWT');
 
 mongoose.connect(
     "mongodb+srv://crosse:Zack0018@christiancluster.0ejv5.mongodb.net/appUsers?retryWrites=true&w=majority&appName=ChristianCluster"
