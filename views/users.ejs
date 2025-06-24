@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gamebook Scraper | Subscribers</title>
+    <link rel="stylesheet" href="/css/gamebook_scraper.css">
+</head>
+<body>
+    <div class="list-container">
+        <% users.forEach(u => { %>
+            <div class="user">
+                <p>
+                    <span class="item-label">
+                        Name:
+                    </span>
+                    <%= u.name %>
+                </p>
+
+                <p>
+                    <span class="item-label">
+                        Email:
+                    </span>
+                    <%= u.email %>
+                </p>
+
+                <p>
+                    <span class="item-label">
+                        Phone Number:
+                    </span>
+                    <%= u.phoneNumber %>
+                </p>
+            </div>
+
+        <% }); %>
+    </div>
+</body>
+</html>

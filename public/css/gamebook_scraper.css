@@ -1,0 +1,321 @@
+body {
+    
+    background-color: rgb(23, 123, 83);
+    margin: 0;
+    padding: 0;
+    justify-content: center;
+    background-size: cover;
+    }
+
+#nav {
+    width: 100%;
+    height: 110px;
+    border-bottom: solid 8px rgb(234, 230, 191);
+    position: absolute;
+    top: 0;
+    position: static;
+    box-sizing: border-box;
+    background-color: rgb(48, 145, 75);
+    text-align: center;}
+
+ul {
+    color: rgb(234, 230, 191);
+    font-size: 25px;
+}
+
+
+#title{
+    color: rgb(234, 230, 191);
+    margin: 3px;
+    font-family:'Times New Roman', Times, serif;
+    
+
+}
+
+h1 {
+    color: rgb(234, 230, 191);
+    font-size: 40px;
+    
+}
+
+h2 {
+    color: rgb(224, 220, 185);
+    font-size: 36px;
+}
+
+h3 {
+    color: rgb(224, 220, 185);
+    font-size: 34px;
+    font-family: 'Times New Roman', Times, serif;
+}
+
+img {
+    width: 60%;
+    height: 25%;
+}
+
+a {
+    color: rgb(234, 230, 191);
+    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+}
+
+.nav-align{
+    text-align: center;
+    padding: 3px 0;
+}
+
+.center-align{
+    text-align: center;
+    padding: 3px 0;
+}
+
+.title-align{
+    text-align: left;
+    padding-left: 20px;
+    
+}
+
+.nav-profile {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+}
+
+#container {
+    width: 66.66%; 
+    height: 1000px;
+    margin-left: 16.66%; 
+    margin-right: 16.66%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    align-items: flex-start;
+}
+
+.button {
+    
+    padding: 0.3vw 3vw;
+    font-size: 25px;
+    cursor: pointer;
+    display: inline-block;
+    color: rgb(234, 230, 191);
+}
+
+.button1 {
+    background-color: rgb(17, 136, 37);
+    border-radius: 100%;
+    cursor: pointer;
+    font-size: 25px;
+    font-weight: bold;
+    color: white;
+}
+
+.button:hover {
+    
+    color: rgb(243, 241, 233);
+    text-decoration: underline;
+
+}
+
+.user {
+    padding: 10px 0;
+    border-bottom: 1px solid lightgray;
+}
+
+.user p {
+    margin: 0;
+}
+
+.list-container {
+    padding: 0 20px;
+    border: 3px solid rgb(23, 123, 83);
+    border-radius: 1px;
+}
+
+.item-label {
+    font-weight: 600;
+    font-style: italic;
+    margin-right: 5px;
+
+}
+
+.subscriber-form input {
+    display: block;
+    margin: 5px;
+}
+
+
+
+.col-6 {
+    flex: 0 0 auto;
+    width: 75%;
+    margin-left: 12.5%;
+    margin-right: 12.5%;
+    height: auto;
+}
+
+
+
+.mt-3 {
+    margin-top: 16px !important;
+}
+
+.mb-3 {
+    margin-bottom: 16px !important;
+}
+
+
+.text-center {
+    text-align: center !important;
+}
+profile_button {
+    width: 100px;
+    height: 100px;
+    border-radius: 100%;
+    border: none;
+    color: white;
+    font-size: 30px;
+    font-weight: bold;
+    display: flex;
+}
+
+.form-container {
+    
+    padding: 20px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    text-align: center;
+    
+}
+
+.form-container1 {
+    position: relative;
+    padding: 20px;
+    width: 100%;
+    height: 90%;
+    max-width: 500px;
+    border-radius: 8px;
+    text-align: left;
+    
+}
+
+footer {position: static;
+    box-sizing: border-box;
+    clear: both;
+    width: 100%;
+    height: 40px;
+    padding-top: 10px;
+    background-color: rgb(48, 145, 75);
+    text-align: center;
+    margin-top: auto
+}
+
+#project-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 8px 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 25px;
+    transition: background-color 0.3s;
+    
+}
+
+#project-btn:hover {
+    background-color: #45a049;
+}
+
+p{
+    font-size: 25px;
+    color: rgb(234, 230, 191)
+}
+
+.drop-container {
+    width: 100%;
+    
+    padding: 30px;
+    border: 2px dashed rgb(234, 230, 191);
+    border-radius: 8px;
+    text-align: center;
+    color: #888;
+    font-size: 16px;
+    cursor: pointer;
+    transition: border-color 0.3s;
+    
+    
+}
+
+.pagediv {
+    width: 50%; 
+    height: 80vh; 
+    margin-left: 20%; 
+    margin-right: 20%;
+    background-color: rgb(100, 123, 83);
+    border-radius: 20px; 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+}
+
+input {
+    width: 100%; 
+    padding: 12px 16px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    background-color: rgb(23, 123, 83);
+    color: #ccc;
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-size: 16px;
+    outline: none;
+    
+}
+
+input::placeholder {
+    color: #ccc; 
+    font-style: italic; 
+    
+}
+
+.file-input {
+    cursor: pointer;
+}
+
+#tutorial-img {
+    width: 60%;
+    height: 100%;
+}
+
+
+.circle {
+    position: relative;
+    left: 200px;
+    width: 100px;
+    height: 100px;
+    background-color: rgb(48, 145, 75); 
+    color: rgb(234, 230, 191);
+    font-size: 40px;
+    font-weight: bold;
+    border-radius: 50%; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2); 
+}
+
+
+
+
+
+
+
+
+
+
