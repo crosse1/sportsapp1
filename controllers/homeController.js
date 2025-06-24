@@ -21,3 +21,7 @@ exports.showAbout = (req, res) => {
 exports.showTutorial = (req, res) => {
     res.render("tutorial");
 };
+
+exports.showWelcome = (req, res) => {
+    res.render("welcome");
+};
