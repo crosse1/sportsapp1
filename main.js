@@ -70,6 +70,9 @@ app.get('/logout', (req, res) => {
     res.redirect('/login');
 });
 app.get('/thanks', requireAuth, profileController.getProfile);
+app.get('/profile', requireAuth, profileController.getProfile);
+app.get('/profile/edit', requireAuth, profileController.getEditProfile);
+app.post('/profile/edit', requireAuth, profileController.updateProfile);
 app.get('/welcome', requireAuth, homeController.showWelcome);
 
 app.get("/users", requireAuth, profileController.getAllUsers);

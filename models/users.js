@@ -5,7 +5,19 @@ const userSchema = new mongoose.Schema({
     name: String,
     email: String,
     phoneNumber: Number,
-    password: String
+    password: String,
+    profileImage: {
+        type: String,
+        default: 'https://via.placeholder.com/150'
+    },
+    followersCount: {
+        type: Number,
+        default: 0
+    },
+    followingCount: {
+        type: Number,
+        default: 0
+    }
 });
 
 // Automatically hash a password before saving
