@@ -17,24 +17,7 @@
 </head>
 <body class="d-flex flex-column min-vh-100">
     <!-- Navigation -->
-    <header class="shadow-sm bg-white">
-        <nav class="container d-flex align-items-center justify-content-between py-3">
-            <a href="/" class="fw-bold fs-4 text-decoration-none">App Logo</a>
-            <ul class="d-none d-md-flex list-unstyled mb-0 gap-4">
-                <li><a href="#" class="text-decoration-none text-body">Games</a></li>
-                <li><a href="#" class="text-decoration-none text-body">Social</a></li>
-                <li><a href="#" class="text-decoration-none text-body">Plans &amp; Pricing</a></li>
-                <li><a href="#" class="text-decoration-none text-body">About</a></li>
-            </ul>
-            <div class="text-nowrap">
-                <% if (user) { %>
-                    <span class="me-3">Hello, <%= user.name %></span>
-                <% } %>
-                <a href="/login" class="btn btn-outline-primary me-2">Sign In</a>
-                <a href="/signup" class="btn btn-primary">Register</a>
-            </div>
-        </nav>
-    </header>
+    <%- include('partials/header') %>
 
     <!-- Hero -->
     <section class="hero text-white text-center py-5 flex-grow-1 d-flex flex-column justify-content-center" style="max-height: 500px;">

@@ -1,0 +1,22 @@
+<header class="shadow-sm bg-white">
+  <nav class="container d-flex align-items-center justify-content-between py-3">
+    <a href="/" class="fw-bold fs-4 text-decoration-none">App Logo</a>
+    <ul class="d-none d-md-flex list-unstyled mb-0 gap-4">
+      <li><a href="#" class="text-decoration-none text-body">Games</a></li>
+      <li><a href="#" class="text-decoration-none text-body">Social</a></li>
+      <li><a href="#" class="text-decoration-none text-body">Plans &amp; Pricing</a></li>
+      <li><a href="/about" class="text-decoration-none text-body">About</a></li>
+    </ul>
+    <div class="text-nowrap d-flex align-items-center">
+      <% if (user) { %>
+        <a href="/profile" class="me-3">
+          <img src="<%= user.profileImage || 'https://via.placeholder.com/40' %>" alt="Profile" class="rounded-circle" style="width:40px;height:40px; object-fit:cover;">
+        </a>
+        <a href="/logout" class="btn btn-outline-secondary">Log Out</a>
+      <% } else { %>
+        <a href="/login" class="btn btn-outline-primary me-2">Sign In</a>
+        <a href="/signup" class="btn btn-primary">Register</a>
+      <% } %>
+    </div>
+  </nav>
+</header>
