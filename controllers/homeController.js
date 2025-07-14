@@ -1,6 +1,7 @@
 
+// Render landing page
 exports.index = (req, res) => {
-    res.render("index");
+    res.render("home", { layout: false });
 };
 
 exports.logRequestPaths = (req, res, next) => {

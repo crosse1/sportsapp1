@@ -59,7 +59,8 @@ const requireAuth = (req, res, next) => {
     next();
 };
 
-app.get('/',requireAuth, homeController.index);
+// Public landing page
+app.get('/', homeController.index);
 app.get('/signup', profileController.getSignUp);
 app.get('/login', profileController.getLogin);
 app.post('/signup', profileController.saveUser);
