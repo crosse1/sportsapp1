@@ -6,7 +6,7 @@ const jwt = require('../lib/simpleJWT');
 const User = require('../models/users');
 
 exports.getSignUp = (req, res) => {
-    res.render('contact');
+    res.render('contact', { layout: false });
 };
 
 exports.getLogin = (req, res) => {
