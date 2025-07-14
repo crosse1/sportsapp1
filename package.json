@@ -1,7 +1,7 @@
 {
-  "name": "it231-final-rosse",
+  "name": "sportsapp1",
   "version": "1.0.0",
-  "description": "IT231 - Final Project: Gamebook Scraper",
+  "description": "Interactive social sporting event app",
   "main": "main.js",
   "scripts": {
     "test": "echo \"No tests defined\" && exit 0",
