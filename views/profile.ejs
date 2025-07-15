@@ -32,6 +32,77 @@
     margin-right: auto;
 }
 
+.profile-search.form-control {
+    background-color: rgba(255, 255, 255, 0.2) !important; /* Transparent glass effect */
+    border: 1px solid #ccc !important;                   /* Gray border always visible */
+    color: #fff !important;                               /* Text color white */
+    border-radius: 8px !important;
+    padding: 0.5rem 1rem !important;
+    font-family: inherit !important;
+    font-weight: bold !important;
+    font-size: 1.1rem !important;
+}
+
+.profile-search.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.7) !important; /* Placeholder visible */
+    font-style: italic;
+}
+
+.profile-search.form-control:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(204, 204, 204, 0.5) !important;
+    border-color: #bbb !important;
+}
+
+.user-search-modal .modal-content {
+    background: linear-gradient(to right, #7e22ce, #14b8a6);
+    background-clip: padding-box;
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    color: #fff;
+    backdrop-filter: blur(10px); /* Glass effect */
+    font-family: inherit;
+}
+
+/* Match header and title styling */
+.user-search-modal .modal-title {
+    font-family: inherit;
+    font-weight: bold;
+    font-size: 1.5rem;
+    color: #fff;
+}
+
+.user-search-modal .btn-close {
+    filter: invert(1); /* Makes close button visible on dark bg */
+}
+
+/* Match input styles inside modal */
+.user-search-modal .profile-search.form-control {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid #ccc !important;
+    color: #fff !important;
+    font-family: inherit !important;
+    font-weight: bold !important;
+    font-size: 1.1rem !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1rem 0.5rem 2.5rem !important; /* Top, Right, Bottom, Left */
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.user-search-modal .profile-search.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-style: italic;
+}
+
+.user-search-modal .profile-search.form-control:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(204, 204, 204, 0.5) !important;
+    border-color: #bbb !important;
+}
+
+
+
 @media (min-width: 768px) {
     .profile-avatar {
         margin-left: 0;
@@ -122,7 +193,7 @@
                 <div class="modal-body">
                     <div class="position-relative mb-3 profile-search-wrapper w-100">
                         <i class="bi bi-search search-icon"></i>
-                        <input type="text" id="searchInput" class="form-control profile-search" placeholder="Find users">
+                        <input type="text" id="searchInput" class="form-control profile-search">
                     </div>
                     <div id="searchResults" class="row g-3" style="max-height:300px;overflow:auto;"></div>
                 </div>
