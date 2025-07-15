@@ -18,15 +18,23 @@ exports.getLogin = (req, res) => {
 };
 
 exports.saveUser = async (req, res, next) => {
-    const { name, email, phoneNumber, password, profileImage, favoriteTeams } = req.body;
+    const { username, email, phoneNumber, password, favoriteTeams } = req.body;
     try {
         const fav = favoriteTeams ? (Array.isArray(favoriteTeams) ? favoriteTeams : [favoriteTeams]) : [];
-        const newUser = new User({ name, email, phoneNumber, password, profileImage, favoriteTeams: fav });
+        if (fav.length === 0) {
+            const teams = await Team.find();
+            return res.status(400).render('contact', { layout: false, teams, error: 'Please select at least one favorite team.' });
+        }
+        const newUser = new User({ username, email, phoneNumber, password, favoriteTeams: fav });
         await newUser.save();
-        const token = jwt.sign({ id: newUser._id, name: newUser.name, email: newUser.email, phoneNumber: newUser.phoneNumber, profileImage: newUser.profileImage }, 'secret');
+        const token = jwt.sign({ id: newUser._id, username: newUser.username, email: newUser.email, phoneNumber: newUser.phoneNumber, profileImage: newUser.profileImage }, 'secret');
         res.cookie('token', token, { httpOnly: true });
         res.redirect('/welcome');
     } catch (error) {
+        if (error.name === 'ValidationError') {
+            const teams = await Team.find();
+            return res.status(400).render('contact', { layout: false, teams, error: error.message });
+        }
         next(error);
     }
 };
@@ -38,7 +46,7 @@ exports.loginUser = async (req, res, next) => {
         if (!user) return res.redirect('/login');
         const match = await user.comparePassword(password);
         if (!match) return res.redirect('/login');
-        const token = jwt.sign({ id: user._id, name: user.name, email: user.email, phoneNumber: user.phoneNumber, profileImage: user.profileImage }, 'secret');
+        const token = jwt.sign({ id: user._id, username: user.username, email: user.email, phoneNumber: user.phoneNumber, profileImage: user.profileImage }, 'secret');
         res.cookie('token', token, { httpOnly: true });
         res.redirect('/welcome');
     } catch (error) {
@@ -71,16 +79,15 @@ exports.getEditProfile = async (req, res, next) => {
 
 exports.updateProfile = async (req, res, next) => {
     try {
-        const { name, email, phoneNumber, profileImage, favoriteTeams } = req.body;
+        const { username, email, phoneNumber, favoriteTeams } = req.body;
         const user = await User.findById(req.user.id);
         if (!user) return res.redirect('/login');
-        user.name = name;
+        user.username = username;
         user.email = email;
         user.phoneNumber = phoneNumber;
-        if (profileImage) user.profileImage = profileImage;
         user.favoriteTeams = favoriteTeams ? (Array.isArray(favoriteTeams) ? favoriteTeams : [favoriteTeams]) : [];
         await user.save();
-        const token = jwt.sign({ id: user._id, name: user.name, email: user.email, phoneNumber: user.phoneNumber, profileImage: user.profileImage }, 'secret');
+        const token = jwt.sign({ id: user._id, username: user.username, email: user.email, phoneNumber: user.phoneNumber, profileImage: user.profileImage }, 'secret');
         res.cookie('token', token, { httpOnly: true });
         res.redirect('/profile');
     } catch (err) {

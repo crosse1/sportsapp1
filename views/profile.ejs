@@ -26,7 +26,7 @@
                     <div class="mt-2 fw-bold">💎 675</div>
                 </div>
                 <div class="col-md-6 text-center text-md-start">
-                    <h2 class="fw-bold mb-1"><%= user.name %></h2>
+                    <h2 class="fw-bold mb-1"><%= user.username %></h2>
                     <p class="mb-2">@<%= user.email %></p>
                     <div class="d-flex justify-content-center justify-content-md-start">
                         <div class="me-4">
@@ -58,11 +58,15 @@
 
     <div class="container my-4">
         <h4>Favorite Teams</h4>
-        <ul class="list-group">
-            <% user.favoriteTeams.forEach(function(t){ %>
-                <li class="list-group-item"><%= t.school %> <%= t.mascot %></li>
-            <% }) %>
-        </ul>
+        <% if (user.favoriteTeams && user.favoriteTeams.length > 0) { %>
+            <div class="d-flex flex-wrap gap-2">
+                <% user.favoriteTeams.forEach(function(t){ %>
+                    <img src="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>" alt="<%= t.school %>" style="width:60px;height:60px;object-fit:contain;">
+                <% }) %>
+            </div>
+        <% } else { %>
+            <p>No favorite teams selected.</p>
+        <% } %>
     </div>
 
 
