@@ -1,3 +1,9 @@
+const path = require("path");
+const fs = require("fs");
+const multer = require("multer");
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: (req, file, cb) => { if(!file.mimetype.startsWith("image/")) return cb(new Error("Invalid file")); cb(null, true); } });
+
 
 const jwt = require('../lib/simpleJWT');
 
@@ -94,6 +100,23 @@ exports.updateProfile = async (req, res, next) => {
         next(err);
     }
 };
+exports.uploadProfilePhoto = [upload.single("profileImage"), async (req, res, next) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: "No image" });
+        const filename = `profile_${req.user.id}_${Date.now()}.png`;
+        const filePath = path.join(__dirname, "../public/uploads", filename);
+        fs.writeFileSync(filePath, req.file.buffer);
+        const user = await User.findById(req.user.id);
+        user.profileImage = "/uploads/" + filename;
+        await user.save();
+        const token = jwt.sign({ id: user._id, username: user.username, email: user.email, phoneNumber: user.phoneNumber, profileImage: user.profileImage }, "secret");
+        res.cookie("token", token, { httpOnly: true });
+        res.json({ imageUrl: user.profileImage });
+    } catch (err) {
+        next(err);
+    }
+}];
+
 
 exports.getAllUsers = async (req, res, next) => {
     try{

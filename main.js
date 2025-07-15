@@ -73,6 +73,7 @@ app.get('/thanks', requireAuth, profileController.getProfile);
 app.get('/profile', requireAuth, profileController.getProfile);
 app.get('/profile/edit', requireAuth, profileController.getEditProfile);
 app.post('/profile/edit', requireAuth, profileController.updateProfile);
+app.post('/profile/photo', requireAuth, profileController.uploadProfilePhoto);
 app.get('/welcome', requireAuth, (req, res) => {
     res.redirect('/');
 });
