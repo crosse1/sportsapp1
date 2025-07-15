@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const fs = require('fs');
+const path = require('path');
 
 const userSchema = new mongoose.Schema({
     username: {
@@ -14,6 +16,7 @@ const userSchema = new mongoose.Schema({
     favoriteTeams: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Team', required: true }],
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    uploadedPic: String,
     profileImage: {
         type: String,
         default: function() {
@@ -58,6 +61,16 @@ userSchema.pre('save', async function(next) {
 userSchema.methods.comparePassword = async function(candidate) {
     return bcrypt.compare(candidate, this.password);
 };
+
+// Delete uploaded profile picture file when user is removed
+userSchema.pre('remove', function(next) {
+    if (this.uploadedPic) {
+        const picPath = path.join(__dirname, '../public/uploads/profilePics', this.uploadedPic);
+        fs.unlink(picPath, () => next());
+    } else {
+        next();
+    }
+});
 
 module.exports = mongoose.model('User', userSchema);
 

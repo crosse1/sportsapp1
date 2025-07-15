@@ -9,6 +9,7 @@ const express = require("express"),
     layouts = require('express-ejs-layouts'),
     mongoose = require('mongoose'),
     cookieParser = require('cookie-parser'),
+    path = require('path'),
 
     jwt = require('./lib/simpleJWT');
 
@@ -26,6 +27,7 @@ db.once("open", () => {
 app.set('port', process.env.PORT || 3000);
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
+app.use('/uploads/profilePics', express.static(path.join(__dirname, 'public/uploads/profilePics')));
 app.use(layouts);
 app.use(cookieParser());
 app.use(express.urlencoded({
