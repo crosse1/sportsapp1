@@ -1,12 +1,16 @@
 
 const jwt = require('../lib/simpleJWT');
 
-
-
 const User = require('../models/users');
+const Team = require('../models/Team');
 
-exports.getSignUp = (req, res) => {
-    res.render('contact', { layout: false });
+exports.getSignUp = async (req, res, next) => {
+    try {
+        const teams = await Team.find();
+        res.render('contact', { layout: false, teams });
+    } catch (err) {
+        next(err);
+    }
 };
 
 exports.getLogin = (req, res) => {
@@ -14,9 +18,10 @@ exports.getLogin = (req, res) => {
 };
 
 exports.saveUser = async (req, res, next) => {
-    const { name, email, phoneNumber, password, profileImage } = req.body;
+    const { name, email, phoneNumber, password, profileImage, favoriteTeams } = req.body;
     try {
-        const newUser = new User({ name, email, phoneNumber, password, profileImage });
+        const fav = favoriteTeams ? (Array.isArray(favoriteTeams) ? favoriteTeams : [favoriteTeams]) : [];
+        const newUser = new User({ name, email, phoneNumber, password, profileImage, favoriteTeams: fav });
         await newUser.save();
         const token = jwt.sign({ id: newUser._id, name: newUser.name, email: newUser.email, phoneNumber: newUser.phoneNumber, profileImage: newUser.profileImage }, 'secret');
         res.cookie('token', token, { httpOnly: true });
@@ -45,7 +50,7 @@ exports.loginUser = async (req, res, next) => {
 
 exports.getProfile = async (req, res, next) => {
     try {
-        const user = await User.findById(req.user.id);
+        const user = await User.findById(req.user.id).populate('favoriteTeams');
         if (!user) return res.redirect('/login');
         res.render('profile', { user });
     } catch (err) {
@@ -55,9 +60,10 @@ exports.getProfile = async (req, res, next) => {
 
 exports.getEditProfile = async (req, res, next) => {
     try {
-        const user = await User.findById(req.user.id);
+        const user = await User.findById(req.user.id).populate('favoriteTeams');
         if (!user) return res.redirect('/login');
-        res.render('editProfile', { user });
+        const teams = await Team.find();
+        res.render('editProfile', { user, teams });
     } catch (err) {
         next(err);
     }
@@ -65,13 +71,14 @@ exports.getEditProfile = async (req, res, next) => {
 
 exports.updateProfile = async (req, res, next) => {
     try {
-        const { name, email, phoneNumber, profileImage } = req.body;
+        const { name, email, phoneNumber, profileImage, favoriteTeams } = req.body;
         const user = await User.findById(req.user.id);
         if (!user) return res.redirect('/login');
         user.name = name;
         user.email = email;
         user.phoneNumber = phoneNumber;
         if (profileImage) user.profileImage = profileImage;
+        user.favoriteTeams = favoriteTeams ? (Array.isArray(favoriteTeams) ? favoriteTeams : [favoriteTeams]) : [];
         await user.save();
         const token = jwt.sign({ id: user._id, name: user.name, email: user.email, phoneNumber: user.phoneNumber, profileImage: user.profileImage }, 'secret');
         res.cookie('token', token, { httpOnly: true });
@@ -83,7 +90,7 @@ exports.updateProfile = async (req, res, next) => {
 
 exports.getAllUsers = async (req, res, next) => {
     try{
-        const users = await User.find();
+        const users = await User.find().populate('favoriteTeams');
         res.render("users", {users});
     } catch (error) {
         next(error);

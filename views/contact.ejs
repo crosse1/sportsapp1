@@ -20,11 +20,24 @@
             <input type="password" name="password" placeholder="Password" class="form-control mb-3" required>
             <input type="text" name="phoneNumber" placeholder="Phone Number" pattern="[0-9]{10}" class="form-control mb-3" required>
             <input type="text" name="profileImage" placeholder="Profile Image URL" class="form-control mb-3">
+            <select name="favoriteTeams" class="form-control mb-3 favoriteTeams-select" multiple>
+                <% teams.forEach(t => { %>
+                    <option value="<%= t._id %>"><%= t.school %> <%= t.mascot %></option>
+                <% }); %>
+            </select>
             <button type="submit" class="btn w-100 text-white" style="background-color:#14b8a6;">Sign Up</button>
         </form>
         <div class="text-center mt-3">
             <a href="/login" class="text-decoration-none">Already have an account? Sign in</a>
         </div>
     </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(function(){
+            $('.favoriteTeams-select').select2({ placeholder:'Favorite Teams', width: '100%' });
+        });
+    </script>
 </body>
 </html>
