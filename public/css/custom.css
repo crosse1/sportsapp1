@@ -109,3 +109,11 @@
 .follow-users-btn {
     transition: background-color 0.3s, color 0.3s;
 }
+.cropper-view-box,
+.cropper-face {
+    border-radius: 50%;
+}
+
+.profile-photo-preview {
+    border: 2px solid #ddd;
+}
