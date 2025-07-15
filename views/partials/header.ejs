@@ -13,7 +13,7 @@
     <div class="text-nowrap d-flex align-items-center">
       <% if (loggedInUser) { %>
         <a href="/profile" class="me-3">
-          <img src="<%= loggedInUser.profileImage || 'https://via.placeholder.com/40' %>" alt="Profile" class="avatar avatar-sm">
+          <img src="<%= loggedInUser.profileImage || 'https://via.placeholder.com/40' %>" alt="Profile" class="nav-profile-icon">
         </a>
         <a href="/logout" class="btn btn-outline-secondary">Log Out</a>
       <% } else { %>
