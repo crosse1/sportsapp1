@@ -1,10 +1,10 @@
 const fs = require('fs');
 const csv = require('csv-parser');
 const mongoose = require('mongoose');
-const Team = require('../models/Team');
-const Game = require('../models/Game');
+const Team = require('./models/Team');
+const Game = require('./models/Game');
 
-mongoose.connect('mongodb://localhost:27017/sportsapp', {
+mongoose.connect("mongodb+srv://crosse:Zack0018@christiancluster.0ejv5.mongodb.net/appUsers?retryWrites=true&w=majority&appName=ChristianCluster", {
   useNewUrlParser: true,
   useUnifiedTopology: true
 });
