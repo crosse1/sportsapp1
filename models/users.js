@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
     email: String,
     phoneNumber: Number,
     password: String,
+    favoriteTeams: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Team' }],
     profileImage: {
         type: String,
         default: 'https://via.placeholder.com/150'
