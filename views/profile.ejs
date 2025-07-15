@@ -18,11 +18,25 @@
             transition: background-color 0.3s, color 0.3s;
         }
 
-        .avatar {
+.avatar {
     border-radius: 50%; /* Circle shape */
     object-fit: cover;
     border: 2px solid rgba(255, 255, 255, 0.8);
     display: inline-block; /* Align nicely with text */
+}
+
+/* center profile image on mobile */
+.profile-avatar {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@media (min-width: 768px) {
+    .profile-avatar {
+        margin-left: 0;
+        margin-right: 0;
+    }
 }
 
 /* Large avatar: scales with screen width */
@@ -46,7 +60,7 @@
             <div class="row align-items-center">
                 <div class="col-md-3 text-center mb-4 mb-md-0">
                     <img src="<%= user.profileImage || 'https://via.placeholder.com/150' %>"
-     class="avatar avatar-lg"
+     class="avatar avatar-lg profile-avatar"
      alt="Profile Photo">
                     
                 </div>
