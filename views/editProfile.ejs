@@ -16,7 +16,7 @@
             <div class="col-md-6">
                 <form action="/profile/edit" method="post">
                     <div class="mb-3 text-center">
-                        <img id="profilePreview" src="<%= user.profileImage || 'https://via.placeholder.com/150' %>" class="avatar avatar-md profile-photo-preview" alt="Profile Photo">
+                        <img id="profilePreview" src="<%= user.uploadedPic ? ('/uploads/profilePics/' + user.uploadedPic) : (user.profileImage || 'https://via.placeholder.com/150') %>" class="avatar avatar-md profile-photo-preview" alt="Profile Photo">
                         <input type="file" id="profileImageInput" accept=".jpg,.jpeg,.png" class="form-control mt-2">
                         <div class="text-danger" id="uploadError"></div>
                     </div>
