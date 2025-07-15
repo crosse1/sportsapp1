@@ -29,7 +29,7 @@ exports.saveUser = async (req, res, next) => {
         await newUser.save();
         const token = jwt.sign({ id: newUser._id, username: newUser.username, email: newUser.email, phoneNumber: newUser.phoneNumber, profileImage: newUser.profileImage }, 'secret');
         res.cookie('token', token, { httpOnly: true });
-        res.redirect('/welcome');
+        res.redirect('/');
     } catch (error) {
         if (error.name === 'ValidationError') {
             const teams = await Team.find();
@@ -48,7 +48,7 @@ exports.loginUser = async (req, res, next) => {
         if (!match) return res.redirect('/login');
         const token = jwt.sign({ id: user._id, username: user.username, email: user.email, phoneNumber: user.phoneNumber, profileImage: user.profileImage }, 'secret');
         res.cookie('token', token, { httpOnly: true });
-        res.redirect('/welcome');
+        res.redirect('/');
     } catch (error) {
         next(error);
     }
