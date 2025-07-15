@@ -12,6 +12,8 @@ const userSchema = new mongoose.Schema({
     phoneNumber: Number,
     password: String,
     favoriteTeams: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Team', required: true }],
+    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     profileImage: {
         type: String,
         default: function() {

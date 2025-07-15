@@ -78,6 +78,12 @@ app.get('/welcome', requireAuth, (req, res) => {
 });
 
 app.get("/users", requireAuth, profileController.getAllUsers);
+app.get('/users/search', requireAuth, profileController.searchUsers);
+app.post('/users/:id/follow', requireAuth, profileController.followUser);
+app.post('/users/:id/unfollow', requireAuth, profileController.unfollowUser);
+app.get('/users/:id', requireAuth, profileController.viewUser);
+app.get('/users/:id/followers', requireAuth, profileController.viewFollowers);
+app.get('/users/:id/following', requireAuth, profileController.viewFollowing);
 
 app.get('/tutorial', requireAuth, homeController.showTutorial);
 

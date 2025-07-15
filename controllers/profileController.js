@@ -60,7 +60,7 @@ exports.getProfile = async (req, res, next) => {
     try {
         const user = await User.findById(req.user.id).populate('favoriteTeams');
         if (!user) return res.redirect('/login');
-        res.render('profile', { user });
+        res.render('profile', { user, isCurrentUser: true, isFollowing: false, viewer: req.user });
     } catch (err) {
         next(err);
     }
@@ -102,5 +102,99 @@ exports.getAllUsers = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-    
+
+};
+
+// Search users by username
+exports.searchUsers = async (req, res, next) => {
+    try {
+        const q = req.query.q || '';
+        if (!q) return res.json([]);
+        const users = await User.find({ username: { $regex: q, $options: 'i' } })
+            .select('username profileImage followers followersCount followingCount');
+        res.json(users);
+    } catch (err) {
+        next(err);
+    }
+};
+
+// View another user's profile
+exports.viewUser = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.params.id).populate('favoriteTeams');
+        if (!user) return res.redirect('/profile');
+        const isCurrentUser = req.user && String(req.user.id) === String(user._id);
+        const isFollowing = req.user && user.followers.some(f => String(f) === String(req.user.id));
+        res.render('profile', { user, isCurrentUser, isFollowing, viewer: req.user });
+    } catch (err) {
+        next(err);
+    }
+};
+
+// Follow a user
+exports.followUser = async (req, res, next) => {
+    try {
+        const targetId = req.params.id;
+        const currentId = req.user.id;
+        if (targetId === currentId) return res.status(400).json({ error: 'Cannot follow yourself' });
+        const [currentUser, targetUser] = await Promise.all([
+            User.findById(currentId),
+            User.findById(targetId)
+        ]);
+        if (!targetUser) return res.status(404).json({ error: 'User not found' });
+        if (currentUser.following.some(f => String(f) === targetId)) {
+            return res.status(400).json({ error: 'Already following' });
+        }
+        currentUser.following.push(targetId);
+        currentUser.followingCount = currentUser.following.length;
+        targetUser.followers.push(currentId);
+        targetUser.followersCount = targetUser.followers.length;
+        await Promise.all([currentUser.save(), targetUser.save()]);
+        res.json({ success: true });
+    } catch (err) {
+        next(err);
+    }
+};
+
+// Unfollow a user
+exports.unfollowUser = async (req, res, next) => {
+    try {
+        const targetId = req.params.id;
+        const currentId = req.user.id;
+        const [currentUser, targetUser] = await Promise.all([
+            User.findById(currentId),
+            User.findById(targetId)
+        ]);
+        if (!targetUser) return res.status(404).json({ error: 'User not found' });
+        currentUser.following = currentUser.following.filter(f => String(f) !== targetId);
+        currentUser.followingCount = currentUser.following.length;
+        targetUser.followers = targetUser.followers.filter(f => String(f) !== currentId);
+        targetUser.followersCount = targetUser.followers.length;
+        await Promise.all([currentUser.save(), targetUser.save()]);
+        res.json({ success: true });
+    } catch (err) {
+        next(err);
+    }
+};
+
+// View followers list
+exports.viewFollowers = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.params.id).populate('followers');
+        if (!user) return res.redirect('/profile');
+        res.render('followList', { title: 'Followers', users: user.followers });
+    } catch (err) {
+        next(err);
+    }
+};
+
+// View following list
+exports.viewFollowing = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.params.id).populate('following');
+        if (!user) return res.redirect('/profile');
+        res.render('followList', { title: 'Following', users: user.following });
+    } catch (err) {
+        next(err);
+    }
 };
