@@ -48,7 +48,7 @@ app.use((req, res, next) => {
     } else {
         req.user = null;
     }
-    res.locals.user = req.user;
+    res.locals.loggedInUser = req.user;
     next();
 });
 

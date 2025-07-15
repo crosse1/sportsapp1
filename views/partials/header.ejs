@@ -10,9 +10,9 @@
       <li><a href="/about" class="text-decoration-none text-body px-3 py-1 rounded">About</a></li>
     </ul>
     <div class="text-nowrap d-flex align-items-center">
-      <% if (user) { %>
+      <% if (loggedInUser) { %>
         <a href="/profile" class="me-3">
-          <img src="<%= user.profileImage || 'https://via.placeholder.com/40' %>" alt="Profile" class="rounded-circle" style="width:40px;height:40px; object-fit:cover;">
+          <img src="<%= loggedInUser.profileImage || 'https://via.placeholder.com/40' %>" alt="Profile" class="rounded-circle" style="width:40px;height:40px; object-fit:cover;">
         </a>
         <a href="/logout" class="btn btn-outline-secondary">Log Out</a>
       <% } else { %>
