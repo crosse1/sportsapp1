@@ -1,0 +1,29 @@
+.avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+}
+
+.avatar-sm { width:40px; height:40px; }
+.avatar-md { width:120px; height:120px; }
+.avatar-lg { width:150px; height:150px; }
+
+.profile-search {
+    background-color: rgba(255,255,255,0.2);
+    border: none;
+    color: #fff;
+    padding-left: 2.25rem;
+    border-radius: 0.5rem;
+}
+.profile-search::placeholder {
+    color: #fff;
+}
+.search-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #fff;
+}
