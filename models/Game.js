@@ -1,0 +1,39 @@
+const mongoose = require('mongoose');
+
+const gameSchema = new mongoose.Schema({
+  gameId: { type: Number, unique: true },
+  season: Number,
+  week: Number,
+  seasonType: String,
+  startDate: Date,
+  startTimeTBD: Boolean,
+  completed: Boolean,
+  neutralSite: Boolean,
+  conferenceGame: Boolean,
+  attendance: Number,
+  venueId: Number,
+  venue: String,
+  homeTeam: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
+  homeTeamName: String,
+  homeClassification: String,
+  homeConference: String,
+  homePoints: Number,
+  homeLineScores: [Number],
+  homePostgameWinProbability: Number,
+  homePregameElo: Number,
+  homePostgameElo: Number,
+  awayTeam: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
+  awayTeamName: String,
+  awayClassification: String,
+  awayConference: String,
+  awayPoints: Number,
+  awayLineScores: [Number],
+  awayPostgameWinProbability: Number,
+  awayPregameElo: Number,
+  awayPostgameElo: Number,
+  excitementIndex: Number,
+  highlights: String,
+  notes: String
+});
+
+module.exports = mongoose.model('Game', gameSchema);
