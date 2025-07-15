@@ -84,3 +84,28 @@
     object-fit: cover;
     border-radius: 50%;
 }
+
+/* Modal backdrop blur */
+.modal-backdrop {
+    backdrop-filter: blur(8px);
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* User search modal sizing */
+.user-search-modal .modal-dialog {
+    max-width: 100%;
+}
+
+@media (min-width: 768px) {
+    .user-search-modal .modal-dialog {
+        max-width: 50%;
+    }
+}
+
+.user-search-modal .modal-content {
+    border-radius: 0.5rem;
+}
+
+.follow-users-btn {
+    transition: background-color 0.3s, color 0.3s;
+}
