@@ -59,10 +59,21 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-3 text-center mb-4 mb-md-0">
-                    <img src="<%= user.profileImage || 'https://via.placeholder.com/150' %>"
+                    <div class="profile-avatar-wrapper d-inline-block">
+                        <img src="<%= user.profileImage || 'https://via.placeholder.com/150' %>"
      class="avatar avatar-lg profile-avatar"
      alt="Profile Photo">
-                    
+                        <svg class="gold-chain" viewBox="0 0 100 60" preserveAspectRatio="none">
+                            <path d="M5 55 Q50 5 95 55" stroke="#FFD700" stroke-width="4" fill="none" stroke-linecap="round"/>
+                        </svg>
+                        <% if (user.favoriteTeams && user.favoriteTeams.length > 0) { %>
+                            <% user.favoriteTeams.forEach(function(t){ %>
+                                <a href="/teams/<%= t._id %>" class="chain-logo">
+                                    <img src="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>" alt="<%= t.school %>">
+                                </a>
+                            <% }) %>
+                        <% } %>
+                    </div>
                 </div>
                 <div class="col-md-6 text-center text-md-start">
                     <h2 class="fw-bold mb-1"><%= user.username %></h2>
@@ -198,6 +209,25 @@
                     btn.disabled = false;
                 }
             });
+        }
+
+        // Position team logos along the gold chain
+        const wrapper = document.querySelector('.profile-avatar-wrapper');
+        if(wrapper){
+            const logos = wrapper.querySelectorAll('.chain-logo');
+            if(logos.length){
+                const radius = wrapper.offsetWidth * 0.6;
+                const centerX = wrapper.offsetWidth / 2;
+                const centerY = wrapper.offsetHeight / 2;
+                const angleStep = Math.PI / (logos.length + 1);
+                logos.forEach((logo, idx) => {
+                    const angle = Math.PI - angleStep * (idx + 1);
+                    const x = centerX + radius * Math.cos(angle) - logo.offsetWidth / 2;
+                    const y = centerY + radius * Math.sin(angle) - logo.offsetHeight / 2;
+                    logo.style.left = x + 'px';
+                    logo.style.top = y + 'px';
+                });
+            }
         }
     </script>
 </body>
