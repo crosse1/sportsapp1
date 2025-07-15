@@ -74,8 +74,16 @@
                     </div>
                 </div>
                 <div class="col-md-6 text-center text-md-start">
-                    <h2 class="fw-bold mb-1"><%= user.username %></h2>
-                    
+                    <div class="d-flex flex-column flex-md-row align-items-center">
+                        <h2 class="fw-bold mb-1 me-md-3"><%= user.username %></h2>
+                        <% if (isCurrentUser) { %>
+                        <div class="position-relative profile-search-wrapper w-100 mt-2 mt-md-0">
+                            <i class="bi bi-search search-icon"></i>
+                            <input type="text" id="searchInput" class="form-control profile-search" placeholder="Find users">
+                        </div>
+                        <% } %>
+                    </div>
+                    <p class="mb-2">@<%= user.email %></p>
                     <div class="d-flex justify-content-center justify-content-md-start">
                         <div class="me-4">
                             <a href="/users/<%= user._id %>/followers" class="text-decoration-none text-white">
@@ -100,15 +108,7 @@
                 </div>
             </div>
             <% if (isCurrentUser) { %>
-            <div class="row mt-3">
-                <div class="col-md-6 offset-md-3">
-                    <div class="position-relative">
-                        <i class="bi bi-search search-icon"></i>
-                        <input type="text" id="searchInput" class="form-control profile-search mb-3" placeholder="Find users">
-                    </div>
-                    <div id="searchResults" class="row g-3" style="max-height:300px;overflow:auto;"></div>
-                </div>
-            </div>
+            <div id="searchResults" class="row g-3 mt-2" style="max-height:300px;overflow:auto;"></div>
             <% } %>
             
     </div>

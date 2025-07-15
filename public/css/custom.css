@@ -20,11 +20,16 @@
 .avatar-lg { width:150px; height:150px; }
 
 .profile-search {
-    background-color: rgba(255,255,255,0.2);
-    border: none;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     color: #fff;
     padding-left: 2.25rem;
     border-radius: 0.5rem;
+}
+.profile-search:focus {
+    background-color: rgba(255, 255, 255, 0.2);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
 }
 .profile-search::placeholder {
     color: #fff;
@@ -35,6 +40,16 @@
     top: 50%;
     transform: translateY(-50%);
     color: #fff;
+}
+
+.profile-search-wrapper {
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .profile-search-wrapper {
+        width: 50%;
+    }
 }
 
 /* Necklace styles around profile avatar */
