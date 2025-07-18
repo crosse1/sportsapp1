@@ -100,6 +100,8 @@ app.get('/newProject', requireAuth, projectsController.getNewProject);
 
 app.get('/games', gamesController.listGames);
 app.get('/teams/search', gamesController.searchTeams);
+app.get('/games/:id', gamesController.showGame);
+app.post('/games/:id/checkin', gamesController.checkIn);
 
 
 app.use(homeController.logRequestPaths);

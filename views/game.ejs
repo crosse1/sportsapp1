@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Details</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+<body class="d-flex flex-column min-vh-100 gradient-bg">
+  <%- include('partials/header') %>
+
+  <div class="container my-4 flex-grow-1">
+    <div class="row g-4 align-items-center">
+      <div class="col-md-5">
+        <div class="team-diagonal-square mx-auto" style="--homeColor:<%= game.homeTeam && game.homeTeam.alternateColor ? game.homeTeam.alternateColor : '#ffffff' %>; --awayColor:<%= game.awayTeam && game.awayTeam.alternateColor ? game.awayTeam.alternateColor : '#ffffff' %>">
+          <div class="triangle home-bg" style="background: var(--homeColor);"></div>
+          <div class="triangle away-bg" style="background: var(--awayColor);"></div>
+          <img src="<%= game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0] ? game.awayTeam.logos[0] : 'https://via.placeholder.com/150' %>" alt="<%= game.awayTeamName %>" class="team-logo-detail away-logo">
+          <img src="<%= game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0] ? game.homeTeam.logos[0] : 'https://via.placeholder.com/150' %>" alt="<%= game.homeTeamName %>" class="team-logo-detail home-logo">
+        </div>
+      </div>
+      <div class="col-md-7 text-white text-center text-md-start">
+        <h2 class="fw-bold mb-2" id="gameStart"></h2>
+        <h3 class="mb-3"><%= game.awayTeamName %> @ <%= game.homeTeamName %></h3>
+        <p class="mb-1">(<%= game.awayRecord || '0-0' %>) vs (<%= game.homeRecord || '0-0' %>)</p>
+        <p class="mb-3"><%= game.venue %> - <%= game.homeTeam && game.homeTeam.location ? game.homeTeam.location.city : '' %></p>
+        <form method="post" action="/games/<%= game._id %>/checkin" class="d-inline">
+          <button type="submit" class="btn gradient-btn px-4">Check-In</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const startDate = new Date('<%= game.startDate.toISOString() %>');
+    document.getElementById('gameStart').textContent =
+      new Intl.DateTimeFormat(navigator.language, { dateStyle: 'medium', timeStyle: 'short' }).format(startDate);
+  </script>
+</body>
+</html>

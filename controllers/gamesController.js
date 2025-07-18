@@ -43,3 +43,24 @@ exports.searchTeams = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.showGame = async (req, res, next) => {
+  try {
+    const game = await Game.findById(req.params.id)
+      .populate('homeTeam')
+      .populate('awayTeam');
+    if (!game) return res.status(404).render('error', { message: 'Game not found' });
+    res.render('game', { game });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.checkIn = async (req, res, next) => {
+  try {
+    // Placeholder implementation
+    res.redirect(`/games/${req.params.id}`);
+  } catch (err) {
+    next(err);
+  }
+};
