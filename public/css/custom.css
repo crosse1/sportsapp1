@@ -117,3 +117,16 @@
 .profile-photo-preview {
     border: 2px solid #ddd;
 }
+
+/* Games page */
+.game-card {
+    border-radius: .5rem;
+}
+
+.team-logo {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #ccc;
+}

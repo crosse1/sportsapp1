@@ -6,6 +6,7 @@ const express = require("express"),
     homeController = require("./controllers/homeController"),
     profileController = require("./controllers/profileController"),
     projectsController = require("./controllers/projectsController"),
+    gamesController = require("./controllers/gamesController"),
     layouts = require('express-ejs-layouts'),
     mongoose = require('mongoose'),
     cookieParser = require('cookie-parser'),
@@ -95,6 +96,8 @@ app.get('/about', requireAuth, homeController.showAbout);
 
 app.get('/projects', requireAuth, projectsController.getProjects);
 app.get('/newProject', requireAuth, projectsController.getNewProject);
+
+app.get('/games', gamesController.listGames);
 
 
 app.use(homeController.logRequestPaths);
