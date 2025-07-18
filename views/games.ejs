@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Games</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/custom.css">
+  <style>
+    .game-card { border-radius: .5rem; }
+    .team-logo { width:60px; height:60px; border-radius:50%; object-fit:cover; border:1px solid #ccc; }
+  </style>
+</head>
+<body class="d-flex flex-column min-vh-100">
+  <%- include('partials/header') %>
+
+  <div class="container my-4 flex-grow-1">
+    <form class="row g-3 mb-4" method="get" action="/games">
+      <div class="col-sm-4">
+        <input type="text" class="form-control" name="team" placeholder="Search by team" value="<%= filters.team || '' %>">
+      </div>
+      <div class="col-sm-3">
+        <input type="date" class="form-control" name="start" value="<%= filters.start || '' %>">
+      </div>
+      <div class="col-sm-3">
+        <input type="date" class="form-control" name="end" value="<%= filters.end || '' %>">
+      </div>
+      <div class="col-sm-2 d-grid">
+        <button type="submit" class="btn btn-primary">Filter</button>
+      </div>
+    </form>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+      <% games.forEach(function(game){ %>
+        <div class="col">
+          <div class="card shadow-sm h-100 game-card p-3 text-center">
+            <div class="fw-bold mb-2" data-start="<%= game.startDate.toISOString() %>"></div>
+            <div class="d-flex align-items-center justify-content-center mb-2">
+              <div class="me-3 text-center">
+                <img class="team-logo mb-1" src="<%= game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0] ? game.awayTeam.logos[0] : 'https://via.placeholder.com/60' %>" alt="<%= game.awayTeamName %>">
+                <div class="small"><%= game.awayTeamName %></div>
+              </div>
+              <div class="fw-bold fs-4">@</div>
+              <div class="ms-3 text-center">
+                <img class="team-logo mb-1" src="<%= game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0] ? game.homeTeam.logos[0] : 'https://via.placeholder.com/60' %>" alt="<%= game.homeTeamName %>">
+                <div class="small"><%= game.homeTeamName %></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+
+    <% if (hasNextPage || page > 1) { %>
+      <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+          <% if (page > 1) { %>
+            <li class="page-item">
+              <a class="page-link" href="?<%= buildQS({ page: page - 1 }) %>">Previous</a>
+            </li>
+          <% } %>
+          <% if (hasNextPage) { %>
+            <li class="page-item">
+              <a class="page-link" href="?<%= buildQS({ page: page + 1 }) %>">Next</a>
+            </li>
+          <% } %>
+        </ul>
+      </nav>
+    <% } %>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.querySelectorAll('[data-start]').forEach(function(el){
+      var date = new Date(el.dataset.start);
+      el.textContent = new Intl.DateTimeFormat(navigator.language, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+    });
+  </script>
+</body>
+</html>
