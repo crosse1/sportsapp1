@@ -156,3 +156,39 @@
     object-fit: cover;
     margin-right: 0.5rem;
 }
+
+/* Games page enhancements */
+.logo-wrapper {
+    width: 80px;
+    text-align: center;
+}
+
+.team-logo-container {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(240,240,240,0.6);
+    border: 2px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.25rem;
+}
+
+.team-logo-container img {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.team-name {
+    display: block;
+    font-size: 0.9rem;
+    line-height: 1.1;
+    word-break: break-word;
+}
+
+.game-date {
+    font-weight: 600;
+}
