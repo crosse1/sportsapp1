@@ -52,6 +52,7 @@ app.use((req, res, next) => {
         req.user = null;
     }
     res.locals.loggedInUser = req.user;
+    res.locals.currentPath = req.path;
     next();
 });
 
@@ -98,6 +99,7 @@ app.get('/projects', requireAuth, projectsController.getProjects);
 app.get('/newProject', requireAuth, projectsController.getNewProject);
 
 app.get('/games', gamesController.listGames);
+app.get('/teams/search', gamesController.searchTeams);
 
 
 app.use(homeController.logRequestPaths);
