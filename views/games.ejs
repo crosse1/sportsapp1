@@ -6,24 +6,18 @@
   <title>Games</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/css/custom.css">
-  <style>
-    .game-card { border-radius: .5rem; }
-    .team-logo { width:60px; height:60px; border-radius:50%; object-fit:cover; border:1px solid #ccc; }
-  </style>
 </head>
-<body class="d-flex flex-column min-vh-100">
+<body class="d-flex flex-column min-vh-100 gradient-bg">
   <%- include('partials/header') %>
 
   <div class="container my-4 flex-grow-1">
-    <form class="row g-3 mb-4" method="get" action="/games">
-      <div class="col-sm-4">
-        <input type="text" class="form-control" name="team" placeholder="Search by team" value="<%= filters.team || '' %>">
+    <form class="row g-3 mb-4 position-relative" method="get" action="/games">
+      <div class="col-sm-5 position-relative">
+        <input id="teamInput" type="text" class="form-control" name="team" placeholder="Search by team" autocomplete="off" value="<%= filters.team || '' %>">
+        <div id="teamSuggestions" class="list-group team-suggestions"></div>
       </div>
-      <div class="col-sm-3">
-        <input type="date" class="form-control" name="start" value="<%= filters.start || '' %>">
-      </div>
-      <div class="col-sm-3">
-        <input type="date" class="form-control" name="end" value="<%= filters.end || '' %>">
+      <div class="col-sm-5">
+        <input type="date" class="form-control" name="date" value="<%= filters.date || '' %>">
       </div>
       <div class="col-sm-2 d-grid">
         <button type="submit" class="btn btn-primary">Filter</button>
@@ -69,12 +63,38 @@
     <% } %>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    document.querySelectorAll('[data-start]').forEach(function(el){
-      var date = new Date(el.dataset.start);
-      el.textContent = new Intl.DateTimeFormat(navigator.language, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
-    });
-  </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      document.querySelectorAll('[data-start]').forEach(function(el){
+        var date = new Date(el.dataset.start);
+        el.textContent = new Intl.DateTimeFormat(navigator.language, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+      });
+
+      const teamInput = document.getElementById('teamInput');
+      const suggestions = document.getElementById('teamSuggestions');
+      if(teamInput){
+        teamInput.addEventListener('input', async function(){
+          const q = this.value.trim();
+          if(!q){ suggestions.innerHTML=''; return; }
+          const res = await fetch('/teams/search?q='+encodeURIComponent(q));
+          if(!res.ok) return;
+          const data = await res.json();
+          suggestions.innerHTML = data.map(t=>`<button type="button" class="list-group-item list-group-item-action d-flex align-items-center" data-name="${t.school}">`+
+            `<img src="${t.logos && t.logos[0] ? t.logos[0] : 'https://via.placeholder.com/30'}">`+
+            `${t.school}</button>`).join('');
+        });
+
+        suggestions.addEventListener('click', function(e){
+          const btn = e.target.closest('button[data-name]');
+          if(!btn) return;
+          const name = btn.getAttribute('data-name');
+          teamInput.value = name;
+          suggestions.innerHTML='';
+          const params = new URLSearchParams(window.location.search);
+          params.set('team', name);
+          document.location.search = params.toString();
+        });
+      }
+    </script>
 </body>
 </html>
