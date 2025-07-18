@@ -14,6 +14,7 @@
     <form class="row g-3 mb-4 position-relative" method="get" action="/games">
       <div class="col-sm-5 position-relative">
         <input id="teamInput" type="text" class="form-control" name="team" placeholder="Search by team" autocomplete="off" value="<%= filters.team || '' %>">
+        <input type="hidden" id="teamId" name="teamId" value="<%= filters.teamId || '' %>">
         <div id="teamSuggestions" class="list-group team-suggestions"></div>
       </div>
       <div class="col-sm-5">
@@ -33,7 +34,7 @@
           <a href="/games/<%= game._id %>" class="game-link">
             <div class="card shadow-sm h-100 game-card p-3 text-center" data-away-color="<%= awayColor %>" data-home-color="<%= homeColor %>" style="background: linear-gradient(to right, <%= awayColor %>, <%= homeColor %>);">
               <div class="game-date mb-2" data-start="<%= game.startDate.toISOString() %>"></div>
-              <div class="d-flex justify-content-between align-items-center position-relative mb-2">
+              <div class="d-flex justify-content-between align-items-center position-relative mb-2 px-3">
                 <div class="logo-wrapper me-3">
                   <div class="team-logo-container">
                     <img loading="lazy" src="<%= game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0] ? game.awayTeam.logos[0] : 'https://via.placeholder.com/60' %>" alt="<%= game.awayTeamName %>">
@@ -46,7 +47,7 @@
                   </div>
                   <span class="team-name"><%= game.homeTeamName %></span>
                 </div>
-                <div class="position-absolute top-50 start-50 translate-middle fw-bold fs-4">@</div>
+                <div class="position-absolute top-50 start-50 translate-middle fw-bold fs-4 at-symbol">@</div>
               </div>
             </div>
           </a>
@@ -66,12 +67,13 @@
       const suggestions = document.getElementById('teamSuggestions');
       if(teamInput){
         teamInput.addEventListener('input', async function(){
+          document.getElementById('teamId').value = '';
           const q = this.value.trim();
           if(!q){ suggestions.innerHTML=''; return; }
           const res = await fetch('/teams/search?q='+encodeURIComponent(q));
           if(!res.ok) return;
           const data = await res.json();
-          suggestions.innerHTML = data.map(t=>`<button type="button" class="list-group-item list-group-item-action d-flex align-items-center" data-name="${t.school}">`+
+          suggestions.innerHTML = data.map(t=>`<button type="button" class="list-group-item list-group-item-action d-flex align-items-center" data-name="${t.school}" data-id="${t._id}">`+
             `<img src="${t.logos && t.logos[0] ? t.logos[0] : 'https://via.placeholder.com/30'}">`+
             `${t.school}</button>`).join('');
         });
@@ -80,9 +82,12 @@
           const btn = e.target.closest('button[data-name]');
           if(!btn) return;
           const name = btn.getAttribute('data-name');
+          const id = btn.getAttribute('data-id');
           teamInput.value = name;
+          document.getElementById('teamId').value = id;
           suggestions.innerHTML='';
           const params = new URLSearchParams(window.location.search);
+          params.set('teamId', id);
           params.set('team', name);
           document.location.search = params.toString();
         });
@@ -122,21 +127,6 @@
         });
       });
 
-      function fitTeamNames(){
-        document.querySelectorAll('.team-name').forEach(name=>{
-          const wrapper = name.parentElement; // logo-wrapper
-          const maxWidth = wrapper.clientWidth;
-          let fontSize = parseFloat(window.getComputedStyle(name).fontSize);
-          name.style.fontSize = fontSize + 'px';
-          while(name.scrollWidth > maxWidth && fontSize > 8){
-            fontSize -= 1;
-            name.style.fontSize = fontSize + 'px';
-          }
-        });
-      }
-
-      window.addEventListener('load', fitTeamNames);
-      window.addEventListener('resize', fitTeamNames);
     </script>
 </body>
 </html>

@@ -23,9 +23,14 @@ function colorDistance(c1, c2) {
 
 exports.listGames = async (req, res, next) => {
   try {
-    const { team, date } = req.query;
+    const { team, teamId, date } = req.query;
     const query = {};
-    if (team) {
+    if (teamId) {
+      query.$or = [
+        { homeTeam: teamId },
+        { awayTeam: teamId }
+      ];
+    } else if (team) {
       query.$or = [
         { homeTeamName: { $regex: team, $options: 'i' } },
         { awayTeamName: { $regex: team, $options: 'i' } }
@@ -44,7 +49,7 @@ exports.listGames = async (req, res, next) => {
 
     res.render('games', {
       games,
-      filters: { team, date }
+      filters: { team, teamId, date }
     });
   } catch (err) {
     next(err);
@@ -56,7 +61,7 @@ exports.searchTeams = async (req, res, next) => {
     const q = req.query.q || '';
     if (!q) return res.json([]);
     const teams = await Team.find({ school: { $regex: q, $options: 'i' } })
-      .select('school logos')
+      .select('school logos _id')
       .limit(5);
     res.json(teams);
   } catch (err) {
