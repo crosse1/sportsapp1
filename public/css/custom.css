@@ -275,10 +275,10 @@
 }
 
 .team-logo-detail {
-    width: 75%;
-    height: 75%;
-    max-width: 225px;
-    max-height: 225px;
+    width: 90%;
+    height: 90%;
+    max-width: 500px;
+    max-height: 500px;
     object-fit: contain;
 }
 
