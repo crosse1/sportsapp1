@@ -1,6 +1,26 @@
 const Game = require('../models/Game');
 const Team = require('../models/Team');
 
+function hexToRgb(hex) {
+  if (!hex) return null;
+  const sanitized = hex.replace('#', '');
+  const bigint = parseInt(sanitized, 16);
+  return {
+    r: (bigint >> 16) & 255,
+    g: (bigint >> 8) & 255,
+    b: bigint & 255
+  };
+}
+
+function colorDistance(c1, c2) {
+  if (!c1 || !c2) return Number.MAX_VALUE;
+  return Math.sqrt(
+    Math.pow(c1.r - c2.r, 2) +
+    Math.pow(c1.g - c2.g, 2) +
+    Math.pow(c1.b - c2.b, 2)
+  );
+}
+
 exports.listGames = async (req, res, next) => {
   try {
     const { team, date } = req.query;
@@ -50,7 +70,17 @@ exports.showGame = async (req, res, next) => {
       .populate('homeTeam')
       .populate('awayTeam');
     if (!game) return res.status(404).render('error', { message: 'Game not found' });
-    res.render('game', { game });
+    let homeBgColor = game.homeTeam && game.homeTeam.alternateColor ? game.homeTeam.alternateColor : '#ffffff';
+    const awayBgColor = game.awayTeam && game.awayTeam.alternateColor ? game.awayTeam.alternateColor : '#ffffff';
+
+    if (game.homeTeam && game.awayTeam && game.homeTeam.alternateColor && game.awayTeam.alternateColor) {
+      const diff = colorDistance(hexToRgb(game.homeTeam.alternateColor), hexToRgb(game.awayTeam.alternateColor));
+      if (diff < 60 && game.homeTeam.color) {
+        homeBgColor = game.homeTeam.color;
+      }
+    }
+
+    res.render('game', { game, homeBgColor, awayBgColor });
   } catch (err) {
     next(err);
   }
