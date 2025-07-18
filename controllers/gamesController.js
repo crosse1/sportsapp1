@@ -3,7 +3,7 @@ const Team = require('../models/Team');
 
 exports.listGames = async (req, res, next) => {
   try {
-    const { team, start, end, page = 1 } = req.query;
+    const { team, date, page = 1 } = req.query;
     const query = {};
     if (team) {
       query.$or = [
@@ -11,11 +11,11 @@ exports.listGames = async (req, res, next) => {
         { awayTeamName: { $regex: team, $options: 'i' } }
       ];
     }
-    if (start) {
-      query.startDate = { ...(query.startDate || {}), $gte: new Date(start) };
-    }
-    if (end) {
-      query.startDate = { ...(query.startDate || {}), $lte: new Date(end) };
+    if (date) {
+      const startOfDay = new Date(date);
+      const endOfDay = new Date(date);
+      endOfDay.setDate(endOfDay.getDate() + 1);
+      query.startDate = { $gte: startOfDay, $lt: endOfDay };
     }
     const limit = 50;
     const skip = (parseInt(page) - 1) * limit;
@@ -33,8 +33,7 @@ exports.listGames = async (req, res, next) => {
     const buildQS = (extra = {}) => {
       const params = new URLSearchParams();
       if (team) params.append('team', team);
-      if (start) params.append('start', start);
-      if (end) params.append('end', end);
+      if (date) params.append('date', date);
       Object.keys(extra).forEach(k => {
         if (extra[k]) params.append(k, extra[k]);
       });
@@ -43,11 +42,24 @@ exports.listGames = async (req, res, next) => {
 
     res.render('games', {
       games,
-      filters: { team, start, end },
+      filters: { team, date },
       page: parseInt(page),
       hasNextPage,
       buildQS
     });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.searchTeams = async (req, res, next) => {
+  try {
+    const q = req.query.q || '';
+    if (!q) return res.json([]);
+    const teams = await Team.find({ school: { $regex: q, $options: 'i' } })
+      .select('school logos')
+      .limit(5);
+    res.json(teams);
   } catch (err) {
     next(err);
   }
