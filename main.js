@@ -7,6 +7,8 @@ const express = require("express"),
     profileController = require("./controllers/profileController"),
     projectsController = require("./controllers/projectsController"),
     gamesController = require("./controllers/gamesController"),
+    messagesController = require('./controllers/messagesController'),
+    Message = require('./models/Message'),
     layouts = require('express-ejs-layouts'),
     mongoose = require('mongoose'),
     cookieParser = require('cookie-parser'),
@@ -39,7 +41,7 @@ app.use(express.urlencoded({
 app.use(express.json());
 
 // Middleware to authenticate token
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
     const token = req.cookies.token;
     if (token) {
         try {
@@ -53,6 +55,12 @@ app.use((req, res, next) => {
     }
     res.locals.loggedInUser = req.user;
     res.locals.currentPath = req.path;
+    if (req.user) {
+        const hasUnread = await Message.exists({ participants: req.user.id, unreadBy: req.user.id });
+        res.locals.hasUnreadMessages = !!hasUnread;
+    } else {
+        res.locals.hasUnreadMessages = false;
+    }
     next();
 });
 
@@ -89,6 +97,11 @@ app.post('/users/:id/unfollow', requireAuth, profileController.unfollowUser);
 app.get('/users/:id', requireAuth, profileController.viewUser);
 app.get('/users/:id/followers', requireAuth, profileController.viewFollowers);
 app.get('/users/:id/following', requireAuth, profileController.viewFollowing);
+
+app.get('/messages', requireAuth, messagesController.listThreads);
+app.get('/messages/:id', requireAuth, messagesController.viewThread);
+app.post('/messages/start/:id', requireAuth, messagesController.startThread);
+app.post('/messages/:id/send', requireAuth, messagesController.sendMessage);
 
 app.get('/tutorial', requireAuth, homeController.showTutorial);
 

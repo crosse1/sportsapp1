@@ -147,6 +147,11 @@
                 <div class="col-md-6 text-center text-md-start">
                     <div class="d-flex flex-column flex-md-row align-items-center">
                         <h2 class="fw-bold mb-1 me-md-3"><%= user.username %></h2>
+                        <% if(!isCurrentUser){ %>
+                        <form method="post" action="/messages/start/<%= user._id %>">
+                            <button type="submit" class="btn btn-outline-light btn-sm ms-md-2">Message</button>
+                        </form>
+                        <% } %>
                     </div>
                     <p class="mb-2">@<%= user.email %></p>
                     <div class="d-flex justify-content-center justify-content-md-start">
