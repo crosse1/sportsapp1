@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/custom.css">
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <%- include('partials/header') %>
+    <div class="container my-4 flex-grow-1 d-flex flex-column">
+        <div class="flex-grow-1 mb-3 overflow-auto" id="msgContainer">
+            <% thread.messages.forEach(function(m){ const isMine = String(m.sender._id||m.sender) === loggedInUser.id; %>
+                <div class="d-flex mb-2 <%= isMine ? 'justify-content-end' : 'justify-content-start' %>">
+                    <div class="p-2 rounded" style="max-width:70%; background-color:<%= isMine ? '#d1e7ff' : '#f1f1f1' %>">
+                        <%= m.content %><br>
+                        <small class="text-muted"><%= new Date(m.timestamp).toLocaleString() %></small>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+        <form method="POST" action="/messages/<%= thread._id %>/send" class="d-flex">
+            <input type="text" name="content" class="form-control me-2" autocomplete="off" required>
+            <button type="submit" class="btn btn-primary">Send</button>
+        </form>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const container = document.getElementById('msgContainer');
+        container.scrollTop = container.scrollHeight;
+    </script>
+</body>
+</html>

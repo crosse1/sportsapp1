@@ -316,3 +316,13 @@
 .checkin-btn:hover {
     filter: brightness(1.05);
 }
+
+.msg-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    position: absolute;
+    top: 0;
+    right: 0;
+    background-color: red;
+}

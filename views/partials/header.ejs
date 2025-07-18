@@ -1,4 +1,5 @@
 <link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 <header class="shadow-sm bg-white">
   <nav class="container d-flex align-items-center justify-content-between py-3">
     <a href="/" class="fw-bold fs-4 text-decoration-none px-3 py-1 rounded-pill <%= currentPath === '/' ? 'bg-primary text-white' : 'text-body' %>">App Logo</a>
@@ -12,6 +13,12 @@
     </ul>
     <div class="text-nowrap d-flex align-items-center">
       <% if (loggedInUser) { %>
+        <a href="/messages" class="me-3 position-relative <%= currentPath.startsWith('/messages') ? 'text-primary' : 'text-body' %>">
+          <i class="bi bi-envelope-fill fs-4"></i>
+          <% if(hasUnreadMessages){ %>
+            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
+          <% } %>
+        </a>
         <a href="/profile" class="me-3 <%= currentPath.startsWith('/profile') ? 'active-profile' : '' %>">
           <img src="<%= loggedInUser.uploadedPic ? ('/uploads/profilePics/' + loggedInUser.uploadedPic) : (loggedInUser.profileImage || 'https://via.placeholder.com/40') %>" alt="Profile" class="nav-profile-icon">
         </a>

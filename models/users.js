@@ -30,7 +30,8 @@ const userSchema = new mongoose.Schema({
     followingCount: {
         type: Number,
         default: 0
-    }
+    },
+    messageThreads: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Message' }]
 });
 
 // Automatically hash a password before saving
