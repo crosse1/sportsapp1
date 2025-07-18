@@ -121,6 +121,10 @@
 /* Games page */
 .game-card {
     border-radius: .5rem;
+    height: 220px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .team-logo {
@@ -186,7 +190,9 @@
     display: block;
     font-size: 0.9rem;
     line-height: 1.1;
-    word-break: break-word;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .game-date {
@@ -206,6 +212,10 @@
 
 .game-link:hover .game-card {
     transform: scale(1.05);
+}
+
+.at-symbol {
+    color: #fff;
 }
 
 /* Game listing diagonal logos */
