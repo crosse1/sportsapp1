@@ -3,7 +3,7 @@ const Team = require('../models/Team');
 
 exports.listGames = async (req, res, next) => {
   try {
-    const { team, date, page = 1 } = req.query;
+    const { team, date } = req.query;
     const query = {};
     if (team) {
       query.$or = [
@@ -17,35 +17,14 @@ exports.listGames = async (req, res, next) => {
       endOfDay.setDate(endOfDay.getDate() + 1);
       query.startDate = { $gte: startOfDay, $lt: endOfDay };
     }
-    const limit = 50;
-    const skip = (parseInt(page) - 1) * limit;
-
     let games = await Game.find(query)
       .populate('homeTeam')
       .populate('awayTeam')
-      .sort({ startDate: 1 })
-      .skip(skip)
-      .limit(limit + 1); // fetch one extra to check if next page exists
-
-    const hasNextPage = games.length > limit;
-    if (hasNextPage) games = games.slice(0, limit);
-
-    const buildQS = (extra = {}) => {
-      const params = new URLSearchParams();
-      if (team) params.append('team', team);
-      if (date) params.append('date', date);
-      Object.keys(extra).forEach(k => {
-        if (extra[k]) params.append(k, extra[k]);
-      });
-      return params.toString();
-    };
+      .sort({ startDate: 1 });
 
     res.render('games', {
       games,
-      filters: { team, date },
-      page: parseInt(page),
-      hasNextPage,
-      buildQS
+      filters: { team, date }
     });
   } catch (err) {
     next(err);
