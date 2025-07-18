@@ -257,6 +257,10 @@
     position: absolute;
     width: 100%;
     height: 100%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 
@@ -271,21 +275,16 @@
 }
 
 .team-logo-detail {
-    position: absolute;
-    width: 50%;
-    max-width: 150px;
-    transform: translate(-50%, -50%);
+    width: 75%;
+    height: 75%;
+    max-width: 225px;
+    max-height: 225px;
+    object-fit: contain;
 }
 
-.team-logo-detail.home-logo {
-    top: 33%;
-    left: 33%;
-}
+.team-logo-detail.home-logo {}
 
-.team-logo-detail.away-logo {
-    top: 67%;
-    left: 67%;
-}
+.team-logo-detail.away-logo {}
 
 .gradient-btn {
     background: linear-gradient(to right, #7e22ce, #14b8a6);
@@ -296,4 +295,14 @@
 
 .gradient-btn:hover {
     filter: brightness(1.1);
+}
+
+.checkin-btn {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: #fff;
+}
+
+.checkin-btn:hover {
+    filter: brightness(1.05);
 }
