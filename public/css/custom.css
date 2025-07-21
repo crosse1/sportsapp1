@@ -193,7 +193,7 @@
     line-height: 1.1;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
+    transition: font-size 0.2s;
 }
 
 .game-date {
@@ -388,7 +388,12 @@
   top:50%;
   left:0.25rem;
   transform:translateY(-50%);
+  transform-origin:left center;
+  transition:transform 0.2s;
   width:40px;
+}
+.position-relative:hover .followers-col{
+  transform:translateY(-50%) scale(1.05);
 }
 .follower-avatar img{ width:30px; height:30px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,255,255,0.8); }
 .followers-row a img{ width:30px; height:30px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,255,255,0.8); }
