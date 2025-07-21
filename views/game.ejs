@@ -26,6 +26,17 @@
                  alt="<%= game.homeTeamName %>" class="team-logo-detail home-logo">
           </div>
         </div>
+        <% if(followerWishers && followerWishers.length){ const extra = followerWishers.length - 5; %>
+        <div class="followers-row d-flex justify-content-center gap-2 mt-2 flex-wrap">
+          <% followerWishers.slice(0,5).forEach(function(u){ %>
+            <a href="/users/<%= u._id %>" title="<%= u.username %>">
+              <img src="<%= u.uploadedPic ? ('/uploads/profilePics/' + u.uploadedPic) : (u.profileImage || 'https://via.placeholder.com/30') %>" class="avatar avatar-sm">
+            </a>
+          <% }); if(extra>0){ %>
+            <div class="more-followers align-self-center">+<%= extra %></div>
+          <% } %>
+        </div>
+        <% } %>
       </div>
       <div class="col-md-7 text-white text-center text-md-start">
         <h2 class="fw-bold mb-2" id="gameStart"></h2>

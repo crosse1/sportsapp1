@@ -125,6 +125,8 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+    position: relative;
+    padding-right: 50px;
 }
 
 .team-logo {
@@ -381,8 +383,16 @@
 }
 
 /* Wishlist and followers */
-.followers-col{ width:40px; }
+.followers-col{
+  position:absolute;
+  top:50%;
+  right:0.25rem;
+  transform:translateY(-50%);
+  width:40px;
+}
 .follower-avatar img{ width:30px; height:30px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,255,255,0.8); }
+.followers-row a img{ width:30px; height:30px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,255,255,0.8); }
+.followers-row .more-followers{margin-left:0.25rem;}
 .more-followers{ font-size:0.8rem; color:#fff; }
 .wishlist-btn{
   top:0.5rem;
@@ -399,4 +409,8 @@
   cursor:pointer;
   color:#e3342f;
 }
+.wishlist-btn:hover{
+  background: rgba(255,255,255,0.4);
+}
+.wishlist-btn:hover .bi{color:#fff;}
 .wishlist-btn .bi{font-size:1.2rem;}
