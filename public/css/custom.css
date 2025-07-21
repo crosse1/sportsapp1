@@ -126,7 +126,7 @@
     flex-direction: column;
     justify-content: center;
     position: relative;
-    padding-right: 50px;
+    padding-left: 50px;
 }
 
 .team-logo {
@@ -386,7 +386,7 @@
 .followers-col{
   position:absolute;
   top:50%;
-  right:0.25rem;
+  left:0.25rem;
   transform:translateY(-50%);
   width:40px;
 }
