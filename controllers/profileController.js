@@ -85,9 +85,11 @@ exports.loginUser = async (req, res, next) => {
 
 exports.getProfile = async (req, res, next) => {
     try {
-        const user = await User.findById(req.user.id).populate('favoriteTeams');
+        const user = await User.findById(req.user.id)
+            .populate('favoriteTeams')
+            .populate({ path: 'wishlist', populate: ['homeTeam','awayTeam'] });
         if (!user) return res.redirect('/login');
-        res.render('profile', { user, isCurrentUser: true, isFollowing: false, viewer: req.user });
+        res.render('profile', { user, isCurrentUser: true, isFollowing: false, viewer: req.user, wishlistGames: user.wishlist });
     } catch (err) {
         next(err);
     }

@@ -117,6 +117,7 @@ app.get('/games', gamesController.listGames);
 app.get('/teams/search', gamesController.searchTeams);
 app.get('/games/:id', gamesController.showGame);
 app.post('/games/:id/checkin', gamesController.checkIn);
+app.post('/games/:id/wishlist', requireAuth, gamesController.toggleWishlist);
 
 
 app.use(homeController.logRequestPaths);
