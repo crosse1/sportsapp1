@@ -1,5 +1,6 @@
 const Game = require('../models/Game');
 const Team = require('../models/Team');
+const Venue = require('../models/Venue');
 
 function hexToRgb(hex) {
   if (!hex) return null;
@@ -57,6 +58,11 @@ exports.listGames = async (req, res, next) => {
       .populate('awayTeam')
       .sort({ startDate: 1 });
 
+    const venueIds = [...new Set(games.map(g => g.venueId).filter(v => v !== undefined))];
+    const venues = await Venue.find({ venueId: { $in: venueIds } });
+    const venueMap = {};
+    venues.forEach(v => { venueMap[v.venueId] = v; });
+
     let userWishlist = new Set();
     let followed = [];
     if(req.user){
@@ -71,10 +77,14 @@ exports.listGames = async (req, res, next) => {
 
     if(userCoords){
       games = games.map(g => {
-        const loc = g.homeTeam && g.homeTeam.location;
-        if(loc && typeof loc.latitude === 'number' && typeof loc.longitude === 'number'){
-          g.distance = haversine(userCoords.lat, userCoords.lng, loc.latitude, loc.longitude);
-        }else{
+        const venue = venueMap[g.venueId];
+        const coords = venue && venue.coordinates && Array.isArray(venue.coordinates.coordinates)
+          ? venue.coordinates.coordinates
+          : null;
+        if(coords && coords.length === 2){
+          const [lngVal, latVal] = coords;
+          g.distance = haversine(userCoords.lat, userCoords.lng, latVal, lngVal);
+        } else {
           g.distance = Infinity;
         }
         return g;
@@ -135,6 +145,7 @@ exports.showGame = async (req, res, next) => {
     const game = await Game.findById(req.params.id)
       .populate('homeTeam')
       .populate('awayTeam');
+    const venue = await Venue.findOne({ venueId: game.venueId });
     if (!game) return res.status(404).render('error', { message: 'Game not found' });
     let homeBgColor = game.homeTeam && game.homeTeam.alternateColor ? game.homeTeam.alternateColor : '#ffffff';
     const awayBgColor = game.awayTeam && game.awayTeam.alternateColor ? game.awayTeam.alternateColor : '#ffffff';
@@ -154,7 +165,7 @@ exports.showGame = async (req, res, next) => {
       followerWishers = (viewer.followers || []).filter(u => (u.wishlist || []).some(w => String(w) === String(game._id)));
     }
 
-    res.render('game', { game, homeBgColor, awayBgColor, followerWishers });
+    res.render('game', { game, homeBgColor, awayBgColor, followerWishers, venue });
   } catch (err) {
     next(err);
   }

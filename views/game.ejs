@@ -42,7 +42,7 @@
         <h2 class="fw-bold mb-2" id="gameStart"></h2>
         <h3 class="mb-3"><%= game.awayTeamName %> @ <%= game.homeTeamName %></h3>
         <p class="mb-1">(<%= game.awayRecord || '0-0' %>) vs (<%= game.homeRecord || '0-0' %>)</p>
-        <p class="mb-3"><%= game.venue %> - <%= game.homeTeam && game.homeTeam.location ? game.homeTeam.location.city : '' %></p>
+        <p class="mb-3"><%= game.venue %> - <%= venue && venue.city ? venue.city : '' %></p>
         <form method="post" action="/games/<%= game._id %>/checkin" class="d-inline w-100">
           <button type="submit" class="btn checkin-btn w-100">Check-In</button>
         </form>
