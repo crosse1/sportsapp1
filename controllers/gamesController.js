@@ -32,7 +32,7 @@ function haversine(lat1, lon1, lat2, lon2){
 
 exports.listGames = async (req, res, next) => {
   try {
-    const { team, teamId, date, lat, lng, sort = 'proximity', radius = 100 } = req.query;
+    const { team, teamId, date, lat, lng } = req.query;
     const query = {};
     if (teamId) {
       query.$or = [
@@ -58,7 +58,6 @@ exports.listGames = async (req, res, next) => {
       .sort({ startDate: 1 });
 
     const userCoords = lat && lng ? { lat: parseFloat(lat), lng: parseFloat(lng) } : null;
-    const maxRadius = parseFloat(radius) || 100;
 
     if(userCoords){
       games = games.map(g => {
@@ -71,19 +70,24 @@ exports.listGames = async (req, res, next) => {
         return g;
       });
 
-      if(sort === 'proximity'){
-        games.sort((a,b)=>{
-          if(a.distance === b.distance) return new Date(a.startDate) - new Date(b.startDate);
-          return a.distance - b.distance;
-        });
-      }
+      games.sort((a,b)=>{
+        const dateA = new Date(a.startDate);
+        const dateB = new Date(b.startDate);
+        const dayA = dateA.toDateString();
+        const dayB = dateB.toDateString();
 
-      games = games.filter(g => g.distance <= maxRadius);
+        if(dayA === dayB){
+          if(a.distance === b.distance) return dateA - dateB;
+          return a.distance - b.distance;
+        }
+
+        return dateA - dateB;
+      });
     }
 
     res.render('games', {
       games,
-      filters: { team, teamId, date, lat, lng, sort, radius: maxRadius }
+      filters: { team, teamId, date, lat, lng }
     });
   } catch (err) {
     next(err);
