@@ -187,6 +187,45 @@
 
             
     </div>
+
+    <% if (wishlistGames && wishlistGames.length > 0) { %>
+    <div class="container my-4" id="wishlistSection">
+        <h4>Wishlisted Games</h4>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="wishlistContainer">
+            <% wishlistGames.forEach(function(game){
+                 const awayColor = game.awayTeam && game.awayTeam.color ? game.awayTeam.color : '#ffffff';
+                 const homeColor = game.homeTeam && game.homeTeam.color ? game.homeTeam.color : '#ffffff'; %>
+            <div class="col">
+                <a href="/games/<%= game._id %>" class="game-link">
+                    <div class="card shadow-sm h-100 game-card p-3 text-center position-relative" data-away-color="<%= awayColor %>" data-home-color="<%= homeColor %>" style="background: linear-gradient(to right, <%= awayColor %>, <%= homeColor %>);">
+                        <div class="game-date mb-2" data-start="<%= game.startDate.toISOString() %>"></div>
+                        <div class="d-flex justify-content-between align-items-center position-relative mb-2 px-3">
+                            <div class="logo-wrapper me-3">
+                                <div class="team-logo-container">
+                                    <img loading="lazy" src="<%= game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0] ? game.awayTeam.logos[0] : 'https://via.placeholder.com/60' %>" alt="<%= game.awayTeamName %>">
+                                </div>
+                                <span class="team-name"><%= game.awayTeamName %></span>
+                            </div>
+                            <div class="logo-wrapper ms-3">
+                                <div class="team-logo-container">
+                                    <img loading="lazy" src="<%= game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0] ? game.homeTeam.logos[0] : 'https://via.placeholder.com/60' %>" alt="<%= game.homeTeamName %>">
+                                </div>
+                                <span class="team-name"><%= game.homeTeamName %></span>
+                            </div>
+                            <div class="position-absolute top-50 start-50 translate-middle fw-bold fs-4 at-symbol">@</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <% }); %>
+        </div>
+    </div>
+    <% } else { %>
+    <div class="container my-4" id="wishlistSection">
+        <h4>Wishlisted Games</h4>
+        <p>No games wishlisted.</p>
+    </div>
+    <% } %>
 </div>
 
     <% if (isCurrentUser) { %>
@@ -333,6 +372,36 @@
                 });
             }
         }
+
+        function hexToRgb(hex){
+            if(!hex) return [255,255,255];
+            hex = hex.replace('#','');
+            if(hex.length===3) hex = hex.split('').map(c=>c+c).join('');
+            const num = parseInt(hex,16);
+            return [(num>>16)&255,(num>>8)&255,num&255];
+        }
+        function luminance(r,g,b){
+            const a=[r,g,b].map(v=>{ v/=255; return v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4); });
+            return 0.2126*a[0] + 0.7152*a[1] + 0.0722*a[2];
+        }
+        function chooseTextColor(colors){
+            const lums = colors.map(c=>{ const [r,g,b]=hexToRgb(c); return luminance(r,g,b); });
+            const avg = lums.reduce((a,b)=>a+b,0)/lums.length;
+            return avg > 0.5 ? '#333333' : '#ffffff';
+        }
+
+        function formatWishlist(){
+            document.querySelectorAll('#wishlistContainer .game-date').forEach(el=>{
+                const d=new Date(el.dataset.start);
+                el.textContent = new Intl.DateTimeFormat(navigator.language,{dateStyle:'medium',timeStyle:'short'}).format(d);
+            });
+            document.querySelectorAll('#wishlistContainer .game-card').forEach(card=>{
+                const away=card.dataset.awayColor; const home=card.dataset.homeColor;
+                const color=chooseTextColor([away,home]);
+                card.querySelectorAll('.game-date, .team-name').forEach(e=>{e.style.color=color;});
+            });
+        }
+        formatWishlist();
     </script>
 </body>
 </html>

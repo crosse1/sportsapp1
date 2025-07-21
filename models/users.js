@@ -16,6 +16,7 @@ const userSchema = new mongoose.Schema({
     favoriteTeams: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Team', required: true }],
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Game' }],
     uploadedPic: String,
     profileImage: {
         type: String,

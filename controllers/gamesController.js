@@ -57,6 +57,16 @@ exports.listGames = async (req, res, next) => {
       .populate('awayTeam')
       .sort({ startDate: 1 });
 
+    let userWishlist = new Set();
+    let followed = [];
+    if(req.user){
+      const User = require('../models/users');
+      const viewer = await User.findById(req.user.id)
+        .populate({path:'following', select:'username uploadedPic profileImage wishlist'});
+      userWishlist = new Set((viewer.wishlist || []).map(g=>String(g)));
+      followed = viewer.following || [];
+    }
+
     const userCoords = lat && lng ? { lat: parseFloat(lat), lng: parseFloat(lng) } : null;
 
     if(userCoords){
@@ -84,6 +94,13 @@ exports.listGames = async (req, res, next) => {
         return dateA - dateB;
       });
     }
+
+    games = games.map(g => {
+      const idStr = String(g._id);
+      g.isWishlisted = userWishlist.has(idStr);
+      g.followedWishers = followed.filter(u => (u.wishlist || []).some(w => String(w) === idStr));
+      return g;
+    });
 
     res.render('games', {
       games,
@@ -140,6 +157,27 @@ exports.checkIn = async (req, res, next) => {
     // Placeholder implementation
     res.redirect(`/games/${req.params.id}`);
   } catch (err) {
+    next(err);
+  }
+};
+
+exports.toggleWishlist = async (req, res, next) => {
+  try {
+    const User = require('../models/users');
+    const user = await User.findById(req.user.id);
+    const gameId = req.params.id;
+    const idx = user.wishlist.findIndex(g => String(g) === gameId);
+    let action;
+    if(idx >= 0){
+      user.wishlist.splice(idx,1);
+      action = 'removed';
+    } else {
+      user.wishlist.push(gameId);
+      action = 'added';
+    }
+    await user.save();
+    res.json({success:true, action});
+  } catch(err){
     next(err);
   }
 };
