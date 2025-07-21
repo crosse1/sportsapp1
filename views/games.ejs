@@ -11,7 +11,7 @@
   <%- include('partials/header') %>
 
   <div class="container my-4 flex-grow-1">
-    <form class="row g-3 mb-4 position-relative" method="get" action="/games">
+    <form class="row g-3 mb-4 position-relative" method="get" action="/games" id="filtersForm">
       <div class="col-sm-5 position-relative">
         <input id="teamInput" type="text" class="form-control" name="team" placeholder="Search by team" autocomplete="off" value="<%= filters.team || '' %>">
         <input type="hidden" id="teamId" name="teamId" value="<%= filters.teamId || '' %>">
@@ -23,16 +23,28 @@
       <div class="col-sm-2 d-grid">
         <button type="submit" class="btn btn-primary">Filter</button>
       </div>
+      <input type="hidden" id="latInput" name="lat" value="<%= filters.lat || '' %>">
+      <input type="hidden" id="lngInput" name="lng" value="<%= filters.lng || '' %>">
+      <div class="col-12 d-flex align-items-center gap-3">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="sortProximity" <%= filters.sort !== 'time' ? 'checked' : '' %>>
+          <label class="form-check-label" for="sortProximity">Sort by Proximity</label>
+        </div>
+        <div class="flex-grow-1">
+          <label for="radiusRange" class="form-label">Show games within <span id="radiusVal"><%= filters.radius %></span> miles</label>
+          <input type="range" class="form-range" min="10" max="500" step="10" id="radiusRange" value="<%= filters.radius %>">
+        </div>
+      </div>
     </form>
 
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="gamesContainer">
       <% games.forEach(function(game){
            const awayColor = game.awayTeam && game.awayTeam.color ? game.awayTeam.color : '#ffffff';
            const homeColor = game.homeTeam && game.homeTeam.color ? game.homeTeam.color : '#ffffff';
       %>
-        <div class="col">
+    <div class="col" data-distance="<%= typeof game.distance === 'number' ? game.distance.toFixed(1) : '' %>" data-start="<%= game.startDate.toISOString() %>">
           <a href="/games/<%= game._id %>" class="game-link">
-            <div class="card shadow-sm h-100 game-card p-3 text-center" data-away-color="<%= awayColor %>" data-home-color="<%= homeColor %>" style="background: linear-gradient(to right, <%= awayColor %>, <%= homeColor %>);">
+            <div class="card shadow-sm h-100 game-card p-3 text-center position-relative" data-away-color="<%= awayColor %>" data-home-color="<%= homeColor %>" style="background: linear-gradient(to right, <%= awayColor %>, <%= homeColor %>);">
               <div class="game-date mb-2" data-start="<%= game.startDate.toISOString() %>"></div>
               <div class="d-flex justify-content-between align-items-center position-relative mb-2 px-3">
                 <div class="logo-wrapper me-3">
@@ -49,6 +61,9 @@
                 </div>
                 <div class="position-absolute top-50 start-50 translate-middle fw-bold fs-4 at-symbol">@</div>
               </div>
+              <% if(typeof game.distance === 'number'){ %>
+                <span class="badge bg-success near-badge"><%= game.distance.toFixed(0) %> mi</span>
+              <% } %>
             </div>
           </a>
         </div>
@@ -58,7 +73,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-      document.querySelectorAll('[data-start]').forEach(function(el){
+      document.querySelectorAll('.game-date[data-start]').forEach(function(el){
         var date = new Date(el.dataset.start);
         el.textContent = new Intl.DateTimeFormat(navigator.language, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
       });
@@ -126,6 +141,90 @@
           el.style.color = textColor;
         });
       });
+
+      const GEO_KEY = 'userCoords';
+      const latInput = document.getElementById('latInput');
+      const lngInput = document.getElementById('lngInput');
+
+      function getCached(){
+        try{
+          const data = JSON.parse(localStorage.getItem(GEO_KEY));
+          if(!data) return null;
+          if(Date.now() - data.t > 30*60*1000) return null;
+          return data;
+        }catch(e){ return null; }
+      }
+
+      function saveCoords(lat,lng){
+        localStorage.setItem(GEO_KEY, JSON.stringify({lat,lng,t:Date.now()}));
+        if(window.loggedInUser){
+          fetch('/profile/location',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({latitude:lat, longitude:lng})});
+        }
+      }
+
+      async function ensureCoords(){
+        let c = getCached();
+        if(c) return c;
+        if(!navigator.geolocation) return null;
+        return new Promise(res=>{
+          navigator.geolocation.getCurrentPosition(p=>{
+            c = {lat:p.coords.latitude,lng:p.coords.longitude};
+            saveCoords(c.lat,c.lng);
+            res(c);
+          }, ()=>res(null));
+        });
+      }
+
+      ensureCoords().then(coords=>{
+        if(coords){
+          latInput.value = coords.lat;
+          lngInput.value = coords.lng;
+        }
+      });
+
+      const container = document.getElementById('gamesContainer');
+      const cards = Array.from(container.children);
+      const sortToggle = document.getElementById('sortProximity');
+      const radiusRange = document.getElementById('radiusRange');
+      const radiusVal = document.getElementById('radiusVal');
+
+      function filterRadius(){
+        const r = parseFloat(radiusRange.value);
+        cards.forEach(card=>{
+          const d = parseFloat(card.dataset.distance);
+          if(!isNaN(d) && d > r){
+            card.classList.add('d-none');
+          }else{
+            card.classList.remove('d-none');
+          }
+        });
+      }
+
+      function sortCards(){
+        const sorted = cards.sort((a,b)=>{
+          if(sortToggle.checked){
+            const d1 = parseFloat(a.dataset.distance) || Infinity;
+            const d2 = parseFloat(b.dataset.distance) || Infinity;
+            if(d1 === d2){
+              return new Date(a.dataset.start) - new Date(b.dataset.start);
+            }
+            return d1 - d2;
+          }
+          return new Date(a.dataset.start) - new Date(b.dataset.start);
+        });
+        container.classList.add('fading');
+        setTimeout(()=>{
+          sorted.forEach(el=>container.appendChild(el));
+          container.classList.remove('fading');
+          filterRadius();
+        },150);
+      }
+
+      sortToggle.addEventListener('change', sortCards);
+      radiusRange.addEventListener('input', ()=>radiusVal.textContent = radiusRange.value);
+      radiusRange.addEventListener('change', filterRadius);
+
+      sortCards();
 
     </script>
 </body>

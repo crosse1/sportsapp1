@@ -249,3 +249,16 @@ exports.viewFollowing = async (req, res, next) => {
         next(err);
     }
 };
+
+exports.setLocation = async (req, res, next) => {
+    try {
+        if(!req.user) return res.status(401).json({ error: 'Unauthorized' });
+        const { latitude, longitude } = req.body;
+        await User.findByIdAndUpdate(req.user.id, {
+            location: { latitude, longitude, updatedAt: new Date() }
+        });
+        res.json({ success: true });
+    } catch (err) {
+        next(err);
+    }
+};

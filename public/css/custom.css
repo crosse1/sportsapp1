@@ -349,3 +349,12 @@
   font-size:0.7em;
   color:rgba(255,255,255,0.6);
 }
+
+.near-badge{
+  position:absolute;
+  top:0.5rem;
+  right:0.5rem;
+}
+
+#gamesContainer{transition:opacity 0.3s;}
+#gamesContainer.fading{opacity:0.3;}

@@ -31,6 +31,11 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    location: {
+        latitude: Number,
+        longitude: Number,
+        updatedAt: Date
+    },
     messageThreads: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Message' }]
 });
 
