@@ -164,7 +164,7 @@
 
 /* Games page enhancements */
 .logo-wrapper {
-    width: 80px;
+    width: 108px; /* expanded width for longer team names */
     text-align: center;
 }
 
@@ -189,7 +189,7 @@
 
 .team-name {
     display: block;
-    font-size: 0.9rem;
+    font-size: 1rem;
     line-height: 1.1;
     white-space: nowrap;
     overflow: hidden;
@@ -382,32 +382,29 @@
   backdrop-filter: blur(8px);
 }
 
-/* Wishlist and followers */
-.followers-col{
+.wishlist-wrapper{
   position:absolute;
-  top:50%;
-  left:0.25rem;
-  transform:translateY(-50%);
-  transform-origin:left center;
-  transition:transform 0.2s;
-  width:40px;
+  top:0.5rem;
+  left:0.5rem;
+  display:flex;
+  align-items:center;
 }
-.position-relative:hover .followers-col{
-  transform:translateY(-50%) scale(1.05);
+.followers-col{
+  display:flex;
+  align-items:center;
+  margin-left:0.25rem;
 }
-.follower-avatar img{ width:30px; height:30px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,255,255,0.8); }
+.follower-avatar img{ width:15px; height:15px; border-radius:50%; object-fit:cover; border:1px solid rgba(255,255,255,0.8); }
 .followers-row a img{ width:30px; height:30px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,255,255,0.8); }
 .followers-row .more-followers{margin-left:0.25rem;}
 .more-followers{ font-size:0.8rem; color:#fff; }
 .wishlist-btn{
-  top:0.5rem;
-  left:0.5rem;
   width:32px;
   height:32px;
   display:flex;
   align-items:center;
   justify-content:center;
-  position:absolute;
+  position:relative;
   background: rgba(255,255,255,0.25);
   backdrop-filter: blur(6px);
   border-radius:50%;
