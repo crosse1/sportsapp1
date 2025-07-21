@@ -326,3 +326,20 @@
     right: 0;
     background-color: red;
 }
+
+/* Messaging modal styles */
+.messages-modal .modal-dialog{ max-width:60vw; }
+@media (max-width:768px){
+  .messages-modal .modal-dialog{ max-width:90vw; }
+  .messages-modal .modal-body{ flex-direction:column; }
+  .messages-modal .threads{ width:100% !important; max-height:200px !important; }
+  .messages-modal .conversation{ width:100% !important; }
+}
+.messages-modal .modal-content{
+  background: linear-gradient(to right, #7e22ce, #14b8a6);
+  background-clip: padding-box;
+  border-radius:1rem;
+  border:1px solid rgba(255,255,255,0.2);
+  color:#fff;
+  backdrop-filter: blur(10px);
+}

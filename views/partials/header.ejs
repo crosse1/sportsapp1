@@ -13,7 +13,7 @@
     </ul>
     <div class="text-nowrap d-flex align-items-center">
       <% if (loggedInUser) { %>
-        <a href="/messages" class="me-3 position-relative <%= currentPath.startsWith('/messages') ? 'text-primary' : 'text-body' %>">
+        <a href="/messages" id="navMessages" class="me-3 position-relative <%= currentPath.startsWith('/messages') ? 'text-primary' : 'text-body' %>">
           <i class="bi bi-envelope-fill fs-4"></i>
           <% if(hasUnreadMessages){ %>
             <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
@@ -30,3 +30,9 @@
     </div>
   </nav>
 </header>
+<div class="modal fade messages-modal" id="messagesModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content"></div>
+  </div>
+</div>
+<script src="/js/messagesModal.js"></script>
