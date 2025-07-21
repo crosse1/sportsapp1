@@ -119,6 +119,9 @@ app.get('/teams/search', gamesController.searchTeams);
 app.get('/games/:id', gamesController.showGame);
 app.post('/games/:id/checkin', gamesController.checkIn);
 app.post('/games/:id/wishlist', requireAuth, gamesController.toggleWishlist);
+app.post('/games/:id/list', requireAuth, gamesController.toggleGameList);
+app.post('/teams/:id/list', requireAuth, gamesController.toggleTeamList);
+app.post('/venues/:id/list', requireAuth, gamesController.toggleVenueList);
 
 app.get('/venues', venuesController.listVenues);
 
