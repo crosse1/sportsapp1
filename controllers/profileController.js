@@ -1,19 +1,7 @@
 const path = require("path");
-const fs = require("fs");
 const multer = require("multer");
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadPath = path.join(__dirname, "../public/uploads/profilePics");
-        fs.mkdirSync(uploadPath, { recursive: true });
-        cb(null, uploadPath);
-    },
-    filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname).toLowerCase();
-        const name = `${req.user.id}-${Date.now()}${ext}`;
-        cb(null, name);
-    }
-});
+const storage = multer.memoryStorage();
 
 const upload = multer({
     storage,
@@ -54,7 +42,7 @@ exports.saveUser = async (req, res, next) => {
         }
         const newUser = new User({ username, email, phoneNumber, password, favoriteTeams: fav });
         await newUser.save();
-        const token = jwt.sign({ id: newUser._id, username: newUser.username, email: newUser.email, phoneNumber: newUser.phoneNumber, profileImage: newUser.profileImage, uploadedPic: newUser.uploadedPic }, 'secret');
+        const token = jwt.sign({ id: newUser._id, username: newUser.username, email: newUser.email, phoneNumber: newUser.phoneNumber }, 'secret');
         res.cookie('token', token, { httpOnly: true });
         res.redirect('/');
     } catch (error) {
@@ -73,7 +61,7 @@ exports.loginUser = async (req, res, next) => {
         if (!user) return res.redirect('/login');
         const match = await user.comparePassword(password);
         if (!match) return res.redirect('/login');
-        const token = jwt.sign({ id: user._id, username: user.username, email: user.email, phoneNumber: user.phoneNumber, profileImage: user.profileImage, uploadedPic: user.uploadedPic }, 'secret');
+        const token = jwt.sign({ id: user._id, username: user.username, email: user.email, phoneNumber: user.phoneNumber }, 'secret');
         res.cookie('token', token, { httpOnly: true });
         res.redirect('/');
     } catch (error) {
@@ -116,7 +104,7 @@ exports.updateProfile = async (req, res, next) => {
         user.phoneNumber = phoneNumber;
         user.favoriteTeams = favoriteTeams ? (Array.isArray(favoriteTeams) ? favoriteTeams : [favoriteTeams]) : [];
         await user.save();
-        const token = jwt.sign({ id: user._id, username: user.username, email: user.email, phoneNumber: user.phoneNumber, profileImage: user.profileImage, uploadedPic: user.uploadedPic }, 'secret');
+        const token = jwt.sign({ id: user._id, username: user.username, email: user.email, phoneNumber: user.phoneNumber }, 'secret');
         res.cookie('token', token, { httpOnly: true });
         res.redirect('/profile');
     } catch (err) {
@@ -127,15 +115,14 @@ exports.uploadProfilePhoto = [upload.single("profileImage"), async (req, res, ne
     try {
         if (!req.file) return res.status(400).json({ error: "No image" });
         const user = await User.findById(req.user.id);
-        if (user.uploadedPic) {
-            const oldPath = path.join(__dirname, "../public/uploads/profilePics", user.uploadedPic);
-            fs.unlink(oldPath, () => {});
-        }
-        user.uploadedPic = req.file.filename;
+        user.profilePic = {
+            data: req.file.buffer,
+            contentType: req.file.mimetype
+        };
         await user.save();
-        const token = jwt.sign({ id: user._id, username: user.username, email: user.email, phoneNumber: user.phoneNumber, profileImage: user.profileImage, uploadedPic: user.uploadedPic }, "secret");
+        const token = jwt.sign({ id: user._id, username: user.username, email: user.email, phoneNumber: user.phoneNumber }, "secret");
         res.cookie("token", token, { httpOnly: true });
-        res.json({ imageUrl: "/uploads/profilePics/" + user.uploadedPic });
+        res.json({ imageData: "data:" + user.profilePic.contentType + ";base64," + user.profilePic.data.toString('base64') });
     } catch (err) {
         next(err);
     }
@@ -158,7 +145,7 @@ exports.searchUsers = async (req, res, next) => {
         const q = req.query.q || '';
         if (!q) return res.json([]);
         const users = await User.find({ username: { $regex: q, $options: 'i' } })
-            .select('username profileImage uploadedPic followers followersCount followingCount');
+            .select('username profilePic followers followersCount followingCount');
         res.json(users);
     } catch (err) {
         next(err);
