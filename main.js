@@ -99,6 +99,7 @@ app.get('/users/:id/followers', requireAuth, profileController.viewFollowers);
 app.get('/users/:id/following', requireAuth, profileController.viewFollowing);
 
 app.get('/messages', requireAuth, messagesController.listThreads);
+app.get('/messages/modal', requireAuth, messagesController.renderModal);
 app.get('/messages/:id', requireAuth, messagesController.viewThread);
 app.post('/messages/start/:id', requireAuth, messagesController.startThread);
 app.post('/messages/:id/send', requireAuth, messagesController.sendMessage);

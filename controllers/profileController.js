@@ -169,8 +169,14 @@ exports.viewUser = async (req, res, next) => {
         const user = await User.findById(req.params.id).populate('favoriteTeams');
         if (!user) return res.redirect('/profile');
         const isCurrentUser = req.user && String(req.user.id) === String(user._id);
-        const isFollowing = req.user && user.followers.some(f => String(f) === String(req.user.id));
-        res.render('profile', { user, isCurrentUser, isFollowing, viewer: req.user });
+        let isFollowing = false, canMessage = false;
+        if(req.user){
+            const viewer = await User.findById(req.user.id);
+            isFollowing = viewer.following.some(f => String(f) === String(user._id));
+            const followsBack = user.following.some(f => String(f) === String(viewer._id));
+            canMessage = isFollowing && followsBack;
+        }
+        res.render('profile', { user, isCurrentUser, isFollowing, canMessage, viewer: req.user });
     } catch (err) {
         next(err);
     }
