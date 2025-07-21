@@ -146,7 +146,15 @@ exports.showGame = async (req, res, next) => {
       }
     }
 
-    res.render('game', { game, homeBgColor, awayBgColor });
+    let followerWishers = [];
+    if(req.user){
+      const User = require('../models/users');
+      const viewer = await User.findById(req.user.id)
+        .populate({path:'followers', select:'username uploadedPic profileImage wishlist'});
+      followerWishers = (viewer.followers || []).filter(u => (u.wishlist || []).some(w => String(w) === String(game._id)));
+    }
+
+    res.render('game', { game, homeBgColor, awayBgColor, followerWishers });
   } catch (err) {
     next(err);
   }
