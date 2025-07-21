@@ -26,13 +26,13 @@
           <div class="d-flex mb-2 <%= isMine ? 'justify-content-end' : 'justify-content-start' %>">
             <div class="p-2 rounded" style="max-width:70%; background-color:<%= isMine ? '#d1e7ff' : '#f1f1f1' %>">
               <%= m.content %><br>
-              <small class="text-muted"><%= new Date(m.timestamp).toLocaleString() %></small>
+              <small class="text-muted message-timestamp"><%= new Date(m.timestamp).toLocaleString() %></small>
             </div>
           </div>
         <% }) %>
       </div>
       <form id="messageForm" data-thread="<%= currentThread._id %>" class="d-flex p-2 border-top">
-        <input type="text" id="messageInput" class="form-control me-2" autocomplete="off" required>
+        <input type="text" id="messageInput" class="form-control me-2" autocomplete="off" required placeholder="Type message here">
         <button class="btn btn-primary">Send</button>
       </form>
     <% } else { %>
