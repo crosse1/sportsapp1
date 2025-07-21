@@ -21,9 +21,18 @@ function colorDistance(c1, c2) {
   );
 }
 
+function haversine(lat1, lon1, lat2, lon2){
+  const R = 6371; // km
+  const toRad = d => d * Math.PI/180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
 exports.listGames = async (req, res, next) => {
   try {
-    const { team, teamId, date } = req.query;
+    const { team, teamId, date, lat, lng, sort = 'proximity', radius = 100 } = req.query;
     const query = {};
     if (teamId) {
       query.$or = [
@@ -42,14 +51,39 @@ exports.listGames = async (req, res, next) => {
       endOfDay.setDate(endOfDay.getDate() + 1);
       query.startDate = { $gte: startOfDay, $lt: endOfDay };
     }
+
     let games = await Game.find(query)
       .populate('homeTeam')
       .populate('awayTeam')
       .sort({ startDate: 1 });
 
+    const userCoords = lat && lng ? { lat: parseFloat(lat), lng: parseFloat(lng) } : null;
+    const maxRadius = parseFloat(radius) || 100;
+
+    if(userCoords){
+      games = games.map(g => {
+        const loc = g.homeTeam && g.homeTeam.location;
+        if(loc && typeof loc.latitude === 'number' && typeof loc.longitude === 'number'){
+          g.distance = haversine(userCoords.lat, userCoords.lng, loc.latitude, loc.longitude);
+        }else{
+          g.distance = Infinity;
+        }
+        return g;
+      });
+
+      if(sort === 'proximity'){
+        games.sort((a,b)=>{
+          if(a.distance === b.distance) return new Date(a.startDate) - new Date(b.startDate);
+          return a.distance - b.distance;
+        });
+      }
+
+      games = games.filter(g => g.distance <= maxRadius);
+    }
+
     res.render('games', {
       games,
-      filters: { team, teamId, date }
+      filters: { team, teamId, date, lat, lng, sort, radius: maxRadius }
     });
   } catch (err) {
     next(err);
