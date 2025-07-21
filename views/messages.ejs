@@ -29,7 +29,7 @@
                             <small class="text-muted"><%= last.content.slice(0,40) %></small>
                         <% } %>
                     </div>
-                    <% if(last){ %><small class="text-nowrap ms-2"><%= new Date(last.timestamp).toLocaleString() %></small><% } %>
+                    <% if(last){ %><small class="text-nowrap ms-2 message-timestamp"><%= new Date(last.timestamp).toLocaleString() %></small><% } %>
                     <% if(unread){ %>
                         <span class="position-absolute top-0 end-0 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
                     <% } %>
