@@ -416,3 +416,29 @@
 }
 .wishlist-btn:hover .bi{color:#fff;}
 .wishlist-btn .bi{font-size:1.2rem;}
+
+/* Profile tabs */
+.profile-tabs{
+  border:none;
+  background-color:rgba(255,255,255,0.15);
+  backdrop-filter:blur(8px);
+  overflow-x:auto;
+  white-space:nowrap;
+  -ms-overflow-style:none;
+  scrollbar-width:none;
+}
+.profile-tabs::-webkit-scrollbar{display:none;}
+.profile-tab{
+  color:rgba(255,255,255,0.8);
+  border:none;
+  border-bottom:3px solid transparent;
+  margin-right:.5rem;
+  transition:color .3s, background-color .3s, box-shadow .3s;
+}
+.profile-tab:hover{color:#fff;}
+.profile-tab.active{
+  color:#fff;
+  background:linear-gradient(to right,#7e22ce,#14b8a6);
+  box-shadow:0 0 0.5rem rgba(20,184,166,0.6);
+}
+.empty-tab-message{color:rgba(255,255,255,0.8);}
