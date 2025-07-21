@@ -147,10 +147,9 @@
     position: absolute;
     z-index: 1000;
     width: 100%;
-    background: #fff;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     max-height: 200px;
     overflow-y: auto;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
 .team-suggestions .list-group-item img {
@@ -358,3 +357,18 @@
 
 #gamesContainer{transition:opacity 0.3s;}
 #gamesContainer.fading{opacity:0.3;}
+
+/* Glassmorphic controls for games filters */
+.glass-control{
+  background-color: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.3);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  border-radius: .5rem;
+}
+.glass-control::placeholder{color:#fff;}
+
+.team-suggestions{
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(8px);
+}

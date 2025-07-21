@@ -6,36 +6,28 @@
   <title>Games</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/css/custom.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body class="d-flex flex-column min-vh-100 gradient-bg">
   <%- include('partials/header') %>
 
   <div class="container my-4 flex-grow-1">
-    <form class="row g-3 mb-4 position-relative" method="get" action="/games" id="filtersForm">
+    <div class="row g-3 mb-4 position-relative" id="filtersForm">
       <div class="col-sm-5 position-relative">
-        <input id="teamInput" type="text" class="form-control" name="team" placeholder="Search by team" autocomplete="off" value="<%= filters.team || '' %>">
-        <input type="hidden" id="teamId" name="teamId" value="<%= filters.teamId || '' %>">
+        <input id="teamInput" type="text" class="form-control glass-control" placeholder="Search by team" autocomplete="off" value="<%= filters.team || '' %>">
+        <input type="hidden" id="teamId" value="<%= filters.teamId || '' %>">
         <div id="teamSuggestions" class="list-group team-suggestions"></div>
       </div>
-      <div class="col-sm-5">
-        <input type="date" class="form-control" name="date" value="<%= filters.date || '' %>">
+      <div class="col-sm-5 d-flex align-items-center">
+        <button type="button" id="dateBtn" class="btn glass-control d-flex align-items-center"><i class="bi bi-calendar3"></i><span id="dateDisplay" class="ms-2"></span></button>
+        <input type="hidden" id="dateInput" value="<%= filters.date || '' %>">
       </div>
-      <div class="col-sm-2 d-grid">
-        <button type="submit" class="btn btn-primary">Filter</button>
+      <div class="col-sm-2 d-flex justify-content-end">
+        <button type="button" id="clearFilters" class="btn btn-sm btn-outline-light">Clear Filters</button>
       </div>
-      <input type="hidden" id="latInput" name="lat" value="<%= filters.lat || '' %>">
-      <input type="hidden" id="lngInput" name="lng" value="<%= filters.lng || '' %>">
-      <div class="col-12 d-flex align-items-center gap-3">
-        <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" id="sortProximity" <%= filters.sort !== 'time' ? 'checked' : '' %>>
-          <label class="form-check-label" for="sortProximity">Sort by Proximity</label>
-        </div>
-        <div class="flex-grow-1">
-          <label for="radiusRange" class="form-label">Show games within <span id="radiusVal"><%= filters.radius %></span> miles</label>
-          <input type="range" class="form-range" min="10" max="500" step="10" id="radiusRange" value="<%= filters.radius %>">
-        </div>
-      </div>
-    </form>
+      <input type="hidden" id="latInput" value="<%= filters.lat || '' %>">
+      <input type="hidden" id="lngInput" value="<%= filters.lng || '' %>">
+    </div>
 
   <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="gamesContainer">
       <% games.forEach(function(game){
@@ -72,39 +64,12 @@
   </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
-      document.querySelectorAll('.game-date[data-start]').forEach(function(el){
-        var date = new Date(el.dataset.start);
-        el.textContent = new Intl.DateTimeFormat(navigator.language, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
-      });
-
-      const teamInput = document.getElementById('teamInput');
-      const suggestions = document.getElementById('teamSuggestions');
-      if(teamInput){
-        teamInput.addEventListener('input', async function(){
-          document.getElementById('teamId').value = '';
-          const q = this.value.trim();
-          if(!q){ suggestions.innerHTML=''; return; }
-          const res = await fetch('/teams/search?q='+encodeURIComponent(q));
-          if(!res.ok) return;
-          const data = await res.json();
-          suggestions.innerHTML = data.map(t=>`<button type="button" class="list-group-item list-group-item-action d-flex align-items-center" data-name="${t.school}" data-id="${t._id}">`+
-            `<img src="${t.logos && t.logos[0] ? t.logos[0] : 'https://via.placeholder.com/30'}">`+
-            `${t.school}</button>`).join('');
-        });
-
-        suggestions.addEventListener('click', function(e){
-          const btn = e.target.closest('button[data-name]');
-          if(!btn) return;
-          const name = btn.getAttribute('data-name');
-          const id = btn.getAttribute('data-id');
-          teamInput.value = name;
-          document.getElementById('teamId').value = id;
-          suggestions.innerHTML='';
-          const params = new URLSearchParams(window.location.search);
-          params.set('teamId', id);
-          params.set('team', name);
-          document.location.search = params.toString();
+      function formatDates(){
+        document.querySelectorAll('.game-date[data-start]').forEach(function(el){
+          var date = new Date(el.dataset.start);
+          el.textContent = new Intl.DateTimeFormat(navigator.language, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
         });
       }
 
@@ -133,14 +98,19 @@
         return avg > 0.5 ? '#333333' : '#ffffff';
       }
 
-      document.querySelectorAll('.game-card').forEach(card=>{
-        const away = card.dataset.awayColor;
-        const home = card.dataset.homeColor;
-        const textColor = chooseTextColor([away, home]);
-        card.querySelectorAll('.game-date, .team-name').forEach(el=>{
-          el.style.color = textColor;
+      function applyTextColors(){
+        document.querySelectorAll('.game-card').forEach(card=>{
+          const away = card.dataset.awayColor;
+          const home = card.dataset.homeColor;
+          const textColor = chooseTextColor([away, home]);
+          card.querySelectorAll('.game-date, .team-name').forEach(el=>{
+            el.style.color = textColor;
+          });
         });
-      });
+      }
+
+      formatDates();
+      applyTextColors();
 
       const GEO_KEY = 'userCoords';
       const latInput = document.getElementById('latInput');
@@ -175,56 +145,95 @@
         });
       }
 
+      const container = document.getElementById('gamesContainer');
+      const teamIdInput = document.getElementById('teamId');
+      const teamInput = document.getElementById('teamInput');
+      const suggestions = document.getElementById('teamSuggestions');
+      const dateInput = document.getElementById('dateInput');
+      const dateDisplay = document.getElementById('dateDisplay');
+      const dateBtn = document.getElementById('dateBtn');
+      const clearBtn = document.getElementById('clearFilters');
+
+      const fp = flatpickr(dateBtn, {
+        defaultDate: dateInput.value || null,
+        onChange: (selected)=>{
+          dateInput.value = selected[0] ? selected[0].toISOString().split('T')[0] : '';
+          dateDisplay.textContent = selected[0] ? selected[0].toLocaleDateString() : '';
+          applyFilters();
+        }
+      });
+      if(dateInput.value){
+        dateDisplay.textContent = new Date(dateInput.value).toLocaleDateString();
+      }
+
+      if(teamInput){
+        teamInput.addEventListener('input', async function(){
+          teamIdInput.value = '';
+          const q = this.value.trim();
+          if(!q){ suggestions.innerHTML=''; applyFilters(); return; }
+          const res = await fetch('/teams/search?q='+encodeURIComponent(q));
+          if(!res.ok) return;
+          const data = await res.json();
+          suggestions.innerHTML = data.map(t=>`<button type="button" class="list-group-item list-group-item-action d-flex align-items-center" data-name="${t.school}" data-id="${t._id}">`+
+            `<img src="${t.logos && t.logos[0] ? t.logos[0] : 'https://via.placeholder.com/30'}">`+
+            `${t.school}</button>`).join('');
+        });
+
+        suggestions.addEventListener('click', function(e){
+          const btn = e.target.closest('button[data-name]');
+          if(!btn) return;
+          const name = btn.getAttribute('data-name');
+          const id = btn.getAttribute('data-id');
+          teamInput.value = name;
+          teamIdInput.value = id;
+          suggestions.innerHTML='';
+          applyFilters();
+        });
+      }
+
+      clearBtn.addEventListener('click', () => {
+        teamInput.value = '';
+        teamIdInput.value = '';
+        dateInput.value = '';
+        dateDisplay.textContent = '';
+        fp.clear();
+        applyFilters();
+      });
+
+      async function applyFilters(){
+        const params = new URLSearchParams();
+        if(teamIdInput.value){
+          params.set('teamId', teamIdInput.value);
+          params.set('team', teamInput.value);
+        }
+        if(dateInput.value) params.set('date', dateInput.value);
+        if(latInput.value && lngInput.value){
+          params.set('lat', latInput.value);
+          params.set('lng', lngInput.value);
+        }
+        const url = '/games?' + params.toString();
+        const res = await fetch(url);
+        if(!res.ok) return;
+        const html = await res.text();
+        const doc = new DOMParser().parseFromString(html,'text/html');
+        const newContainer = doc.getElementById('gamesContainer');
+        container.classList.add('fading');
+        setTimeout(()=>{
+          container.innerHTML = newContainer.innerHTML;
+          container.classList.remove('fading');
+          formatDates();
+          applyTextColors();
+        },150);
+        history.replaceState(null,'',url);
+      }
+
       ensureCoords().then(coords=>{
         if(coords){
           latInput.value = coords.lat;
           lngInput.value = coords.lng;
         }
+        applyFilters();
       });
-
-      const container = document.getElementById('gamesContainer');
-      const cards = Array.from(container.children);
-      const sortToggle = document.getElementById('sortProximity');
-      const radiusRange = document.getElementById('radiusRange');
-      const radiusVal = document.getElementById('radiusVal');
-
-      function filterRadius(){
-        const r = parseFloat(radiusRange.value);
-        cards.forEach(card=>{
-          const d = parseFloat(card.dataset.distance);
-          if(!isNaN(d) && d > r){
-            card.classList.add('d-none');
-          }else{
-            card.classList.remove('d-none');
-          }
-        });
-      }
-
-      function sortCards(){
-        const sorted = cards.sort((a,b)=>{
-          if(sortToggle.checked){
-            const d1 = parseFloat(a.dataset.distance) || Infinity;
-            const d2 = parseFloat(b.dataset.distance) || Infinity;
-            if(d1 === d2){
-              return new Date(a.dataset.start) - new Date(b.dataset.start);
-            }
-            return d1 - d2;
-          }
-          return new Date(a.dataset.start) - new Date(b.dataset.start);
-        });
-        container.classList.add('fading');
-        setTimeout(()=>{
-          sorted.forEach(el=>container.appendChild(el));
-          container.classList.remove('fading');
-          filterRadius();
-        },150);
-      }
-
-      sortToggle.addEventListener('change', sortCards);
-      radiusRange.addEventListener('input', ()=>radiusVal.textContent = radiusRange.value);
-      radiusRange.addEventListener('change', filterRadius);
-
-      sortCards();
 
     </script>
 </body>
