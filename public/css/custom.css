@@ -438,7 +438,23 @@
 .profile-tab:hover{color:#fff;}
 .profile-tab.active{
   color:#fff;
-  background:linear-gradient(to right,#7e22ce,#14b8a6);
+  background-color:rgba(255,255,255,0.25);
   box-shadow:0 0 0.5rem rgba(20,184,166,0.6);
+  position:relative;
+}
+.profile-tab.active::after{
+  content:'';
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:3px;
+  background:linear-gradient(to right,#14b8a6,#7e22ce);
+  border-radius:2px;
+}
+.profile-tab-content{
+  background-color:rgba(255,255,255,0.15);
+  backdrop-filter:blur(8px);
+  border-radius:.5rem;
 }
 .empty-tab-message{color:rgba(255,255,255,0.8);}
