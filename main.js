@@ -7,6 +7,7 @@ const express = require("express"),
     profileController = require("./controllers/profileController"),
     projectsController = require("./controllers/projectsController"),
     gamesController = require("./controllers/gamesController"),
+    venuesController = require('./controllers/venuesController'),
     messagesController = require('./controllers/messagesController'),
     Message = require('./models/Message'),
     layouts = require('express-ejs-layouts'),
@@ -118,6 +119,8 @@ app.get('/teams/search', gamesController.searchTeams);
 app.get('/games/:id', gamesController.showGame);
 app.post('/games/:id/checkin', gamesController.checkIn);
 app.post('/games/:id/wishlist', requireAuth, gamesController.toggleWishlist);
+
+app.get('/venues', venuesController.listVenues);
 
 
 app.use(homeController.logRequestPaths);

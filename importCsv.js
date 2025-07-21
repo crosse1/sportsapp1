@@ -3,6 +3,7 @@ const csv = require('csv-parser');
 const mongoose = require('mongoose');
 const Team = require('./models/Team');
 const Game = require('./models/Game');
+const Venue = require('./models/Venue');
 
 mongoose.connect("mongodb+srv://crosse:Zack0018@christiancluster.0ejv5.mongodb.net/appUsers?retryWrites=true&w=majority&appName=ChristianCluster", {
   useNewUrlParser: true,
@@ -38,6 +39,49 @@ function parseLineScores(val) {
   }
   const num = parseNumber(val);
   return num !== undefined ? [num] : [];
+}
+
+async function importVenues() {
+  return new Promise((resolve, reject) => {
+    const rows = [];
+    fs.createReadStream('public/files/Venues.csv')
+      .pipe(csv())
+      .on('data', row => rows.push(row))
+      .on('end', async () => {
+        try {
+          await Venue.deleteMany({});
+          for (const row of rows) {
+            const id = parseNumber(row.Id);
+            const teamDoc = await Team.findOne({ 'location.id': id });
+            const venue = new Venue({
+              venueId: id,
+              name: row.Name,
+              capacity: parseNumber(row.Capacity),
+              grass: parseBoolean(row.Grass),
+              dome: parseBoolean(row.Dome),
+              city: row.City,
+              state: row.State,
+              zip: row.Zip,
+              countryCode: row.CountryCode,
+              timezone: row.Timezone,
+              coordinates: row.Latitude && row.Longitude ? {
+                type: 'Point',
+                coordinates: [parseNumber(row.Longitude), parseNumber(row.Latitude)]
+              } : undefined,
+              elevation: parseNumber(row.Elevation),
+              constructionYear: parseNumber(row.ConstructionYear),
+              team: teamDoc ? teamDoc._id : undefined
+            });
+            await venue.save();
+          }
+          console.log(`Imported ${rows.length} venues`);
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      })
+      .on('error', reject);
+  });
 }
 
 async function importTeams() {
@@ -154,6 +198,7 @@ async function importGames() {
 async function run() {
   try {
     await importTeams();
+    await importVenues();
     await importGames();
     console.log('CSV import completed');
   } catch (err) {
