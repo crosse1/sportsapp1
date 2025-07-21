@@ -10,6 +10,7 @@ const express = require("express"),
     venuesController = require('./controllers/venuesController'),
     messagesController = require('./controllers/messagesController'),
     Message = require('./models/Message'),
+    User = require('./models/users'),
     layouts = require('express-ejs-layouts'),
     mongoose = require('mongoose'),
     cookieParser = require('cookie-parser'),
@@ -31,7 +32,6 @@ db.once("open", () => {
 app.set('port', process.env.PORT || 3000);
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
-app.use('/uploads/profilePics', express.static(path.join(__dirname, 'public/uploads/profilePics')));
 app.use(layouts);
 app.use(cookieParser());
 app.use(express.urlencoded({
@@ -47,7 +47,18 @@ app.use(async (req, res, next) => {
     if (token) {
         try {
             const decoded = jwt.verify(token, 'secret');
-            req.user = decoded;
+            const userDoc = await User.findById(decoded.id).lean();
+            if (userDoc) {
+                req.user = {
+                    id: String(userDoc._id),
+                    username: userDoc.username,
+                    email: userDoc.email,
+                    phoneNumber: userDoc.phoneNumber,
+                    profilePic: userDoc.profilePic
+                };
+            } else {
+                req.user = null;
+            }
         } catch (err) {
             req.user = null;
         }

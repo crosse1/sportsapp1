@@ -16,7 +16,8 @@
             <div class="col-md-6">
                 <form action="/profile/edit" method="post">
                     <div class="mb-3 text-center">
-                        <img id="profilePreview" src="<%= user.uploadedPic ? ('/uploads/profilePics/' + user.uploadedPic) : (user.profileImage || 'https://via.placeholder.com/150') %>" class="avatar avatar-md profile-photo-preview" alt="Profile Photo">
+                        <% const previewImg = user.profilePic && user.profilePic.data ? ('data:'+user.profilePic.contentType+';base64,'+user.profilePic.data.toString('base64')) : 'https://via.placeholder.com/150'; %>
+                        <img id="profilePreview" src="<%= previewImg %>" class="avatar avatar-md profile-photo-preview" alt="Profile Photo">
                         <input type="file" id="profileImageInput" accept=".jpg,.jpeg,.png" class="form-control mt-2">
                         <div class="text-danger" id="uploadError"></div>
                     </div>
@@ -135,7 +136,8 @@
             const res = await fetch('/profile/photo', { method: 'POST', body: fd });
             if(!res.ok) throw new Error('Upload failed');
             const data = await res.json();
-            console.log('Uploaded:', data.imageUrl);
+            console.log('Uploaded:', data.imageData);
+            preview.src = data.imageData;
             cropModal.hide();
         } catch (err) {
             errorMsg.textContent = err.message;

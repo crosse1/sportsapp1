@@ -22,7 +22,8 @@
                     const unread = t.unreadBy.some(u=> String(u) === locals.loggedInUser.id);
                 %>
                 <a href="/messages/<%= t._id %>" class="list-group-item list-group-item-action d-flex align-items-center position-relative">
-                    <img src="<%= other.uploadedPic ? ('/uploads/profilePics/' + other.uploadedPic) : (other.profileImage || 'https://via.placeholder.com/40') %>" class="avatar avatar-sm me-2">
+                    <% const oimg = other.profilePic && other.profilePic.data ? ('data:'+other.profilePic.contentType+';base64,'+(other.profilePic.data.toString ? other.profilePic.data.toString('base64') : other.profilePic.data)) : 'https://via.placeholder.com/40'; %>
+                    <img src="<%= oimg %>" class="avatar avatar-sm me-2">
                     <div class="flex-grow-1">
                         <div class="fw-bold"><%= other.username %></div>
                         <% if (last) { %>

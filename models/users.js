@@ -1,7 +1,5 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
-const fs = require('fs');
-const path = require('path');
 
 const userSchema = new mongoose.Schema({
     username: {
@@ -11,7 +9,7 @@ const userSchema = new mongoose.Schema({
         match: [/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores.']
     },
     email: String,
-    phoneNumber: Number,
+    phoneNumber: String,
     password: String,
     favoriteTeams: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Team', required: true }],
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
@@ -20,12 +18,9 @@ const userSchema = new mongoose.Schema({
     gamesList: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Game' }], default: [] },
     teamsList: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Team' }], default: [] },
     venuesList: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Venue' }], default: [] },
-    uploadedPic: String,
-    profileImage: {
-        type: String,
-        default: function() {
-            return (this.favoriteTeams && this.favoriteTeams[0] && this.favoriteTeams[0].logo) ? this.favoriteTeams[0].logo : undefined;
-        }
+    profilePic: {
+        data: Buffer,
+        contentType: String
     },
     followersCount: {
         type: Number,
@@ -53,18 +48,6 @@ userSchema.pre('save', async function(next) {
             return next(err);
         }
     }
-
-    if (!this.profileImage && this.favoriteTeams && this.favoriteTeams.length > 0) {
-        try {
-            const Team = mongoose.model('Team');
-            const team = await Team.findById(this.favoriteTeams[0]);
-            if (team && team.logos && team.logos.length > 0) {
-                this.profileImage = team.logos[0];
-            }
-        } catch (err) {
-            return next(err);
-        }
-    }
     next();
 });
 
@@ -72,15 +55,6 @@ userSchema.methods.comparePassword = async function(candidate) {
     return bcrypt.compare(candidate, this.password);
 };
 
-// Delete uploaded profile picture file when user is removed
-userSchema.pre('remove', function(next) {
-    if (this.uploadedPic) {
-        const picPath = path.join(__dirname, '../public/uploads/profilePics', this.uploadedPic);
-        fs.unlink(picPath, () => next());
-    } else {
-        next();
-    }
-});
 
 module.exports = mongoose.model('User', userSchema);
 
