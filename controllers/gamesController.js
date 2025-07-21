@@ -200,3 +200,66 @@ exports.toggleWishlist = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.toggleGameList = async (req, res, next) => {
+  try {
+    const User = require('../models/users');
+    const user = await User.findById(req.user.id);
+    const gameId = req.params.id;
+    const idx = user.gamesList.findIndex(g => String(g) === gameId);
+    let action;
+    if(idx >= 0){
+      user.gamesList.splice(idx,1);
+      action = 'removed';
+    } else {
+      user.gamesList.push(gameId);
+      action = 'added';
+    }
+    await user.save();
+    res.json({success:true, action});
+  } catch(err){
+    next(err);
+  }
+};
+
+exports.toggleTeamList = async (req, res, next) => {
+  try {
+    const User = require('../models/users');
+    const user = await User.findById(req.user.id);
+    const teamId = req.params.id;
+    const idx = user.teamsList.findIndex(t => String(t) === teamId);
+    let action;
+    if(idx >= 0){
+      user.teamsList.splice(idx,1);
+      action = 'removed';
+    } else {
+      user.teamsList.push(teamId);
+      action = 'added';
+    }
+    await user.save();
+    res.json({success:true, action});
+  } catch(err){
+    next(err);
+  }
+};
+
+exports.toggleVenueList = async (req, res, next) => {
+  try {
+    const User = require('../models/users');
+    const user = await User.findById(req.user.id);
+    const venueId = req.params.id;
+    const idx = user.venuesList.findIndex(v => String(v) === venueId);
+    let action;
+    if(idx >= 0){
+      user.venuesList.splice(idx,1);
+      action = 'removed';
+    } else {
+      user.venuesList.push(venueId);
+      action = 'added';
+    }
+    await user.save();
+    res.json({success:true, action});
+  } catch(err){
+    next(err);
+  }
+};
