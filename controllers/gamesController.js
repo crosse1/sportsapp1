@@ -98,7 +98,13 @@ exports.searchTeams = async (req, res, next) => {
   try {
     const q = req.query.q || '';
     if (!q) return res.json([]);
-    const teams = await Team.find({ school: { $regex: q, $options: 'i' } })
+    const homeIds = await Game.distinct('homeTeam');
+    const awayIds = await Game.distinct('awayTeam');
+    const activeIds = [...new Set([...homeIds, ...awayIds])];
+    const teams = await Team.find({
+        _id: { $in: activeIds },
+        school: { $regex: q, $options: 'i' }
+      })
       .select('school logos _id')
       .limit(5);
     res.json(teams);
