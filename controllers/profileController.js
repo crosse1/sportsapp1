@@ -192,13 +192,12 @@ exports.viewUser = async (req, res, next) => {
             const followsBack = user.following.some(f => String(f) === String(viewer._id));
             canMessage = isFollowing && followsBack;
         }
-        res.render('profile', { 
-            user, 
-            isCurrentUser: true, 
-            isFollowing: false, 
-            viewer: req.user, 
-            wishlistGames: user.wishlist,
-            navImg: user.profileImage ? `/users/${user._id}/profile-image` : '/images/default-profile.png' // 👈 ADD THIS
+        res.render("profile", {
+            user,
+            isCurrentUser,
+            isFollowing,
+            viewer: req.user,
+            wishlistGames: user.wishlist
         });
     } catch (err) {
         next(err);
