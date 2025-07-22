@@ -111,6 +111,7 @@ app.get('/profile/edit', requireAuth, profileController.getEditProfile);
 app.post('/profile/edit', requireAuth, profileController.updateProfile);
 app.post('/profile/photo', requireAuth, profileController.uploadProfilePhoto);
 app.post('/profile/location', requireAuth, profileController.setLocation);
+app.post('/profile/games', requireAuth, profileController.addGame);
 app.get('/welcome', requireAuth, (req, res) => {
     res.redirect('/');
 });
@@ -140,6 +141,7 @@ app.get('/newProject', requireAuth, projectsController.getNewProject);
 
 app.get('/games', gamesController.listGames);
 app.get('/teams/search', gamesController.searchTeams);
+app.get('/games/searchGames', gamesController.searchGames);
 app.get('/games/:id', gamesController.showGame);
 app.post('/games/:id/checkin', gamesController.checkIn);
 app.post('/games/:id/wishlist', requireAuth, gamesController.toggleWishlist);

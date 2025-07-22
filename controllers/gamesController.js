@@ -140,6 +140,28 @@ exports.searchTeams = async (req, res, next) => {
   }
 };
 
+exports.searchGames = async (req, res, next) => {
+  try {
+    const q = req.query.q || '';
+    const season = parseInt(req.query.season);
+    const query = {};
+    if(q){
+      query.$or = [
+        { homeTeamName: { $regex: q, $options: 'i' } },
+        { awayTeamName: { $regex: q, $options: 'i' } }
+      ];
+    }
+    if(!isNaN(season)) query.season = season;
+    const games = await Game.find(query)
+      .sort({ startDate: -1 })
+      .limit(10)
+      .select('awayTeamName homeTeamName season');
+    res.json(games);
+  } catch(err){
+    next(err);
+  }
+};
+
 exports.showGame = async (req, res, next) => {
   try {
     const game = await Game.findById(req.params.id)

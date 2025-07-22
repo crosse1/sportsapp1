@@ -18,6 +18,15 @@ const userSchema = new mongoose.Schema({
     gamesList: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Game' }], default: [] },
     teamsList: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Team' }], default: [] },
     venuesList: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Venue' }], default: [] },
+    gameEntries: [{
+        game: { type: mongoose.Schema.Types.ObjectId, ref: 'Game' },
+        rating: Number,
+        comment: String,
+        photo: {
+            data: Buffer,
+            contentType: String
+        }
+    }],
     profileImage: {
         data: Buffer,
         contentType: String

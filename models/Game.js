@@ -33,7 +33,8 @@ const gameSchema = new mongoose.Schema({
   awayPostgameElo: Number,
   excitementIndex: Number,
   highlights: String,
-  notes: String
+  notes: String,
+  ratings: { type: [Number], default: [] }
 });
 
 module.exports = mongoose.model('Game', gameSchema);
