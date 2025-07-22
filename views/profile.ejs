@@ -221,7 +221,7 @@
                     <% } %>
                 </div>
                 <% if (gameEntries && gameEntries.length > 0) { %>
-                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="gamesContainer">
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 justify-content-center" id="gamesContainer">
                     <% gameEntries.forEach(function(entry){
                          const game = entry.game;
                          if(!game) return;
@@ -273,7 +273,7 @@
                     </a>
                 </div>
                 <% if (wishlistGames && wishlistGames.length > 0) { %>
-                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="wishlistContainer">
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 justify-content-center" id="wishlistContainer">
                     <% wishlistGames.forEach(function(game){
                          const awayColor = game.awayTeam && game.awayTeam.color ? game.awayTeam.color : '#ffffff';
                          const homeColor = game.homeTeam && game.homeTeam.color ? game.homeTeam.color : '#ffffff'; %>
