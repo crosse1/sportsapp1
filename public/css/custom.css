@@ -395,6 +395,7 @@
   align-items:center;
   margin-left:0.25rem;
 }
+.follower-avatar{ cursor:pointer; }
 .follower-avatar img{ width:15px; height:15px; border-radius:50%; object-fit:cover; border:1px solid rgba(255,255,255,0.8); }
 .followers-row a img{ width:30px; height:30px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,255,255,0.8); }
 .followers-row .more-followers{margin-left:0.25rem;}
