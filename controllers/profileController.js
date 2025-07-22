@@ -18,6 +18,8 @@ const jwt = require('../lib/simpleJWT');
 
 const User = require('../models/users');
 const Team = require('../models/Team');
+const Game = require('../models/Game');
+const PastGame = require('../models/PastGame');
 
 exports.getSignUp = async (req, res, next) => {
     try {
@@ -75,9 +77,18 @@ exports.getProfile = async (req, res, next) => {
     try {
         const user = await User.findById(req.user.id)
             .populate('favoriteTeams')
-            .populate({ path: 'wishlist', populate: ['homeTeam','awayTeam'] });
+            .populate({ path: 'wishlist', populate: ['homeTeam','awayTeam'] })
+            .populate({ path: 'gamesList', populate: ['homeTeam','awayTeam'] })
+            .populate({ path: 'gameEntries.game', populate: ['homeTeam','awayTeam'] });
         if (!user) return res.redirect('/login');
-        res.render('profile', { user, isCurrentUser: true, isFollowing: false, viewer: req.user, wishlistGames: user.wishlist });
+        const ratingMap = {};
+        if(user.gameEntries){
+            user.gameEntries.forEach(e=>{ ratingMap[String(e.game)] = e.rating; });
+        }
+        if(user.gamesList){
+            user.gamesList.forEach(g=>{ g.userRating = ratingMap[String(g._id)]; });
+        }
+        res.render('profile', { user, isCurrentUser: true, isFollowing: false, viewer: req.user, wishlistGames: user.wishlist, gamesList: user.gamesList });
     } catch (err) {
         next(err);
     }
@@ -182,7 +193,9 @@ exports.viewUser = async (req, res, next) => {
     try {
         const user = await User.findById(req.params.id)
             .populate('favoriteTeams')
-            .populate({ path: 'wishlist', populate: ['homeTeam','awayTeam'] });
+            .populate({ path: 'wishlist', populate: ['homeTeam','awayTeam'] })
+            .populate({ path: 'gamesList', populate: ['homeTeam','awayTeam'] })
+            .populate({ path: 'gameEntries.game', populate: ['homeTeam','awayTeam'] });
         if (!user) return res.redirect('/profile');
         const isCurrentUser = req.user && String(req.user.id) === String(user._id);
         let isFollowing = false, canMessage = false;
@@ -192,13 +205,21 @@ exports.viewUser = async (req, res, next) => {
             const followsBack = user.following.some(f => String(f) === String(viewer._id));
             canMessage = isFollowing && followsBack;
         }
+        const ratingMap = {};
+        if(user.gameEntries){
+            user.gameEntries.forEach(e=>{ ratingMap[String(e.game)] = e.rating; });
+        }
+        if(user.gamesList){
+            user.gamesList.forEach(g=>{ g.userRating = ratingMap[String(g._id)]; });
+        }
         res.render("profile", {
             user,
             isCurrentUser,
             isFollowing,
             canMessage,
             viewer: req.user,
-            wishlistGames: user.wishlist
+            wishlistGames: user.wishlist,
+            gamesList: user.gamesList
         });
     } catch (err) {
         next(err);
@@ -285,3 +306,56 @@ exports.setLocation = async (req, res, next) => {
         next(err);
     }
 };
+
+exports.addGame = [upload.single('photo'), async (req, res, next) => {
+    try {
+        const { gameId, rating, comment } = req.body;
+        const game = await Game.findById(gameId);
+        if(!game) return res.status(400).redirect('/profile');
+        const user = await User.findById(req.user.id);
+        if(!user) return res.status(400).redirect('/profile');
+
+        if(!user.gamesList.some(g => String(g) === gameId)){
+            user.gamesList.push(gameId);
+        }
+        if(game.homeTeam && !user.teamsList.some(t => String(t) === String(game.homeTeam))){
+            user.teamsList.push(game.homeTeam);
+        }
+        if(game.awayTeam && !user.teamsList.some(t => String(t) === String(game.awayTeam))){
+            user.teamsList.push(game.awayTeam);
+        }
+        if(game.venueId && !user.venuesList.some(v => String(v) === String(game.venueId))){
+            user.venuesList.push(game.venueId);
+        }
+
+        const rateNum = parseFloat(rating);
+        if(!isNaN(rateNum)){
+            game.ratings = game.ratings || [];
+            game.ratings.push(rateNum);
+            await game.save();
+            const past = await PastGame.findOne({ Id: game.gameId });
+            if(past){
+                past.ratings = past.ratings || [];
+                past.ratings.push(rateNum);
+                await past.save();
+            }
+        }
+
+        if(!user.gameEntries) user.gameEntries = [];
+        let entry = user.gameEntries.find(e => String(e.game) === gameId);
+        if(!entry){
+            entry = { game: gameId };
+            user.gameEntries.push(entry);
+        }
+        if(!isNaN(rateNum)) entry.rating = rateNum;
+        if(comment) entry.comment = comment;
+        if(req.file){
+            entry.photo = { data: req.file.buffer, contentType: req.file.mimetype };
+        }
+
+        await user.save();
+        res.redirect('/profile');
+    } catch(err){
+        next(err);
+    }
+}];

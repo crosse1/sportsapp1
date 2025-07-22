@@ -24,7 +24,8 @@ const pastGameSchema = new mongoose.Schema({
   awayConferenceId: Number,
   AwayPoints: Number,
   awayLeagueId: Number,
-  homeLeagueId: Number
+  homeLeagueId: Number,
+  ratings: { type: [Number], default: [] }
 });
 
 module.exports = mongoose.model('PastGame', pastGameSchema);
