@@ -42,9 +42,9 @@
                 <% if(game.followedWishers && game.followedWishers.length){ const extra = game.followedWishers.length - 4; %>
                 <div class="followers-col">
                   <% game.followedWishers.slice(0,4).forEach(function(u){ const img = u.profilePic && u.profilePic.data ? ('data:'+u.profilePic.contentType+';base64,'+u.profilePic.data.toString('base64')) : 'https://via.placeholder.com/30'; %>
-                    <a href="/users/<%= u._id %>" class="follower-avatar" title="<%= u.username %>" onclick="event.stopPropagation();">
+                    <div class="follower-avatar" title="<%= u.username %>" data-href="/users/<%= u._id %>">
                       <img src="<%= img %>" class="avatar avatar-sm">
-                    </a>
+                    </div>
                   <% }); if(extra>0){ %>
                     <div class="more-followers">+<%= extra %></div>
                   <% } %>
@@ -253,6 +253,7 @@
           applyTextColors();
           adjustTeamNames();
           attachWishlistHandlers();
+          attachFollowerAvatarHandlers();
         },150);
         history.replaceState(null,'',url);
       }
@@ -295,7 +296,17 @@
         });
       }
 
+      function attachFollowerAvatarHandlers(){
+        document.querySelectorAll('.follower-avatar[data-href]').forEach(div=>{
+          div.addEventListener('click', function(e){
+            e.stopPropagation();
+            window.location.href = div.dataset.href;
+          });
+        });
+      }
+
       attachWishlistHandlers();
+      attachFollowerAvatarHandlers();
       window.addEventListener('resize', adjustTeamNames);
 
     </script>
