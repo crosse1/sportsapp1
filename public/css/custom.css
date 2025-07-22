@@ -461,3 +461,23 @@
   border-radius:.5rem;
 }
 .empty-tab-message{color:rgba(255,255,255,0.8);}
+
+/* Wishlist info banner */
+.info-banner{
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  backdrop-filter: blur(8px);
+  border-radius: .75rem;
+  padding: 1rem;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+.info-banner .go-games-link{
+  color: #0dcaf0;
+  font-weight: 500;
+  text-decoration: none;
+}
+.info-banner .go-games-link:hover{
+  color: #3dd5f3;
+  text-decoration: underline;
+}
