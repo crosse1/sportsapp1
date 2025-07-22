@@ -221,12 +221,14 @@
             <div class="tab-pane fade" id="gamesTab" role="tabpanel" aria-labelledby="games-tab">
                 <div class="d-flex justify-content-end mb-3">
                     <% if(isCurrentUser){ %>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGameModal">+Game</button>
+                        <button class="btn gradient-glass-btn" data-bs-toggle="modal" data-bs-target="#addGameModal">+ Game</button>
                     <% } %>
                 </div>
-                <% if (gamesList && gamesList.length > 0) { %>
+                <% if (gameEntries && gameEntries.length > 0) { %>
                 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="gamesContainer">
-                    <% gamesList.forEach(function(game){
+                    <% gameEntries.forEach(function(entry){
+                         const game = entry.game;
+                         if(!game) return;
                          const awayColor = game.awayTeam && game.awayTeam.color ? game.awayTeam.color : '#ffffff';
                          const homeColor = game.homeTeam && game.homeTeam.color ? game.homeTeam.color : '#ffffff'; %>
                     <div class="col">
@@ -247,10 +249,10 @@
                                         </div>
                                         <span class="team-name"><%= game.homeTeamName %></span>
                                     </div>
-                                    <div class="position-absolute top-50 start-50 translate-middle fw-bold fs-3 score-text text-white"><%= game.awayPoints %>-<%= game.homePoints %></div>
+                                    <div class="position-absolute top-50 start-50 translate-middle fw-bold score-text text-white"><%= game.awayPoints %> – <%= game.homePoints %></div>
                                 </div>
-                                <% if(game.userRating){ %>
-                                    <div class="mt-2 text-center text-white">Rated: <%= game.userRating %>/10</div>
+                                <% if(entry.rating){ %>
+                                    <div class="mt-2 text-center text-white">Rated: <%= entry.rating %>/10</div>
                                 <% } %>
                             </a>
                         </div>
@@ -258,7 +260,7 @@
                     <% }); %>
                 </div>
                 <% } else { %>
-                <p class="empty-tab-message text-center">No games yet</p>
+                <p class="empty-tab-message text-center text-black">No games yet</p>
                 <% } %>
             </div>
             <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">

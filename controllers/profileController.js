@@ -89,7 +89,15 @@ exports.getProfile = async (req, res, next) => {
         if(user.gamesList){
             user.gamesList.forEach(g=>{ g.userRating = ratingMap[String(g._id)]; });
         }
-        res.render('profile', { user, isCurrentUser: true, isFollowing: false, viewer: req.user, wishlistGames: user.wishlist, gamesList: user.gamesList });
+        res.render('profile', { 
+            user, 
+            isCurrentUser: true, 
+            isFollowing: false, 
+            viewer: req.user, 
+            wishlistGames: user.wishlist, 
+            gamesList: user.gamesList,
+            gameEntries: user.gameEntries
+        });
     } catch (err) {
         next(err);
     }
@@ -220,7 +228,8 @@ exports.viewUser = async (req, res, next) => {
             canMessage,
             viewer: req.user,
             wishlistGames: user.wishlist,
-            gamesList: user.gamesList
+            gamesList: user.gamesList,
+            gameEntries: user.gameEntries
         });
     } catch (err) {
         next(err);

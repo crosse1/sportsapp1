@@ -512,3 +512,16 @@
   border-radius:50%;
   cursor:pointer;
 }
+
+/* Gradient glassy button used across the app */
+.gradient-glass-btn{
+  background: linear-gradient(to right,#14b8a6,#7e22ce);
+  color:#fff;
+  border:1px solid rgba(255,255,255,0.25);
+  backdrop-filter: blur(8px);
+  border-radius:0.5rem;
+  transition:filter 0.2s;
+}
+.gradient-glass-btn:hover{
+  filter:brightness(1.1);
+}
