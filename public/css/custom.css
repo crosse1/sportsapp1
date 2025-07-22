@@ -468,9 +468,9 @@
   border: 1px solid rgba(255,255,255,0.25);
   backdrop-filter: blur(8px);
   border-radius: .75rem;
-  padding: 1rem;
-  color: #fff;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  
+  color: #080808;
+ 
 }
 .info-banner .go-games-link{
   color: #0dcaf0;

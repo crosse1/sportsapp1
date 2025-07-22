@@ -8,8 +8,7 @@
         <a href="/games" class="text-decoration-none px-3 py-1 rounded-pill <%= currentPath.startsWith('/games') ? 'bg-primary text-white' : 'text-body' %>">Games</a>
       </li>
       <li><a href="#" class="text-decoration-none px-3 py-1 rounded <%= currentPath.startsWith('/social') ? 'bg-primary text-white' : 'text-body' %>">Social</a></li>
-      <li><a href="#" class="text-decoration-none px-3 py-1 rounded <%= currentPath.startsWith('/plans') ? 'bg-primary text-white' : 'text-body' %>">Plans &amp; Pricing</a></li>
-      <li><a href="/about" class="text-decoration-none px-3 py-1 rounded <%= currentPath.startsWith('/about') ? 'bg-primary text-white' : 'text-body' %>">About</a></li>
+      
     </ul>
     <div class="text-nowrap d-flex align-items-center">
       <% if (loggedInUser) { %>
