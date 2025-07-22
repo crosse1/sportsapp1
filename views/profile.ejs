@@ -217,7 +217,7 @@
             <div class="tab-pane fade" id="gamesTab" role="tabpanel" aria-labelledby="games-tab">
                 <div class="d-flex justify-content-end mb-3">
                     <% if(isCurrentUser){ %>
-                        <button class="btn gradient-glass-btn" data-bs-toggle="modal" data-bs-target="#addGameModal">+ Game</button>
+                        <button id="addGameBtn" type="button" class="btn gradient-glass-btn" data-bs-toggle="modal" data-bs-target="#addGameModal">+ Game</button>
                     <% } %>
                 </div>
                 <% if (gameEntries && gameEntries.length > 0) { %>
@@ -532,6 +532,16 @@
             gamesTabEl.addEventListener('shown.bs.tab', formatGames);
         }
         formatGames();
+
+        const addGameBtn = document.getElementById('addGameBtn');
+        if(addGameBtn){
+            addGameBtn.addEventListener('click', () => {
+                const modalEl = document.getElementById('addGameModal');
+                if(modalEl){
+                    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+                }
+            });
+        }
 
         $(function(){
             const gameSelect = $('#gameSelect');
