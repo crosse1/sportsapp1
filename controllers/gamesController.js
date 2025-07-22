@@ -1,6 +1,7 @@
 const Game = require('../models/Game');
 const Team = require('../models/Team');
 const Venue = require('../models/Venue');
+const PastGame = require('../models/PastGame');
 
 function hexToRgb(hex) {
   if (!hex) return null;
@@ -281,6 +282,52 @@ exports.toggleVenueList = async (req, res, next) => {
     }
     await user.save();
     res.json({success:true, action});
+  } catch(err){
+    next(err);
+  }
+};
+
+exports.listPastGameSeasons = async (req, res, next) => {
+  try {
+    let seasons = await PastGame.distinct('Season');
+    seasons = seasons.filter(s => !!s).sort((a,b) => b - a);
+    res.json(seasons);
+  } catch(err){
+    next(err);
+  }
+};
+
+exports.searchPastGames = async (req, res, next) => {
+  try {
+    const season = parseInt(req.query.season);
+    const q = req.query.q || '';
+    if(isNaN(season)) return res.json([]);
+    const match = { Season: season };
+    if(q){
+      match.$or = [
+        { HomeTeam: { $regex: q, $options: 'i' } },
+        { AwayTeam: { $regex: q, $options: 'i' } }
+      ];
+    }
+    const games = await PastGame.find(match)
+      .sort({ StartDate: -1 })
+      .limit(10)
+      .lean();
+    const teamIds = [...new Set(games.flatMap(g => [g.HomeId, g.AwayId]))];
+    const teams = await Team.find({ teamId: { $in: teamIds } })
+      .select('teamId logos')
+      .lean();
+    const teamMap = {};
+    teams.forEach(t => { teamMap[t.teamId] = t; });
+    const results = games.map(g => ({
+      id: g._id,
+      homeTeamName: g.HomeTeam,
+      awayTeamName: g.AwayTeam,
+      homeLogo: teamMap[g.HomeId] && teamMap[g.HomeId].logos && teamMap[g.HomeId].logos[0],
+      awayLogo: teamMap[g.AwayId] && teamMap[g.AwayId].logos && teamMap[g.AwayId].logos[0],
+      score: `${g.HomePoints ?? ''}-${g.AwayPoints ?? ''}`
+    }));
+    res.json(results);
   } catch(err){
     next(err);
   }

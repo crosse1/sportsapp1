@@ -142,6 +142,8 @@ app.get('/newProject', requireAuth, projectsController.getNewProject);
 app.get('/games', gamesController.listGames);
 app.get('/teams/search', gamesController.searchTeams);
 app.get('/games/searchGames', gamesController.searchGames);
+app.get('/pastGames/seasons', gamesController.listPastGameSeasons);
+app.get('/pastGames/search', gamesController.searchPastGames);
 app.get('/games/:id', gamesController.showGame);
 app.post('/games/:id/checkin', gamesController.checkIn);
 app.post('/games/:id/wishlist', requireAuth, gamesController.toggleWishlist);
