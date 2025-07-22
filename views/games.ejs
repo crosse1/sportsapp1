@@ -11,7 +11,7 @@
 <body class="d-flex flex-column min-vh-100 gradient-bg">
   <%- include('partials/header') %>
 
-  <div><class class="container my-4 flex-grow-1">
+  <div class="container my-4 flex-grow-1">
     <div class="row g-3 mb-4 position-relative" id="filtersForm">
       <div class="col-sm-5 position-relative">
         <input id="teamInput" type="text" class="form-control glass-control" placeholder="Search by team" autocomplete="off" value="<%= filters.team || '' %>">
@@ -28,9 +28,8 @@
       <input type="hidden" id="latInput" value="<%= filters.lat || '' %>">
       <input type="hidden" id="lngInput" value="<%= filters.lng || '' %>">
     </div>
-</class>
-</div>
-  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="gamesContainer">
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="gamesContainer">
       <% games.forEach(function(game){
            const awayColor = game.awayTeam && game.awayTeam.color ? game.awayTeam.color : '#ffffff';
            const homeColor = game.homeTeam && game.homeTeam.color ? game.homeTeam.color : '#ffffff';
