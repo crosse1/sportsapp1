@@ -34,24 +34,25 @@
            const homeColor = game.homeTeam && game.homeTeam.color ? game.homeTeam.color : '#ffffff';
       %>
       <div class="col" data-id="<%= game._id %>" data-distance="<%= typeof game.distance === 'number' ? game.distance.toFixed(1) : '' %>" data-start="<%= game.startDate.toISOString() %>">
-        <div class="position-relative game-link">
-          <div class="card shadow-sm h-100 game-card p-3 text-center position-relative" data-away-color="<%= awayColor %>" data-home-color="<%= homeColor %>" style="background: linear-gradient(to right, <%= awayColor %>, <%= homeColor %>);">
-            <div class="wishlist-wrapper">
-              <div class="wishlist-btn"><i class="bi <%= game.isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i></div>
-              <% if(game.followedWishers && game.followedWishers.length){ const extra = game.followedWishers.length - 4; %>
-              <div class="followers-col">
-                <% game.followedWishers.slice(0,4).forEach(function(u){ const img = u.profilePic && u.profilePic.data ? ('data:'+u.profilePic.contentType+';base64,'+u.profilePic.data.toString('base64')) : 'https://via.placeholder.com/30'; %>
-                  <a href="/users/<%= u._id %>" class="follower-avatar" title="<%= u.username %>" onclick="event.stopPropagation();">
-                    <img src="<%= img %>" class="avatar avatar-sm">
-                  </a>
-                <% }); if(extra>0){ %>
-                  <div class="more-followers">+<%= extra %></div>
+        <div class="position-relative">
+          <a href="/games/<%= game._id %>" class="game-link d-block">
+            <div class="card shadow-sm h-100 game-card p-3 text-center position-relative" data-away-color="<%= awayColor %>" data-home-color="<%= homeColor %>" style="background: linear-gradient(to right, <%= awayColor %>, <%= homeColor %>);">
+              <div class="wishlist-wrapper">
+                <div class="wishlist-btn"><i class="bi <%= game.isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i></div>
+                <% if(game.followedWishers && game.followedWishers.length){ const extra = game.followedWishers.length - 4; %>
+                <div class="followers-col">
+                  <% game.followedWishers.slice(0,4).forEach(function(u){ const img = u.profilePic && u.profilePic.data ? ('data:'+u.profilePic.contentType+';base64,'+u.profilePic.data.toString('base64')) : 'https://via.placeholder.com/30'; %>
+                    <a href="/users/<%= u._id %>" class="follower-avatar" title="<%= u.username %>" onclick="event.stopPropagation();">
+                      <img src="<%= img %>" class="avatar avatar-sm">
+                    </a>
+                  <% }); if(extra>0){ %>
+                    <div class="more-followers">+<%= extra %></div>
+                  <% } %>
+                </div>
                 <% } %>
               </div>
-              <% } %>
-            </div>
-            <div class="game-date mb-2" data-start="<%= game.startDate.toISOString() %>"></div>
-            <div class="d-flex justify-content-between align-items-center position-relative mb-2 px-3">
+              <div class="game-date mb-2" data-start="<%= game.startDate.toISOString() %>"></div>
+              <div class="d-flex justify-content-between align-items-center position-relative mb-2 px-3">
                 <div class="logo-wrapper me-3">
                   <div class="team-logo-container">
                     <img loading="lazy" src="<%= game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0] ? game.awayTeam.logos[0] : 'https://via.placeholder.com/60' %>" alt="<%= game.awayTeamName %>">
@@ -70,10 +71,10 @@
                 <span class="badge bg-success near-badge"><%= game.distance.toFixed(0) %> mi</span>
               <% } %>
             </div>
-            <a href="/games/<%= game._id %>" class="stretched-link"></a>
-          </div>
-        </div>
+          </a>
       </div>
+        </div>
+    
       <% }); %>
     </div>
   </div>
