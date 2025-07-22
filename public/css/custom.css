@@ -208,15 +208,22 @@
 }
 
 .game-link .game-card {
-    transition: transform 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
 }
 
 .game-link:hover .game-card {
     transform: scale(1.05);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.3);
+    filter: brightness(1.05);
 }
 
 .at-symbol {
     color: #fff;
+}
+
+.score-text {
+    font-size: 2rem;
+    font-weight: bold;
 }
 
 /* Game listing diagonal logos */
