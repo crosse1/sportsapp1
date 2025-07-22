@@ -221,8 +221,7 @@
                     <% } %>
                 </div>
                 <% if (gameEntries && gameEntries.length > 0) { %>
-                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 justify-content-center" id="gamesContainer">
-                    <% gameEntries.forEach(function(entry){
+                    <div class="d-flex flex-column align-items-center gap-2" id="gamesContainer">                    <% gameEntries.forEach(function(entry){
                          const game = entry.game;
                          if(!game) return;
                          const awayColor = game.awayTeam && game.awayTeam.color ? game.awayTeam.color : '#ffffff';
