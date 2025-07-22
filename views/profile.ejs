@@ -239,13 +239,13 @@
                                     <div class="d-flex justify-content-between align-items-center position-relative mb-2 px-3">
                                     <div class="logo-wrapper me-3">
                                         <div class="team-logo-container">
-                                            <img loading="lazy" src="<%= game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0] ? game.awayTeam.logos[0] : 'https://via.placeholder.com/60' %>" alt="<%= game.awayTeamName %>">
+                                            <img loading="lazy" src="<%= game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0] ? game.awayTeam.logos[0] : '/images/placeholder.jpg' %>" alt="<%= game.awayTeamName %>">
                                         </div>
                                         <span class="team-name"><%= game.awayTeamName %></span>
                                     </div>
                                     <div class="logo-wrapper ms-3">
                                         <div class="team-logo-container">
-                                            <img loading="lazy" src="<%= game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0] ? game.homeTeam.logos[0] : 'https://via.placeholder.com/60' %>" alt="<%= game.homeTeamName %>">
+                                            <img loading="lazy" src="<%= game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0] ? game.homeTeam.logos[0] : '/images/placeholder.jpg' %>" alt="<%= game.homeTeamName %>">
                                         </div>
                                         <span class="team-name"><%= game.homeTeamName %></span>
                                     </div>
@@ -289,13 +289,13 @@
                                     <div class="d-flex justify-content-between align-items-center position-relative mb-2 px-3">
                                     <div class="logo-wrapper me-3">
                                         <div class="team-logo-container">
-                                            <img loading="lazy" src="<%= game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0] ? game.awayTeam.logos[0] : 'https://via.placeholder.com/60' %>" alt="<%= game.awayTeamName %>">
+                                            <img loading="lazy" src="<%= game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0] ? game.awayTeam.logos[0] : '/images/placeholder.jpg' %>" alt="<%= game.awayTeamName %>">
                                         </div>
                                         <span class="team-name"><%= game.awayTeamName %></span>
                                     </div>
                                     <div class="logo-wrapper ms-3">
                                         <div class="team-logo-container">
-                                            <img loading="lazy" src="<%= game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0] ? game.homeTeam.logos[0] : 'https://via.placeholder.com/60' %>" alt="<%= game.homeTeamName %>">
+                                            <img loading="lazy" src="<%= game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0] ? game.homeTeam.logos[0] : '/images/placeholder.jpg' %>" alt="<%= game.homeTeamName %>">
                                         </div>
                                         <span class="team-name"><%= game.homeTeamName %></span>
                                     </div>
@@ -542,8 +542,8 @@
             const gameSelect = $('#gameSelect');
             function formatGame(option){
                 if(!option.id) return option.text;
-                const homeLogo = option.homeLogo || 'https://via.placeholder.com/30';
-                const awayLogo = option.awayLogo || 'https://via.placeholder.com/30';
+                const homeLogo = option.homeLogo || '/images/placeholder.jpg';
+                const awayLogo = option.awayLogo || '/images/placeholder.jpg';
                 return $(
                     `<div class="d-flex align-items-center">`+
                     `<img src="${homeLogo}" style="width:30px;height:30px;border-radius:50%;" class="me-2">`+

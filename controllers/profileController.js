@@ -22,6 +22,27 @@ const Game = require('../models/Game');
 const PastGame = require('../models/PastGame');
 const Venue = require('../models/Venue');
 
+async function enrichGameEntries(entries){
+    if(!entries || !entries.length) return [];
+    const ids = entries.map(e => e.game).filter(Boolean);
+    const pastGames = await PastGame.find({ _id: { $in: ids } }).lean();
+    const teamIds = [...new Set(pastGames.flatMap(g => [g.HomeId, g.AwayId]))];
+    const teams = await Team.find({ teamId: { $in: teamIds } }).select('teamId logos color alternateColor').lean();
+    const teamMap = {};
+    teams.forEach(t => { teamMap[t.teamId] = t; });
+    const pgMap = {};
+    pastGames.forEach(pg => {
+        pg.homeTeam = teamMap[pg.HomeId] || null;
+        pg.awayTeam = teamMap[pg.AwayId] || null;
+        pgMap[String(pg._id)] = pg;
+    });
+    return entries.map(e => {
+        const entryObj = e.toObject ? e.toObject() : { ...e };
+        entryObj.game = pgMap[String(e.game)] || null;
+        return entryObj;
+    });
+}
+
 exports.getSignUp = async (req, res, next) => {
     try {
         const teams = await Team.find();
@@ -85,15 +106,7 @@ exports.getProfile = async (req, res, next) => {
 
         let enrichedEntries = [];
         if(user.gameEntries && user.gameEntries.length){
-            const ids = user.gameEntries.map(e => e.game).filter(Boolean);
-            const pastGames = await PastGame.find({ _id: { $in: ids } });
-            const pgMap = {};
-            pastGames.forEach(pg => { pgMap[String(pg._id)] = pg; });
-            enrichedEntries = user.gameEntries.map(e => {
-                const entryObj = e.toObject ? e.toObject() : { ...e };
-                entryObj.game = pgMap[String(e.game)] || null;
-                return entryObj;
-            });
+            enrichedEntries = await enrichGameEntries(user.gameEntries);
         }
 
         const ratingMap = {};
@@ -222,15 +235,7 @@ exports.viewUser = async (req, res, next) => {
 
         let enrichedEntries = [];
         if(user.gameEntries && user.gameEntries.length){
-            const ids = user.gameEntries.map(e => e.game).filter(Boolean);
-            const pastGames = await PastGame.find({ _id: { $in: ids } });
-            const pgMap = {};
-            pastGames.forEach(pg => { pgMap[String(pg._id)] = pg; });
-            enrichedEntries = user.gameEntries.map(e => {
-                const entryObj = e.toObject ? e.toObject() : { ...e };
-                entryObj.game = pgMap[String(e.game)] || null;
-                return entryObj;
-            });
+            enrichedEntries = await enrichGameEntries(user.gameEntries);
         }
         const isCurrentUser = req.user && String(req.user.id) === String(user._id);
         let isFollowing = false, canMessage = false;
