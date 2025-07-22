@@ -221,7 +221,7 @@
                     <% } %>
                 </div>
                 <% if (gameEntries && gameEntries.length > 0) { %>
-                    <div class="d-flex flex-column align-items-center gap-2" id="gamesContainer">                    <% gameEntries.forEach(function(entry){
+                    <div class="d-flex flex-column align-items-center gap-2" id="profileGamesContainer">                    <% gameEntries.forEach(function(entry){
                          const game = entry.game;
                          if(!game) return;
                          const awayColor = game.awayTeam && game.awayTeam.color ? game.awayTeam.color : '#ffffff';
@@ -272,7 +272,7 @@
                     </a>
                 </div>
                 <% if (wishlistGames && wishlistGames.length > 0) { %>
-                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 justify-content-center" id="wishlistContainer">
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 justify-content-center" id="wishlistContainer">
                     <% wishlistGames.forEach(function(game){
                          const awayColor = game.awayTeam && game.awayTeam.color ? game.awayTeam.color : '#ffffff';
                          const homeColor = game.homeTeam && game.homeTeam.color ? game.homeTeam.color : '#ffffff'; %>
@@ -517,11 +517,11 @@
         formatWishlist();
 
         function formatGames(){
-            document.querySelectorAll('#gamesContainer .game-date').forEach(el=>{
+            document.querySelectorAll('#profileGamesContainer .game-date').forEach(el=>{
                 const d=new Date(el.dataset.start);
                 el.textContent = new Intl.DateTimeFormat(navigator.language,{dateStyle:'medium',timeStyle:'short'}).format(d);
             });
-            document.querySelectorAll('#gamesContainer .game-card').forEach(card=>{
+            document.querySelectorAll('#profileGamesContainer .game-card').forEach(card=>{
                 const away=card.dataset.awayColor; const home=card.dataset.homeColor;
                 const color=chooseTextColor([away,home]);
                 card.querySelectorAll('.game-date, .team-name, .score-text, .text-white').forEach(e=>{e.style.color=color;});
