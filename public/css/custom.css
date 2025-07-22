@@ -534,26 +534,25 @@
 }
 
 /* Profile games layouts */
-#gamesContainer, #wishlistContainer {
-    display: flex;            /* Ensure flex container */
-    flex-direction: column;   /* Stack children vertically */
-    align-items: center;      /* Center horizontally */
-    gap: 5px;                 /* 5px space between games */
-  }
-
-#gamesContainer .col,#wishlistContainer .col{
-  display:flex;
-  justify-content:center;
+#profileGamesContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
 }
 
-#gamesContainer .game-card,
-#wishlistContainer .game-card {
-  width: 120%;               /* Wider cards but no overflow */
-  max-width: 600px;         /* Optional: limit max width for large screens */
+#profileGamesContainer .col {
+  display: flex;
+  justify-content: center;
+}
+
+#profileGamesContainer .game-card {
+  width: 120%;
+  max-width: 600px;
 }
 
 @media(max-width:576px){
-  #gamesContainer .game-card,#wishlistContainer .game-card{
+  #profileGamesContainer .game-card{
     width:100%;
   }
 }
