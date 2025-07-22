@@ -196,6 +196,7 @@ exports.viewUser = async (req, res, next) => {
             user,
             isCurrentUser,
             isFollowing,
+            canMessage,
             viewer: req.user,
             wishlistGames: user.wishlist
         });

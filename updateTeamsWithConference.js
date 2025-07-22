@@ -13,8 +13,8 @@ function updateTeams(filePath) {
     fs.createReadStream(filePath)
       .pipe(csv())
       .on('data', row => {
-        const teamId = row.teamId ? Number(row.teamId) : undefined;
-        const conferenceId = row.conferenceId;
+        const teamId = row.Id ? Number(row.Id) : undefined;
+        const conferenceId = row.ConferenceId;
         if (teamId && conferenceId) {
           records.push({ teamId, conferenceId: String(conferenceId) });
         }
@@ -37,7 +37,7 @@ function updateTeams(filePath) {
   });
 }
 
-const file = process.argv[2] || 'public/files/TeamConference.csv';
+const file = process.argv[2] || 'public/files/teamConf.csv';
 
 updateTeams(file)
   .then(() => console.log('Team update completed'))

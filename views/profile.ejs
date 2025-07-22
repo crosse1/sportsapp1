@@ -126,7 +126,7 @@
 <body class="d-flex flex-column min-vh-100">
     <%- include('partials/header') %>
 
-    <div class="profile-header pt-5 pb-4 text-white">
+    <div class="profile-header pt-5 pb-0 text-white">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-3 text-center mb-4 mb-md-0">
@@ -144,7 +144,7 @@
                 </div>
                 <div class="col-md-6 text-center text-md-start">
                     <div class="d-flex flex-column flex-md-row align-items-center">
-                        <h2 class="fw-bold mb-1 me-md-3"><%= user.username %></h2>
+                        <h2 class="fw-bold mb-1 me-md-3">@<%= user.username %></h2>
                         <% if(!isCurrentUser){ %>
                             <% if(canMessage){ %>
                                 <button class="btn btn-outline-light btn-sm ms-md-2 message-btn" data-user="<%= user._id %>">Message</button>
@@ -153,8 +153,8 @@
                             <% } %>
                         <% } %>
                     </div>
-                    <p class="mb-2">@<%= user.email %></p>
-                    <div class="d-flex justify-content-center justify-content-md-start">
+                    
+                    <div class="d-flex justify-content-center justify-content-md-start pb-2">
                         <div class="me-4">
                             <a href="/users/<%= user._id %>/followers" class="text-decoration-none text-white">
                                 <div id="followersCount" class="fw-bold text-primary"><%= user.followersCount %></div>
