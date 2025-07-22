@@ -25,6 +25,7 @@ const teamSchema = new mongoose.Schema({
   alternateNames: [String],
   conference: String,
   division: String,
+  conferenceId: String,
   classification: String,
   color: String,
   alternateColor: String,
