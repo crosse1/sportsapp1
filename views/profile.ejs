@@ -126,7 +126,7 @@
 <body class="d-flex flex-column min-vh-100">
     <%- include('partials/header') %>
 
-    <div class="profile-header pt-5 pb-0 text-white">
+    <div class="profile-header pt-5 pb-4 text-white">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-3 text-center mb-4 mb-md-0">
@@ -222,10 +222,11 @@
                          const awayColor = game.awayTeam && game.awayTeam.color ? game.awayTeam.color : '#ffffff';
                          const homeColor = game.homeTeam && game.homeTeam.color ? game.homeTeam.color : '#ffffff'; %>
                     <div class="col">
-                        <a href="/games/<%= game._id %>" class="game-link">
-                            <div class="card shadow-sm h-100 game-card p-3 text-center position-relative" data-away-color="<%= awayColor %>" data-home-color="<%= homeColor %>" style="background: linear-gradient(to right, <%= awayColor %>, <%= homeColor %>);">
-                                <div class="game-date mb-2" data-start="<%= game.startDate.toISOString() %>"></div>
-                                <div class="d-flex justify-content-between align-items-center position-relative mb-2 px-3">
+                        <div class="position-relative">
+                            <a href="/games/<%= game._id %>" class="game-link d-block">
+                                <div class="card shadow-sm h-100 game-card p-3 text-center position-relative" data-away-color="<%= awayColor %>" data-home-color="<%= homeColor %>" style="background: linear-gradient(to right, <%= awayColor %>, <%= homeColor %>);">
+                                    <div class="game-date mb-2" data-start="<%= game.startDate.toISOString() %>"></div>
+                                    <div class="d-flex justify-content-between align-items-center position-relative mb-2 px-3">
                                     <div class="logo-wrapper me-3">
                                         <div class="team-logo-container">
                                             <img loading="lazy" src="<%= game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0] ? game.awayTeam.logos[0] : 'https://via.placeholder.com/60' %>" alt="<%= game.awayTeamName %>">
@@ -241,7 +242,8 @@
                                     <div class="position-absolute top-50 start-50 translate-middle fw-bold fs-4 at-symbol">@</div>
                                 </div>
                             </div>
-                        </a>
+                            </a>
+                        </div>
                     </div>
                     <% }); %>
                 </div>
