@@ -532,3 +532,24 @@
 .gradient-glass-btn:hover{
   filter:brightness(1.1);
 }
+
+/* Profile games layouts */
+#gamesContainer,#wishlistContainer{
+  justify-content:center;
+  gap:5px;
+}
+
+#gamesContainer .col,#wishlistContainer .col{
+  display:flex;
+  justify-content:center;
+}
+
+#gamesContainer .game-card,#wishlistContainer .game-card{
+  width:120%;
+}
+
+@media(max-width:576px){
+  #gamesContainer .game-card,#wishlistContainer .game-card{
+    width:100%;
+  }
+}
