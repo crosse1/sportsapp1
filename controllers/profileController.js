@@ -80,6 +80,7 @@ exports.getProfile = async (req, res, next) => {
             .populate('favoriteTeams')
             .populate({ path: 'wishlist', populate: ['homeTeam','awayTeam'] })
             .populate({ path: 'gamesList', populate: ['homeTeam','awayTeam'] });
+            
         if (!user) return res.redirect('/login');
 
         let enrichedEntries = [];
