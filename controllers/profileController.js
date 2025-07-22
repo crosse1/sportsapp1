@@ -20,6 +20,7 @@ const User = require('../models/users');
 const Team = require('../models/Team');
 const Game = require('../models/Game');
 const PastGame = require('../models/PastGame');
+const Venue = require('../models/Venue');
 
 exports.getSignUp = async (req, res, next) => {
     try {
@@ -310,41 +311,49 @@ exports.setLocation = async (req, res, next) => {
 exports.addGame = [upload.single('photo'), async (req, res, next) => {
     try {
         const { gameId, rating, comment } = req.body;
-        const game = await Game.findById(gameId);
-        if(!game) return res.status(400).redirect('/profile');
-        const user = await User.findById(req.user.id);
+
+        const pastGame = await PastGame.findById(gameId);
+        if(!pastGame) return res.status(400).redirect('/profile');
+
+        const [game, homeTeam, awayTeam, venue, user] = await Promise.all([
+            Game.findOne({ gameId: pastGame.Id }),
+            Team.findOne({ teamId: pastGame.HomeId }),
+            Team.findOne({ teamId: pastGame.AwayId }),
+            Venue.findOne({ venueId: pastGame.VenueId }),
+            User.findById(req.user.id)
+        ]);
+
         if(!user) return res.status(400).redirect('/profile');
 
-        if(!user.gamesList.some(g => String(g) === gameId)){
-            user.gamesList.push(gameId);
-        }
-        if(game.homeTeam && !user.teamsList.some(t => String(t) === String(game.homeTeam))){
-            user.teamsList.push(game.homeTeam);
-        }
-        if(game.awayTeam && !user.teamsList.some(t => String(t) === String(game.awayTeam))){
-            user.teamsList.push(game.awayTeam);
-        }
-        if(game.venueId && !user.venuesList.some(v => String(v) === String(game.venueId))){
-            user.venuesList.push(game.venueId);
+        const addSet = {};
+        if(game) addSet.gamesList = game._id;
+        const teamIds = [];
+        if(homeTeam) teamIds.push(homeTeam._id);
+        if(awayTeam) teamIds.push(awayTeam._id);
+        if(teamIds.length) addSet.teamsList = { $each: teamIds };
+        if(venue) addSet.venuesList = venue._id;
+
+        if(Object.keys(addSet).length){
+            await User.updateOne({ _id: user._id }, { $addToSet: addSet });
         }
 
         const rateNum = parseFloat(rating);
         if(!isNaN(rateNum)){
-            game.ratings = game.ratings || [];
-            game.ratings.push(rateNum);
-            await game.save();
-            const past = await PastGame.findOne({ Id: game.gameId });
-            if(past){
-                past.ratings = past.ratings || [];
-                past.ratings.push(rateNum);
-                await past.save();
+            if(game){
+                game.ratings = game.ratings || [];
+                game.ratings.push(rateNum);
+                await game.save();
             }
+            pastGame.ratings = pastGame.ratings || [];
+            pastGame.ratings.push(rateNum);
+            await pastGame.save();
         }
 
         if(!user.gameEntries) user.gameEntries = [];
-        let entry = user.gameEntries.find(e => String(e.game) === gameId);
+        const entryId = game ? game._id : pastGame._id;
+        let entry = user.gameEntries.find(e => String(e.game) === String(entryId));
         if(!entry){
-            entry = { game: gameId };
+            entry = { game: entryId };
             user.gameEntries.push(entry);
         }
         if(!isNaN(rateNum)) entry.rating = rateNum;
