@@ -79,9 +79,22 @@ exports.getProfile = async (req, res, next) => {
         const user = await User.findById(req.user.id)
             .populate('favoriteTeams')
             .populate({ path: 'wishlist', populate: ['homeTeam','awayTeam'] })
-            .populate({ path: 'gamesList', populate: ['homeTeam','awayTeam'] })
-            .populate({ path: 'gameEntries.game', populate: ['homeTeam','awayTeam'] });
+            .populate({ path: 'gamesList', populate: ['homeTeam','awayTeam'] });
         if (!user) return res.redirect('/login');
+
+        let enrichedEntries = [];
+        if(user.gameEntries && user.gameEntries.length){
+            const ids = user.gameEntries.map(e => e.game).filter(Boolean);
+            const pastGames = await PastGame.find({ _id: { $in: ids } });
+            const pgMap = {};
+            pastGames.forEach(pg => { pgMap[String(pg._id)] = pg; });
+            enrichedEntries = user.gameEntries.map(e => {
+                const entryObj = e.toObject ? e.toObject() : { ...e };
+                entryObj.game = pgMap[String(e.game)] || null;
+                return entryObj;
+            });
+        }
+
         const ratingMap = {};
         if(user.gameEntries){
             user.gameEntries.forEach(e=>{ ratingMap[String(e.game)] = e.rating; });
@@ -89,14 +102,14 @@ exports.getProfile = async (req, res, next) => {
         if(user.gamesList){
             user.gamesList.forEach(g=>{ g.userRating = ratingMap[String(g._id)]; });
         }
-        res.render('profile', { 
-            user, 
-            isCurrentUser: true, 
-            isFollowing: false, 
-            viewer: req.user, 
-            wishlistGames: user.wishlist, 
+        res.render('profile', {
+            user,
+            isCurrentUser: true,
+            isFollowing: false,
+            viewer: req.user,
+            wishlistGames: user.wishlist,
             gamesList: user.gamesList,
-            gameEntries: user.gameEntries
+            gameEntries: enrichedEntries
         });
     } catch (err) {
         next(err);
@@ -203,9 +216,21 @@ exports.viewUser = async (req, res, next) => {
         const user = await User.findById(req.params.id)
             .populate('favoriteTeams')
             .populate({ path: 'wishlist', populate: ['homeTeam','awayTeam'] })
-            .populate({ path: 'gamesList', populate: ['homeTeam','awayTeam'] })
-            .populate({ path: 'gameEntries.game', populate: ['homeTeam','awayTeam'] });
+            .populate({ path: 'gamesList', populate: ['homeTeam','awayTeam'] });
         if (!user) return res.redirect('/profile');
+
+        let enrichedEntries = [];
+        if(user.gameEntries && user.gameEntries.length){
+            const ids = user.gameEntries.map(e => e.game).filter(Boolean);
+            const pastGames = await PastGame.find({ _id: { $in: ids } });
+            const pgMap = {};
+            pastGames.forEach(pg => { pgMap[String(pg._id)] = pg; });
+            enrichedEntries = user.gameEntries.map(e => {
+                const entryObj = e.toObject ? e.toObject() : { ...e };
+                entryObj.game = pgMap[String(e.game)] || null;
+                return entryObj;
+            });
+        }
         const isCurrentUser = req.user && String(req.user.id) === String(user._id);
         let isFollowing = false, canMessage = false;
         if(req.user){
@@ -229,7 +254,7 @@ exports.viewUser = async (req, res, next) => {
             viewer: req.user,
             wishlistGames: user.wishlist,
             gamesList: user.gamesList,
-            gameEntries: user.gameEntries
+            gameEntries: enrichedEntries
         });
     } catch (err) {
         next(err);
