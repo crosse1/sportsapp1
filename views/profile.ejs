@@ -131,10 +131,7 @@
             <div class="row align-items-center">
                 <div class="col-md-3 text-center mb-4 mb-md-0">
                     <div class="profile-avatar-wrapper d-inline-block">
-                        <% const avatar = user.profilePic && user.profilePic.data ? ('data:'+user.profilePic.contentType+';base64,'+user.profilePic.data.toString('base64')) : 'https://via.placeholder.com/150'; %>
-                        <img src="<%= avatar %>"
-     class="avatar avatar-lg profile-avatar"
-     alt="Profile Photo">
+                        <img src="/users/<%= user._id %>/profile-image" class="avatar avatar-lg profile-avatar" alt="Profile Photo">
                         
                         <% if (user.favoriteTeams && user.favoriteTeams.length > 0) { %>
                             <% user.favoriteTeams.forEach(function(t){ %>
@@ -323,7 +320,7 @@
                 const currentId = '<%= viewer ? viewer.id : "" %>';
                 resultsEl.innerHTML = data.map(u=>{
                     const following = u.followers && u.followers.includes(currentId);
-                    const imgUrl = u.profilePic && u.profilePic.data ? `data:${u.profilePic.contentType};base64,${u.profilePic.data.toString ? u.profilePic.data.toString('base64') : u.profilePic.data}` : 'https://via.placeholder.com/40';
+                    const imgUrl = `/users/${u._id}/profile-image`;
                     return `<div class="col-md-4"><div class="card p-2 d-flex flex-row align-items-center gap-2">`+
                         `<img src="${imgUrl}" class="avatar avatar-sm">`+
                         `<div class="flex-grow-1"><a href="/users/${u._id}" class="text-decoration-none">${u.username}</a></div>`+

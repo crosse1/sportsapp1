@@ -54,7 +54,7 @@ app.use(async (req, res, next) => {
                     username: userDoc.username,
                     email: userDoc.email,
                     phoneNumber: userDoc.phoneNumber,
-                    profilePic: userDoc.profilePic
+                    profileImage: userDoc.profileImage
                 };
             } else {
                 req.user = null;
@@ -72,6 +72,18 @@ app.use(async (req, res, next) => {
         res.locals.hasUnreadMessages = !!hasUnread;
     } else {
         res.locals.hasUnreadMessages = false;
+    }
+    next();
+});
+
+app.use(async (req, res, next) => {
+    if (req.user) {
+        const user = await User.findById(req.user.id).select('profileImage');
+        res.locals.navImg = user && user.profileImage && user.profileImage.data
+            ? `/users/${user._id}/profile-image`
+            : '/images/default-profile.png';
+    } else {
+        res.locals.navImg = '/images/default-profile.png';
     }
     next();
 });
@@ -105,6 +117,7 @@ app.get('/welcome', requireAuth, (req, res) => {
 
 app.get("/users", requireAuth, profileController.getAllUsers);
 app.get('/users/search', requireAuth, profileController.searchUsers);
+app.get('/users/:id/profile-image', profileController.getProfileImage);
 app.post('/users/:id/follow', requireAuth, profileController.followUser);
 app.post('/users/:id/unfollow', requireAuth, profileController.unfollowUser);
 app.get('/users/:id', requireAuth, profileController.viewUser);

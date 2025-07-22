@@ -388,6 +388,7 @@
   left:0.5rem;
   display:flex;
   align-items:center;
+  z-index:2;
 }
 .followers-col{
   display:flex;

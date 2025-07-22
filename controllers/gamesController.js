@@ -68,7 +68,7 @@ exports.listGames = async (req, res, next) => {
     if(req.user){
       const User = require('../models/users');
       const viewer = await User.findById(req.user.id)
-        .populate({path:'following', select:'username profilePic wishlist'});
+      .populate({path:'following', select:'username profileImage wishlist'});
       userWishlist = new Set((viewer.wishlist || []).map(g=>String(g)));
       followed = viewer.following || [];
     }
@@ -161,7 +161,7 @@ exports.showGame = async (req, res, next) => {
     if(req.user){
       const User = require('../models/users');
       const viewer = await User.findById(req.user.id)
-        .populate({path:'followers', select:'username profilePic wishlist'});
+      .populate({path:'followers', select:'username profileImage wishlist'});
       followerWishers = (viewer.followers || []).filter(u => (u.wishlist || []).some(w => String(w) === String(game._id)));
     }
 

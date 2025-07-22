@@ -8,7 +8,7 @@ const upload = multer({
     limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         const ext = path.extname(file.originalname).toLowerCase();
-        if(!['.jpg','.jpeg','.png'].includes(ext)) return cb(new Error('Invalid file'));
+        if(ext !== '.jpg' && ext !== '.jpeg') return cb(new Error('Invalid file'));
         cb(null, true);
     }
 });
@@ -94,7 +94,7 @@ exports.getEditProfile = async (req, res, next) => {
     }
 };
 
-exports.updateProfile = async (req, res, next) => {
+exports.updateProfile = [upload.single('profileImage'), async (req, res, next) => {
     try {
         const { username, email, phoneNumber, favoriteTeams } = req.body;
         const user = await User.findById(req.user.id);
@@ -103,6 +103,12 @@ exports.updateProfile = async (req, res, next) => {
         user.email = email;
         user.phoneNumber = phoneNumber;
         user.favoriteTeams = favoriteTeams ? (Array.isArray(favoriteTeams) ? favoriteTeams : [favoriteTeams]) : [];
+        if(req.file){
+            user.profileImage = {
+                data: req.file.buffer,
+                contentType: req.file.mimetype
+            };
+        }
         await user.save();
         const token = jwt.sign({ id: user._id, username: user.username, email: user.email, phoneNumber: user.phoneNumber }, 'secret');
         res.cookie('token', token, { httpOnly: true });
@@ -110,23 +116,42 @@ exports.updateProfile = async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-};
+}];
 exports.uploadProfilePhoto = [upload.single("profileImage"), async (req, res, next) => {
     try {
         if (!req.file) return res.status(400).json({ error: "No image" });
         const user = await User.findById(req.user.id);
-        user.profilePic = {
+        user.profileImage = {
             data: req.file.buffer,
             contentType: req.file.mimetype
         };
         await user.save();
         const token = jwt.sign({ id: user._id, username: user.username, email: user.email, phoneNumber: user.phoneNumber }, "secret");
         res.cookie("token", token, { httpOnly: true });
-        res.json({ imageData: "data:" + user.profilePic.contentType + ";base64," + user.profilePic.data.toString('base64') });
+        res.json({ imageData: "data:" + user.profileImage.contentType + ";base64," + user.profileImage.data.toString('base64') });
     } catch (err) {
         next(err);
     }
 }];
+
+exports.getProfileImage = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.params.id).select('profileImage');
+        if(!user || !user.profileImage || !user.profileImage.data){
+            const fs = require('fs');
+            const imgPath = path.join(__dirname, '../public/images/placeholder.jpg');
+            return fs.promises.readFile(imgPath).then(data => {
+                res.contentType('image/jpeg');
+                res.send(data);
+            });
+        }
+        res.contentType(user.profileImage.contentType);
+        res.send(user.profileImage.data);
+    } catch(err){
+        next(err);
+    }
+};
+
 
 
 exports.getAllUsers = async (req, res, next) => {
@@ -145,7 +170,7 @@ exports.searchUsers = async (req, res, next) => {
         const q = req.query.q || '';
         if (!q) return res.json([]);
         const users = await User.find({ username: { $regex: q, $options: 'i' } })
-            .select('username profilePic followers followersCount followingCount');
+        .select('username profileImage followers followersCount followingCount');
         res.json(users);
     } catch (err) {
         next(err);
@@ -167,7 +192,14 @@ exports.viewUser = async (req, res, next) => {
             const followsBack = user.following.some(f => String(f) === String(viewer._id));
             canMessage = isFollowing && followsBack;
         }
-        res.render('profile', { user, isCurrentUser, isFollowing, canMessage, viewer: req.user, wishlistGames: user.wishlist });
+        res.render('profile', { 
+            user, 
+            isCurrentUser: true, 
+            isFollowing: false, 
+            viewer: req.user, 
+            wishlistGames: user.wishlist,
+            navImg: user.profileImage ? `/users/${user._id}/profile-image` : '/images/default-profile.png' // 👈 ADD THIS
+        });
     } catch (err) {
         next(err);
     }

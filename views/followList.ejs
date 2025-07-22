@@ -14,8 +14,7 @@
         <div class="list-group">
             <% users.forEach(function(u){ %>
                 <a href="/users/<%= u._id %>" class="list-group-item list-group-item-action d-flex align-items-center">
-                    <% const img = u.profilePic && u.profilePic.data ? ('data:'+u.profilePic.contentType+';base64,'+(u.profilePic.data.toString ? u.profilePic.data.toString('base64') : u.profilePic.data)) : 'https://via.placeholder.com/40'; %>
-                    <img src="<%= img %>" class="avatar avatar-sm me-2">
+                    <img src="/users/<%= u._id %>/profile-image" class="avatar avatar-sm me-2">
                     <%= u.username %>
                 </a>
             <% }) %>

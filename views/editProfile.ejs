@@ -14,11 +14,11 @@
     <div class="container my-5">
         <div class="row justify-content-center">
             <div class="col-md-6">
-                <form action="/profile/edit" method="post">
+                <form action="/profile/edit" method="post" enctype="multipart/form-data">
                     <div class="mb-3 text-center">
-                        <% const previewImg = user.profilePic && user.profilePic.data ? ('data:'+user.profilePic.contentType+';base64,'+user.profilePic.data.toString('base64')) : 'https://via.placeholder.com/150'; %>
+                        <% const previewImg = '/users/' + user._id + '/profile-image'; %>
                         <img id="profilePreview" src="<%= previewImg %>" class="avatar avatar-md profile-photo-preview" alt="Profile Photo">
-                        <input type="file" id="profileImageInput" accept=".jpg,.jpeg,.png" class="form-control mt-2">
+                        <input type="file" name="profileImage" id="profileImageInput" accept=".jpg" class="form-control mt-2">
                         <div class="text-danger" id="uploadError"></div>
                     </div>
                     <div class="mb-3">
@@ -98,7 +98,7 @@
             const file = this.files[0];
             errorMsg.textContent = '';
             if(!file) return;
-            if(!/^image\/(jpeg|png|jpg)/.test(file.type)){
+            if(!/^image\/jpeg/.test(file.type)){
                 errorMsg.textContent = 'Invalid file type';
                 this.value = '';
                 return;
@@ -108,6 +108,7 @@
                 this.value = '';
                 return;
             }
+            preview.src = URL.createObjectURL(file);
             const reader = new FileReader();
             reader.onload = function(e){
                 cropImg.src = e.target.result;
@@ -125,24 +126,15 @@
         document.getElementById('cropSaveBtn').addEventListener('click', function(){
     if(!cropper) return;
 
-    cropper.getCroppedCanvas({width:300, height:300}).toBlob(async function(blob){
-        // Preview locally first
+    cropper.getCroppedCanvas({width:300, height:300}).toBlob(function(blob){
         preview.src = URL.createObjectURL(blob);
 
-        // Upload to server
-        const fd = new FormData();
-        fd.append('profileImage', blob, 'profile.png');
-        try {
-            const res = await fetch('/profile/photo', { method: 'POST', body: fd });
-            if(!res.ok) throw new Error('Upload failed');
-            const data = await res.json();
-            console.log('Uploaded:', data.imageData);
-            preview.src = data.imageData;
-            cropModal.hide();
-        } catch (err) {
-            errorMsg.textContent = err.message;
-        }
-    }, 'image/png');
+        const file = new File([blob], 'profile.jpg', {type:'image/jpeg'});
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        imageInput.files = dt.files;
+        cropModal.hide();
+    }, 'image/jpeg');
 });
 
     </script>

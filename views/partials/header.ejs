@@ -20,7 +20,7 @@
           <% } %>
         </a>
         <a href="/profile" class="me-3 <%= currentPath.startsWith('/profile') ? 'active-profile' : '' %>">
-          <% const navImg = loggedInUser.profilePic && loggedInUser.profilePic.data ? ('data:'+loggedInUser.profilePic.contentType+';base64,'+(loggedInUser.profilePic.data.toString ? loggedInUser.profilePic.data.toString('base64') : loggedInUser.profilePic.data)) : 'https://via.placeholder.com/40'; %>
+
           <img src="<%= navImg %>" alt="Profile" class="nav-profile-icon">
         </a>
         <a href="/logout" class="btn btn-outline-secondary">Log Out</a>

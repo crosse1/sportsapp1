@@ -28,9 +28,9 @@
         </div>
         <% if(followerWishers && followerWishers.length){ const extra = followerWishers.length - 5; %>
         <div class="followers-row d-flex justify-content-center gap-2 mt-2 flex-wrap">
-          <% followerWishers.slice(0,5).forEach(function(u){ const img = u.profilePic && u.profilePic.data ? ('data:'+u.profilePic.contentType+';base64,'+(u.profilePic.data.toString ? u.profilePic.data.toString('base64') : u.profilePic.data)) : 'https://via.placeholder.com/30'; %>
+          <% followerWishers.slice(0,5).forEach(function(u){ %>
             <a href="/users/<%= u._id %>" title="<%= u.username %>">
-              <img src="<%= img %>" class="avatar avatar-sm">
+              <img src="/users/<%= u._id %>/profile-image" class="avatar avatar-sm">
             </a>
           <% }); if(extra>0){ %>
             <div class="more-followers align-self-center">+<%= extra %></div>
