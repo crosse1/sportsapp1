@@ -210,12 +210,12 @@
                 const awayLogo = option.awayLogo || '/images/placeholder.jpg';
                 return $(
                     `<div class="d-flex align-items-center">`+
-                    `<img src="${homeLogo}" style="width:30px;height:30px;border-radius:50%;" class="me-2">`+
-                    `<span>${option.homeTeamName}</span>`+
-                    `<span class="mx-1">vs</span>`+
+                    `<img src="${awayLogo}" style="width:30px;height:30px;border-radius:50%;" class="me-2">`+
                     `<span>${option.awayTeamName}</span>`+
-                    `<img src="${awayLogo}" style="width:30px;height:30px;border-radius:50%;" class="ms-2">`+
-                    `<span class="ms-2 text-muted">(${option.score})</span>`+
+                    `<span class="mx-1">vs</span>`+
+                    `<span>${option.homeTeamName}</span>`+
+                    `<img src="${homeLogo}" style="width:30px;height:30px;border-radius:50%;" class="ms-2">`+
+                    `<span class="ms-2 text-muted">(${option.scoreDisplay})</span>`+
                     `</div>`
                 );
             }
@@ -225,21 +225,29 @@
                 width:'100%',
                 templateResult: formatGame,
                 templateSelection: formatGame,
+                containerCssClass:'glass-select2',
+                dropdownCssClass:'glass-select2',
                 ajax:{
                     url:'/pastGames/search',
                     dataType:'json',
                     delay:250,
                     data:function(params){ return { q: params.term, season: $('#seasonSelect').val() }; },
                     processResults:function(data){
-                        return { results: data.map(g=>({
-                            id:g.id,
-                            homeTeamName:g.homeTeamName,
-                            awayTeamName:g.awayTeamName,
-                            homeLogo:g.homeLogo,
-                            awayLogo:g.awayLogo,
-                            score:g.score,
-                            text:`${g.homeTeamName} vs ${g.awayTeamName}`
-                        })) };
+                        return { results: data.map(g=>{
+                            const parts = g.score.split('-');
+                            const home = parts[0] || '';
+                            const away = parts[1] || '';
+                            return {
+                                id:g.id,
+                                homeTeamName:g.homeTeamName,
+                                awayTeamName:g.awayTeamName,
+                                homeLogo:g.homeLogo,
+                                awayLogo:g.awayLogo,
+                                score:g.score,
+                                scoreDisplay:`${away}-${home}`,
+                                text:`${g.awayTeamName} vs ${g.homeTeamName}`
+                            };
+                        }) };
                     }
                 }
             });
@@ -258,9 +266,21 @@
         });
         const ratingRange=document.getElementById('ratingRange');
         const ratingValue=document.getElementById('ratingValue');
+        const ratingBubble=document.getElementById('ratingBubble');
         if(ratingRange){
-            ratingValue.textContent=ratingRange.value;
-            ratingRange.addEventListener('input',()=>{ratingValue.textContent=ratingRange.value;});
+            function updateBubble(){
+                const val=ratingRange.value;
+                ratingValue.textContent=val;
+                if(ratingBubble){
+                    ratingBubble.textContent=val;
+                    const min=ratingRange.min||0;
+                    const max=ratingRange.max||10;
+                    const percent=(val-min)/(max-min);
+                    ratingBubble.style.left=`calc(${percent*100}% - ${ratingBubble.offsetWidth/2}px)`;
+                }
+            }
+            updateBubble();
+            ratingRange.addEventListener('input',updateBubble);
         }
     </script>
 </body>
