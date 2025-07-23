@@ -620,6 +620,10 @@
     color: #fff !important;
     font-weight: bold;
   }
+
+  .select2-container--default .select2-selection__placeholder {
+    color: #fff !important;
+  }
   
   .select2-container--default .select2-dropdown {
     background-color: rgba(255, 255, 255, 0.2);
@@ -644,6 +648,10 @@
     color: #fff !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
     border-radius: .35rem !important;
+  }
+
+  .select2-container--default .select2-search__field::placeholder {
+    color: #fff !important;
   }
 
 /* Range slider value bubble */

@@ -215,13 +215,13 @@
                     `<span class="mx-1">vs</span>`+
                     `<span>${option.homeTeamName}</span>`+
                     `<img src="${homeLogo}" style="width:30px;height:30px;border-radius:50%;" class="ms-2">`+
-                    `<span class="ms-2 text-muted">(${option.scoreDisplay})</span>`+
+                    `<span class="ms-2 text-white">(${option.scoreDisplay})</span>`+
                     `</div>`
                 );
             }
             gameSelect.select2({
                 dropdownParent: $('#addGameModal'),
-                placeholder:'Search game',
+                placeholder:'Search Game',
                 width:'100%',
                 templateResult: formatGame,
                 templateSelection: formatGame,
@@ -266,21 +266,13 @@
         });
         const ratingRange=document.getElementById('ratingRange');
         const ratingValue=document.getElementById('ratingValue');
-        const ratingBubble=document.getElementById('ratingBubble');
         if(ratingRange){
-            function updateBubble(){
+            function updateRating(){
                 const val=ratingRange.value;
                 ratingValue.textContent=val;
-                if(ratingBubble){
-                    ratingBubble.textContent=val;
-                    const min=ratingRange.min||0;
-                    const max=ratingRange.max||10;
-                    const percent=(val-min)/(max-min);
-                    ratingBubble.style.left=`calc(${percent*100}% - ${ratingBubble.offsetWidth/2}px)`;
-                }
             }
-            updateBubble();
-            ratingRange.addEventListener('input',updateBubble);
+            updateRating();
+            ratingRange.addEventListener('input',updateRating);
         }
     </script>
 </body>
