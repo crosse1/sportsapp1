@@ -1,0 +1,131 @@
+<div class="profile-header pt-5 pb-0 text-white">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-3 text-center mb-4 mb-md-0">
+                <div class="profile-avatar-wrapper d-inline-block">
+                    <img src="/users/<%= user._id %>/profile-image" class="avatar avatar-lg profile-avatar" alt="Profile Photo">
+                    <% if (user.favoriteTeams && user.favoriteTeams.length > 0) { %>
+                        <% user.favoriteTeams.forEach(function(t){ %>
+                            <a href="/teams/<%= t._id %>" class="chain-logo">
+                                <img src="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>" alt="<%= t.school %>">
+                            </a>
+                        <% }) %>
+                    <% } %>
+                </div>
+            </div>
+            <div class="col-md-6 text-center text-md-start">
+                <div class="d-flex flex-column flex-md-row align-items-center">
+                    <h2 class="fw-bold mb-1 me-md-3">@<%= user.username %></h2>
+                    <% if(!isCurrentUser){ %>
+                        <% if(canMessage){ %>
+                            <button class="btn btn-outline-light btn-sm ms-md-2 message-btn" data-user="<%= user._id %>">Message</button>
+                        <% } else { %>
+                            <button class="btn btn-outline-light btn-sm ms-md-2" disabled title="Messaging requires a mutual follow">Message</button>
+                        <% } %>
+                    <% } %>
+                </div>
+                <div class="d-flex justify-content-center justify-content-md-start pb-2">
+                    <div class="me-4">
+                        <a href="/users/<%= user._id %>/followers" class="text-decoration-none text-white">
+                            <div id="followersCount" class="fw-bold text-primary"><%= user.followersCount %></div>
+                            <small class="text-white-50">Followers</small>
+                        </a>
+                    </div>
+                    <div>
+                        <a href="/users/<%= user._id %>/following" class="text-decoration-none text-white">
+                            <div class="fw-bold text-info"><%= user.followingCount %></div>
+                            <small class="text-white-50">Following</small>
+                        </a>
+                    </div>
+                </div>
+                <% if (isCurrentUser) { %>
+                <div class="mt-3">
+                    <button id="openUserModal" class="btn btn-primary rounded-pill follow-users-btn px-4" data-bs-toggle="modal" data-bs-target="#userSearchModal">Follow Users</button>
+                </div>
+                <% } %>
+            </div>
+            <div class="col-md-3 text-center text-md-end">
+                <% if (isCurrentUser) { %>
+                    <a href="/profile/edit" class="btn btn-primary rounded-pill px-4 mb-2">Edit Profile</a>
+                    <button id="addGameBtn" type="button" class="btn gradient-glass-btn mb-2" data-bs-toggle="modal" data-bs-target="#addGameModal">+ Game</button>
+                <% } else if (viewer) { %>
+                    <button id="followBtn" data-user="<%= user._id %>" class="btn btn-<%= isFollowing ? 'secondary' : 'primary' %> rounded-pill px-4 follow-btn mb-2"><%= isFollowing ? 'Following' : 'Follow' %></button>
+                <% } %>
+            </div>
+        </div>
+    </div>
+    <div class="container mt-4 pb-0">
+        <ul class="nav nav-tabs profile-tabs" id="profileTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a href="/profile/badges" class="nav-link profile-tab <%= activeTab==='badges' ? 'active' : '' %>">Badges</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a href="/profile/games" class="nav-link profile-tab <%= activeTab==='games' ? 'active' : '' %>">Games</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a href="/profile/stats" class="nav-link profile-tab <%= activeTab==='stats' ? 'active' : '' %>">Stats</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a href="/profile/waitlist" class="nav-link profile-tab <%= activeTab==='waitlist' ? 'active' : '' %>">Waitlist</a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<% if (isCurrentUser) { %>
+<div class="modal fade user-search-modal" id="userSearchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-3">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Find Users</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="position-relative mb-3 profile-search-wrapper w-100">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" id="searchInput" class="form-control profile-search">
+                </div>
+                <div id="searchResults" class="row g-3" style="max-height:300px;overflow:auto;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade user-search-modal" id="addGameModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-3">
+            <form action="/profile/games" method="post" enctype="multipart/form-data">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">Add Game</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Season</label>
+                        <select id="seasonSelect" class="form-select glass-control"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Game</label>
+                        <select id="gameSelect" name="gameId" class="form-select glass-control" required disabled></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rating: <span id="ratingValue">5</span></label>
+                        <input type="range" id="ratingRange" name="rating" class="form-range glass-control" min="1" max="10" step="0.5" value="5" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Photo</label>
+                        <input type="file" name="photo" class="form-control glass-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Comment</label>
+                        <textarea class="form-control glass-control" name="comment" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<% } %>

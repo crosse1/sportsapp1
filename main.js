@@ -105,8 +105,12 @@ app.get('/logout', (req, res) => {
     res.clearCookie('token');
     res.redirect('/login');
 });
-app.get('/thanks', requireAuth, profileController.getProfile);
-app.get('/profile', requireAuth, profileController.getProfile);
+app.get('/thanks', requireAuth, (req, res) => { res.redirect('/profile/badges'); });
+app.get('/profile', requireAuth, (req, res) => { res.redirect('/profile/badges'); });
+app.get('/profile/badges', requireAuth, profileController.profileBadges);
+app.get('/profile/games', requireAuth, profileController.profileGames);
+app.get('/profile/stats', requireAuth, profileController.profileStats);
+app.get('/profile/waitlist', requireAuth, profileController.profileWaitlist);
 app.get('/profile/edit', requireAuth, profileController.getEditProfile);
 app.post('/profile/edit', requireAuth, profileController.updateProfile);
 app.post('/profile/photo', requireAuth, profileController.uploadProfilePhoto);
