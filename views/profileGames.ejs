@@ -89,6 +89,9 @@
                             <% if(entry.comment){ %><span class="rating-comment"><%= entry.comment %></span><% } %>
                         </div>
                     <% } %>
+                    <% if(entry.image){ %>
+                        <img src="<%= entry.image %>" alt="Game photo" class="ms-2" style="max-width:80px;max-height:80px;border-radius:4px;">
+                    <% } %>
                 </div>
             </div>
             <% }); %>

@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
         game: { type: mongoose.Schema.Types.ObjectId, ref: 'Game' },
         rating: Number,
         comment: String,
-        photoPath: String
+        image: String
     }],
     profileImage: {
         data: Buffer,

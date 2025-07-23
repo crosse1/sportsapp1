@@ -256,6 +256,12 @@
                                 <% if(entry.rating){ %>
                                     <div class="mt-2 text-center text-white">Rated: <%= entry.rating %>/10</div>
                                 <% } %>
+                                <% if(entry.comment){ %>
+                                    <div class="text-center text-white"><%= entry.comment %></div>
+                                <% } %>
+                                <% if(entry.image){ %>
+                                    <div class="text-center"><img src="<%= entry.image %>" alt="Game photo" style="max-width:80px;max-height:80px;border-radius:4px;" class="mt-1"></div>
+                                <% } %>
                             </a>
                         </div>
                     </div>
