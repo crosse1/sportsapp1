@@ -166,7 +166,7 @@ exports.updateProfile = [upload.single('profileImage'), async (req, res, next) =
         await user.save();
         const token = jwt.sign({ id: user._id, username: user.username, email: user.email, phoneNumber: user.phoneNumber }, 'secret');
         res.cookie('token', token, { httpOnly: true });
-        res.redirect('/profile');
+        res.redirect('/profile/badges');
     } catch (err) {
         next(err);
     }
@@ -202,6 +202,79 @@ exports.getProfileImage = async (req, res, next) => {
         res.contentType(user.profileImage.contentType);
         res.send(user.profileImage.data);
     } catch(err){
+        next(err);
+    }
+};
+
+exports.profileBadges = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user.id).populate('favoriteTeams');
+        if (!user) return res.redirect('/login');
+        res.render('profileBadges', {
+            user,
+            isCurrentUser: true,
+            isFollowing: false,
+            viewer: req.user,
+            activeTab: 'badges'
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.profileStats = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user.id).populate('favoriteTeams');
+        if (!user) return res.redirect('/login');
+        res.render('profileStats', {
+            user,
+            isCurrentUser: true,
+            isFollowing: false,
+            viewer: req.user,
+            activeTab: 'stats'
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.profileGames = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user.id).populate('favoriteTeams');
+        if (!user) return res.redirect('/login');
+        const gameEntriesRaw = user.gameEntries || [];
+        let enrichedEntries = [];
+        if (gameEntriesRaw.length) {
+            enrichedEntries = await enrichGameEntries(gameEntriesRaw);
+        }
+        res.render('profileGames', {
+            user,
+            isCurrentUser: true,
+            isFollowing: false,
+            viewer: req.user,
+            activeTab: 'games',
+            gameEntries: enrichedEntries
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.profileWaitlist = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user.id)
+            .populate('favoriteTeams')
+            .populate({ path: 'wishlist', populate: ['homeTeam', 'awayTeam'] });
+        if (!user) return res.redirect('/login');
+        res.render('profileWaitlist', {
+            user,
+            isCurrentUser: true,
+            isFollowing: false,
+            viewer: req.user,
+            activeTab: 'waitlist',
+            wishlistGames: user.wishlist || []
+        });
+    } catch (err) {
         next(err);
     }
 };
@@ -415,7 +488,7 @@ exports.addGame = [upload.single('photo'), async (req, res, next) => {
         }
 
         await user.save();
-        res.redirect('/profile');
+        res.redirect('/profile/games');
     } catch(err){
         next(err);
     }
