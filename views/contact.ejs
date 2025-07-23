@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/custom.css">
     <style>
         body {
             background: linear-gradient(to right, #7e22ce, #14b8a6);
@@ -22,7 +23,8 @@
             <input type="email" name="email" placeholder="Email" class="form-control gradient-input mb-3" required>
             <input type="password" name="password" placeholder="Password" class="form-control gradient-input mb-3" required>
             <input type="text" name="phoneNumber" placeholder="Phone Number" pattern="[0-9]{10}" class="form-control gradient-input mb-3" required>
-            <input type="file" name="profileImage" accept="image/*" class="form-control gradient-input mb-3" required>
+            <input type="file" name="profileImage" id="profileImageInput" accept="image/*" class="d-none" required>
+            <label for="profileImageInput" id="profileImageLabel" class="gradient-input file-input-label mb-3 text-center d-block">Profile Image</label>
             <select name="favoriteTeams" class="favoriteTeams-select mb-4" multiple required>
                 <% teams.forEach(t => { %>
                     <option value="<%= t._id %>" data-logo="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>"><%= t.school %> <%= t.mascot %></option>
@@ -53,6 +55,11 @@
                 templateResult: formatTeam,
                 templateSelection: formatTeam
             });
+        });
+        const fileInput = document.getElementById('profileImageInput');
+        const fileLabel = document.getElementById('profileImageLabel');
+        fileInput.addEventListener('change', function(){
+            fileLabel.textContent = this.files[0] ? this.files[0].name : 'Profile Image';
         });
     </script>
 </body>
