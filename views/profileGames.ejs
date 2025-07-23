@@ -33,10 +33,31 @@
         @media (min-width: 768px) { .profile-avatar { margin-left: 0; margin-right: 0; } }
         .avatar-lg { width: clamp(80px, 20vw, 300px); height: clamp(80px, 20vw, 300px); }
         .avatar-sm { width: clamp(40px, 10vw, 60px); height: clamp(40px, 10vw, 60px); }
-        .rating-wrapper { font-size: 2rem; font-weight: bold; color: #000; margin-left: 1rem; position: relative; transition: transform 0.2s; display:inline-block; }
-        .rating-wrapper:hover { transform: translateX(-0.5rem) scale(0.95); }
-        .rating-comment { display:none; white-space:nowrap; position:absolute; left:100%; top:50%; transform:translateY(-50%); margin-left:0.5rem; color:#000; }
-        .rating-wrapper:hover .rating-comment { display:block; }
+        .rating-wrapper {
+            flex: 1;
+            margin-left: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .rating-number {
+            display: inline-block;
+            transform: scaleY(1.3);
+            font-weight: 700;
+            line-height: 1;
+        }
+        .rating-comment {
+            display: none;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: clamp(0.75rem, 2vw, 1rem);
+            font-weight: 700;
+        }
+        .rating-wrapper:hover .rating-number { display: none; }
+        .rating-wrapper:hover .rating-comment { display: block; }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -85,7 +106,7 @@
                     </div>
                     <% if(entry.rating){ %>
                         <div class="rating-wrapper">
-                            <span><%= entry.rating %>/10</span>
+                            <span class="rating-number"><%= entry.rating %>/10</span>
                             <% if(entry.comment){ %><span class="rating-comment"><%= entry.comment %></span><% } %>
                         </div>
                     <% } %>
