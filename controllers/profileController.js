@@ -127,6 +127,7 @@ exports.getProfile = async (req, res, next) => {
             user,
             isCurrentUser: true,
             isFollowing: false,
+            canMessage: false,
             viewer: req.user,
             wishlistGames,
             gamesList: user.gamesList,
@@ -214,6 +215,7 @@ exports.profileBadges = async (req, res, next) => {
             user,
             isCurrentUser: true,
             isFollowing: false,
+            canMessage: false,
             viewer: req.user,
             activeTab: 'badges'
         });
@@ -230,6 +232,7 @@ exports.profileStats = async (req, res, next) => {
             user,
             isCurrentUser: true,
             isFollowing: false,
+            canMessage: false,
             viewer: req.user,
             activeTab: 'stats'
         });
@@ -251,6 +254,7 @@ exports.profileGames = async (req, res, next) => {
             user,
             isCurrentUser: true,
             isFollowing: false,
+            canMessage: false,
             viewer: req.user,
             activeTab: 'games',
             gameEntries: enrichedEntries
@@ -270,6 +274,7 @@ exports.profileWaitlist = async (req, res, next) => {
             user,
             isCurrentUser: true,
             isFollowing: false,
+            canMessage: false,
             viewer: req.user,
             activeTab: 'waitlist',
             wishlistGames: user.wishlist || []
