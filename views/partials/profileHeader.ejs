@@ -103,9 +103,15 @@
                         <label class="form-label">Game</label>
                         <select id="gameSelect" name="gameId" class="form-select glass-control" required disabled></select>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Rating: <span id="ratingValue">5</span></label>
-                        <input type="range" id="ratingRange" name="rating" class="form-range glass-control" min="1" max="10" step="0.5" value="5" required>
+                    <div class="mb-3 position-relative">
+                        <label class="form-label d-flex justify-content-between">
+                            <span>Rating:</span>
+                            <span id="ratingValue" class="fw-bold text-white">5</span>
+                        </label>
+                        <div class="glass-range-wrapper">
+                            <input type="range" id="ratingRange" name="rating" class="form-range glass-control" min="1" max="10" step="0.5" value="5" required>
+                            <div id="ratingBubble" class="range-bubble fw-bold">5</div>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Photo</label>
