@@ -33,6 +33,10 @@
         @media (min-width: 768px) { .profile-avatar { margin-left: 0; margin-right: 0; } }
         .avatar-lg { width: clamp(80px, 20vw, 300px); height: clamp(80px, 20vw, 300px); }
         .avatar-sm { width: clamp(40px, 10vw, 60px); height: clamp(40px, 10vw, 60px); }
+        .rating-wrapper { font-size: 2rem; font-weight: bold; color: #000; margin-left: 1rem; position: relative; transition: transform 0.2s; display:inline-block; }
+        .rating-wrapper:hover { transform: translateX(-0.5rem) scale(0.95); }
+        .rating-comment { display:none; white-space:nowrap; position:absolute; left:100%; top:50%; transform:translateY(-50%); margin-left:0.5rem; color:#000; }
+        .rating-wrapper:hover .rating-comment { display:block; }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -56,30 +60,35 @@
                 <div class="game-date-banner mb-1">
                     <% const dateObj = new Date(game.startDate || game.StartDate); %>
                     <%= (dateObj.getMonth() + 1).toString().padStart(2, '0') %>/<%= dateObj.getDate().toString().padStart(2, '0') %>/<%= dateObj.getFullYear() %>
-                </div>                
-                <div class="position-relative">
-                    <a href="/games/<%= game._id %>" class="game-link d-block">
-                        <div class="card shadow-sm h-100 game-card p-3 text-center position-relative" data-away-color="<%= awayColor %>" data-home-color="<%= homeColor %>" style="background: linear-gradient(to right, <%= awayColor %>, <%= homeColor %>);">
-                            <div class="d-flex justify-content-between align-items-center position-relative mb-2 px-3">
-                                <div class="logo-wrapper me-3">
-                                    <div class="team-logo-container">
-                                        <img loading="lazy" src="<%= game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0] ? game.awayTeam.logos[0] : '/images/placeholder.jpg' %>" alt="<%= game.awayTeamName %>">
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="position-relative flex-grow-1">
+                        <a href="/games/<%= game._id %>" class="game-link d-block">
+                            <div class="card shadow-sm h-100 game-card p-3 text-center position-relative" data-away-color="<%= awayColor %>" data-home-color="<%= homeColor %>" style="background: linear-gradient(to right, <%= awayColor %>, <%= homeColor %>);">
+                                <div class="d-flex justify-content-between align-items-center position-relative mb-2 px-3">
+                                    <div class="logo-wrapper me-3">
+                                        <div class="team-logo-container">
+                                            <img loading="lazy" src="<%= game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0] ? game.awayTeam.logos[0] : '/images/placeholder.jpg' %>" alt="<%= game.awayTeamName %>">
+                                        </div>
+                                        <span class="team-name"><%= game.awayTeamName %></span>
                                     </div>
-                                    <span class="team-name"><%= game.awayTeamName %></span>
-                                </div>
-                                <div class="logo-wrapper ms-3">
-                                    <div class="team-logo-container">
-                                        <img loading="lazy" src="<%= game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0] ? game.homeTeam.logos[0] : '/images/placeholder.jpg' %>" alt="<%= game.homeTeamName %>">
+                                    <div class="logo-wrapper ms-3">
+                                        <div class="team-logo-container">
+                                            <img loading="lazy" src="<%= game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0] ? game.homeTeam.logos[0] : '/images/placeholder.jpg' %>" alt="<%= game.homeTeamName %>">
+                                        </div>
+                                        <span class="team-name"><%= game.homeTeamName %></span>
                                     </div>
-                                    <span class="team-name"><%= game.homeTeamName %></span>
+                                    <div class="position-absolute top-50 start-50 translate-middle fw-bold score-text text-white"><%= game.AwayPoints %> – <%= game.HomePoints %></div>
                                 </div>
-                                <div class="position-absolute top-50 start-50 translate-middle fw-bold score-text text-white"><%= game.AwayPoints %> – <%= game.HomePoints %></div>
                             </div>
-                            <% if(entry.rating){ %>
-                                <div class="mt-2 text-center text-white">Rated: <%= entry.rating %>/10</div>
-                            <% } %>
+                        </a>
+                    </div>
+                    <% if(entry.rating){ %>
+                        <div class="rating-wrapper">
+                            <span><%= entry.rating %>/10</span>
+                            <% if(entry.comment){ %><span class="rating-comment"><%= entry.comment %></span><% } %>
                         </div>
-                    </a>
+                    <% } %>
                 </div>
             </div>
             <% }); %>

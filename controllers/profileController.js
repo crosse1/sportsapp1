@@ -1,10 +1,30 @@
 const path = require("path");
 const multer = require("multer");
 
-const storage = multer.memoryStorage();
+const memoryStorage = multer.memoryStorage();
+const diskStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, path.join(__dirname, '../public/uploads/gamePhotos'));
+    },
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, unique + ext);
+    }
+});
 
-const upload = multer({
-    storage,
+const uploadMemory = multer({
+    storage: memoryStorage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        if(ext !== '.jpg' && ext !== '.jpeg') return cb(new Error('Invalid file'));
+        cb(null, true);
+    }
+});
+
+const uploadDisk = multer({
+    storage: diskStorage,
     limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         const ext = path.extname(file.originalname).toLowerCase();
@@ -149,7 +169,7 @@ exports.getEditProfile = async (req, res, next) => {
     }
 };
 
-exports.updateProfile = [upload.single('profileImage'), async (req, res, next) => {
+exports.updateProfile = [uploadMemory.single('profileImage'), async (req, res, next) => {
     try {
         const { username, email, phoneNumber, favoriteTeams } = req.body;
         const user = await User.findById(req.user.id);
@@ -172,7 +192,7 @@ exports.updateProfile = [upload.single('profileImage'), async (req, res, next) =
         next(err);
     }
 }];
-exports.uploadProfilePhoto = [upload.single("profileImage"), async (req, res, next) => {
+exports.uploadProfilePhoto = [uploadMemory.single("profileImage"), async (req, res, next) => {
     try {
         if (!req.file) return res.status(400).json({ error: "No image" });
         const user = await User.findById(req.user.id);
@@ -443,7 +463,7 @@ exports.setLocation = async (req, res, next) => {
     }
 };
 
-exports.addGame = [upload.single('photo'), async (req, res, next) => {
+exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
     try {
         const { gameId, rating, comment } = req.body;
 
@@ -494,7 +514,7 @@ exports.addGame = [upload.single('photo'), async (req, res, next) => {
         if(!isNaN(rateNum)) entry.rating = rateNum;
         if(comment) entry.comment = comment;
         if(req.file){
-            entry.photo = { data: req.file.buffer, contentType: req.file.mimetype };
+            entry.photoPath = '/uploads/gamePhotos/' + req.file.filename;
         }
 
         await user.save();
