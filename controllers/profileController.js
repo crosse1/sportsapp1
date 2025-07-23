@@ -514,7 +514,7 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
         if(!isNaN(rateNum)) entry.rating = rateNum;
         if(comment) entry.comment = comment;
         if(req.file){
-            entry.photoPath = '/uploads/gamePhotos/' + req.file.filename;
+            entry.image = '/uploads/gamePhotos/' + req.file.filename;
         }
 
         await user.save();
