@@ -26,6 +26,8 @@ async function enrichGameEntries(entries){
     if(!entries || !entries.length) return [];
     const ids = entries.map(e => e.game).filter(Boolean);
     const pastGames = await PastGame.find({ _id: { $in: ids } }).lean();
+    console.log('Entry Game IDs:', ids);
+    console.log('Found PastGame IDs:', pastGames.map(g => String(g._id)));
     const teamIds = [...new Set(pastGames.flatMap(g => [g.HomeId, g.AwayId]))];
     const teams = await Team.find({ teamId: { $in: teamIds } }).select('teamId logos color alternateColor').lean();
     const teamMap = {};
@@ -99,10 +101,6 @@ exports.getProfile = async (req, res, next) => {
     try {
         const user = await User.findById(req.user.id)
             .populate('favoriteTeams')
-            .populate({
-                path: 'gameEntries.game',
-                populate: ['homeTeam', 'awayTeam']
-            })
             .populate({
                 path: 'wishlist',
                 populate: ['homeTeam', 'awayTeam']
@@ -238,10 +236,6 @@ exports.viewUser = async (req, res, next) => {
     try {
         const user = await User.findById(req.params.id)
             .populate('favoriteTeams')
-            .populate({
-                path: 'gameEntries.game',
-                populate: ['homeTeam','awayTeam']
-            })
             .populate({
                 path: 'wishlist',
                 populate: ['homeTeam','awayTeam']
@@ -408,7 +402,7 @@ exports.addGame = [upload.single('photo'), async (req, res, next) => {
         }
 
         if(!user.gameEntries) user.gameEntries = [];
-        const entryId = game ? game._id : pastGame._id;
+        const entryId = pastGame._id;
         let entry = user.gameEntries.find(e => String(e.game) === String(entryId));
         if(!entry){
             entry = { game: entryId };
