@@ -221,7 +221,8 @@
                     <% } %>
                 </div>
                 <% if (gameEntries && gameEntries.length > 0) { %>
-                    <div class="d-flex flex-column align-items-center gap-2" id="profileGamesContainer">                    <% gameEntries.forEach(function(entry){
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 justify-content-center" id="profileGamesContainer">
+                    <% gameEntries.forEach(function(entry){
                          const game = entry.game;
                          if(!game) return;
                          const awayColor = game.awayTeam && game.awayTeam.color ? game.awayTeam.color : '#ffffff';
@@ -537,6 +538,16 @@
         if(addGameBtn){
             addGameBtn.addEventListener('click', () => {
                 const modalEl = document.getElementById('addGameModal');
+                if(modalEl){
+                    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+                }
+            });
+        }
+
+        const openUserModalBtn = document.getElementById('openUserModal');
+        if(openUserModalBtn){
+            openUserModalBtn.addEventListener('click', () => {
+                const modalEl = document.getElementById('userSearchModal');
                 if(modalEl){
                     bootstrap.Modal.getOrCreateInstance(modalEl).show();
                 }

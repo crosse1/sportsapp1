@@ -534,25 +534,6 @@
 }
 
 /* Profile games layouts */
-#profileGamesContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-}
-
-#profileGamesContainer .col {
-  display: flex;
-  justify-content: center;
-}
-
-#profileGamesContainer .game-card {
-  width: 120%;
-  max-width: 600px;
-}
-
-@media(max-width:576px){
-  #profileGamesContainer .game-card{
-    width:100%;
-  }
+#profileGamesContainer .game-card{
+  width:100%;
 }
