@@ -116,13 +116,14 @@
 }
 
 .add-game-btn {
-    font-size: 1.05rem;
+    padding: 0.5rem 2rem;
+    font-size: 1.1rem;
     font-weight: 700;
     background: linear-gradient(to right,#14b8a6,#7e22ce);
     color: #fff;
     border: 1px solid rgba(255,255,255,0.25);
     backdrop-filter: blur(8px);
-    border-radius: 0.5rem;
+    border-radius: 0.7rem;
     transition: filter 0.2s;
 }
 .add-game-btn:hover {

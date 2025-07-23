@@ -23,6 +23,13 @@
         .user-search-modal .profile-search.form-control { background-color: rgba(255, 255, 255, 0.2) !important; border: 1px solid #ccc !important; color: #fff !important; font-family: inherit !important; font-weight: bold !important; font-size: 1.1rem !important; border-radius: 8px !important; padding: 0.5rem 1rem 0.5rem 2.5rem !important; transition: box-shadow 0.2s ease, border-color 0.2s ease; }
         .user-search-modal .profile-search.form-control::placeholder { color: rgba(255, 255, 255, 0.7) !important; font-style: italic; }
         .user-search-modal .profile-search.form-control:focus { outline: none !important; box-shadow: 0 0 0 3px rgba(204, 204, 204, 0.5) !important; border-color: #bbb !important; }
+        .game-date-banner {
+    font-size: 1.5rem; /* Larger font size */
+    font-weight: bold;
+    color: #333; /* Dark text */
+    text-align: left; /* Left justified */
+    margin-bottom: 0.5rem;
+}
         @media (min-width: 768px) { .profile-avatar { margin-left: 0; margin-right: 0; } }
         .avatar-lg { width: clamp(80px, 20vw, 300px); height: clamp(80px, 20vw, 300px); }
         .avatar-sm { width: clamp(40px, 10vw, 60px); height: clamp(40px, 10vw, 60px); }
@@ -46,7 +53,10 @@
                  const awayColor = game.awayTeam && game.awayTeam.color ? game.awayTeam.color : '#ffffff';
                  const homeColor = game.homeTeam && game.homeTeam.color ? game.homeTeam.color : '#ffffff'; %>
             <div class="col">
-                <div class="game-date-banner text-center mb-1"><%= (game.startDate || game.StartDate).toISOString().split('T')[0] %></div>
+                <div class="game-date-banner mb-1">
+                    <% const dateObj = new Date(game.startDate || game.StartDate); %>
+                    <%= (dateObj.getMonth() + 1).toString().padStart(2, '0') %>/<%= dateObj.getDate().toString().padStart(2, '0') %>/<%= dateObj.getFullYear() %>
+                </div>                
                 <div class="position-relative">
                     <a href="/games/<%= game._id %>" class="game-link d-block">
                         <div class="card shadow-sm h-100 game-card p-3 text-center position-relative" data-away-color="<%= awayColor %>" data-home-color="<%= homeColor %>" style="background: linear-gradient(to right, <%= awayColor %>, <%= homeColor %>);">
