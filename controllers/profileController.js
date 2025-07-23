@@ -4,7 +4,7 @@ const multer = require("multer");
 const memoryStorage = multer.memoryStorage();
 const diskStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, '../public/uploads/gamePhotos'));
+        cb(null, path.join(__dirname, '../public/uploads'));
     },
     filename: (req, file, cb) => {
         const ext = path.extname(file.originalname).toLowerCase();
@@ -467,55 +467,18 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
     try {
         const { gameId, rating, comment } = req.body;
 
-        const pastGame = await PastGame.findById(gameId);
-        if(!pastGame) return res.status(400).redirect('/profile');
+        const user = await User.findById(req.user.id);
+        if(!user) return res.redirect('/login');
 
-        const [game, homeTeam, awayTeam, venue, user] = await Promise.all([
-            Game.findOne({ gameId: pastGame.Id }),
-            Team.findOne({ teamId: pastGame.HomeId }),
-            Team.findOne({ teamId: pastGame.AwayId }),
-            Venue.findOne({ venueId: pastGame.VenueId }),
-            User.findById(req.user.id)
-        ]);
-
-        if(!user) return res.status(400).redirect('/profile');
-
-        const addSet = {};
-        if(game) addSet.gamesList = game._id;
-        const teamIds = [];
-        if(homeTeam) teamIds.push(homeTeam._id);
-        if(awayTeam) teamIds.push(awayTeam._id);
-        if(teamIds.length) addSet.teamsList = { $each: teamIds };
-        if(venue) addSet.venuesList = venue._id;
-
-        if(Object.keys(addSet).length){
-            await User.updateOne({ _id: user._id }, { $addToSet: addSet });
-        }
-
-        const rateNum = parseFloat(rating);
-        if(!isNaN(rateNum)){
-            if(game){
-                game.ratings = game.ratings || [];
-                game.ratings.push(rateNum);
-                await game.save();
-            }
-            pastGame.ratings = pastGame.ratings || [];
-            pastGame.ratings.push(rateNum);
-            await pastGame.save();
-        }
+        const entry = {
+            game: gameId,
+            rating: parseFloat(rating),
+            comment: comment || null,
+            image: req.file ? '/uploads/' + req.file.filename : null
+        };
 
         if(!user.gameEntries) user.gameEntries = [];
-        const entryId = pastGame._id;
-        let entry = user.gameEntries.find(e => String(e.game) === String(entryId));
-        if(!entry){
-            entry = { game: entryId };
-            user.gameEntries.push(entry);
-        }
-        if(!isNaN(rateNum)) entry.rating = rateNum;
-        if(comment) entry.comment = comment;
-        if(req.file){
-            entry.image = '/uploads/gamePhotos/' + req.file.filename;
-        }
+        user.gameEntries.push(entry);
 
         await user.save();
         res.redirect('/profile/games');
