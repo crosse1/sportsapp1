@@ -99,14 +99,23 @@ exports.getProfile = async (req, res, next) => {
     try {
         const user = await User.findById(req.user.id)
             .populate('favoriteTeams')
-            .populate({ path: 'wishlist', populate: ['homeTeam','awayTeam'] })
+            .populate({
+                path: 'gameEntries.game',
+                populate: ['homeTeam', 'awayTeam']
+            })
+            .populate({
+                path: 'wishlist',
+                populate: ['homeTeam', 'awayTeam']
+            })
             .populate({ path: 'gamesList', populate: ['homeTeam','awayTeam'] });
             
         if (!user) return res.redirect('/login');
 
+        const wishlistGames = user.wishlist || [];
+        const gameEntriesRaw = user.gameEntries || [];
         let enrichedEntries = [];
-        if(user.gameEntries && user.gameEntries.length){
-            enrichedEntries = await enrichGameEntries(user.gameEntries);
+        if(gameEntriesRaw.length){
+            enrichedEntries = await enrichGameEntries(gameEntriesRaw);
         }
 
         const ratingMap = {};
@@ -121,7 +130,7 @@ exports.getProfile = async (req, res, next) => {
             isCurrentUser: true,
             isFollowing: false,
             viewer: req.user,
-            wishlistGames: user.wishlist,
+            wishlistGames,
             gamesList: user.gamesList,
             gameEntries: enrichedEntries
         });
@@ -229,13 +238,22 @@ exports.viewUser = async (req, res, next) => {
     try {
         const user = await User.findById(req.params.id)
             .populate('favoriteTeams')
-            .populate({ path: 'wishlist', populate: ['homeTeam','awayTeam'] })
+            .populate({
+                path: 'gameEntries.game',
+                populate: ['homeTeam','awayTeam']
+            })
+            .populate({
+                path: 'wishlist',
+                populate: ['homeTeam','awayTeam']
+            })
             .populate({ path: 'gamesList', populate: ['homeTeam','awayTeam'] });
         if (!user) return res.redirect('/profile');
 
+        const wishlistGames = user.wishlist || [];
+        const gameEntriesRaw = user.gameEntries || [];
         let enrichedEntries = [];
-        if(user.gameEntries && user.gameEntries.length){
-            enrichedEntries = await enrichGameEntries(user.gameEntries);
+        if(gameEntriesRaw.length){
+            enrichedEntries = await enrichGameEntries(gameEntriesRaw);
         }
         const isCurrentUser = req.user && String(req.user.id) === String(user._id);
         let isFollowing = false, canMessage = false;
@@ -258,7 +276,7 @@ exports.viewUser = async (req, res, next) => {
             isFollowing,
             canMessage,
             viewer: req.user,
-            wishlistGames: user.wishlist,
+            wishlistGames,
             gamesList: user.gamesList,
             gameEntries: enrichedEntries
         });
