@@ -54,7 +54,8 @@ app.use(async (req, res, next) => {
                     username: userDoc.username,
                     email: userDoc.email,
                     phoneNumber: userDoc.phoneNumber,
-                    profileImage: userDoc.profileImage
+                    profileImage: userDoc.profileImage,
+                    newFollowers: userDoc.newFollowers || []
                 };
             } else {
                 req.user = null;
@@ -70,17 +71,20 @@ app.use(async (req, res, next) => {
     if (req.user) {
         const hasUnread = await Message.exists({ participants: req.user.id, unreadBy: req.user.id });
         res.locals.hasUnreadMessages = !!hasUnread;
+        res.locals.newFollowers = req.user.newFollowers || [];
+        res.locals.hasNewFollowers = res.locals.newFollowers.length > 0;
     } else {
         res.locals.hasUnreadMessages = false;
+        res.locals.hasNewFollowers = false;
+        res.locals.newFollowers = [];
     }
     next();
 });
 
-app.use(async (req, res, next) => {
+app.use((req, res, next) => {
     if (req.user) {
-        const user = await User.findById(req.user.id).select('profileImage');
-        res.locals.navImg = user && user.profileImage && user.profileImage.data
-            ? `/users/${user._id}/profile-image`
+        res.locals.navImg = req.user.profileImage && req.user.profileImage.data
+            ? `/users/${req.user.id}/profile-image`
             : '/images/default-profile.png';
     } else {
         res.locals.navImg = '/images/default-profile.png';

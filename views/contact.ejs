@@ -14,20 +14,21 @@
 <body class="d-flex justify-content-center align-items-center min-vh-100">
     <div class="card shadow p-4" style="max-width: 450px; width: 100%;">
         <h1 class="text-center mb-4">Create Account</h1>
-        <form action="/signup" method="post">
+        <form action="/signup" method="post" enctype="multipart/form-data">
             <% if (typeof error !== 'undefined') { %>
                 <div class="alert alert-danger"><%= error %></div>
             <% } %>
-            <input type="text" name="username" placeholder="Username" class="form-control mb-3" maxlength="20" pattern="^[a-zA-Z0-9_]+$" required>
-            <input type="email" name="email" placeholder="Email" class="form-control mb-3" required>
-            <input type="password" name="password" placeholder="Password" class="form-control mb-3" required>
-            <input type="text" name="phoneNumber" placeholder="Phone Number" pattern="[0-9]{10}" class="form-control mb-3" required>
-            <select name="favoriteTeams" class="form-control mb-3 favoriteTeams-select" multiple required>
+            <input type="text" name="username" placeholder="Username" class="form-control gradient-input mb-3" maxlength="20" pattern="^[a-zA-Z0-9_]+$" required>
+            <input type="email" name="email" placeholder="Email" class="form-control gradient-input mb-3" required>
+            <input type="password" name="password" placeholder="Password" class="form-control gradient-input mb-3" required>
+            <input type="text" name="phoneNumber" placeholder="Phone Number" pattern="[0-9]{10}" class="form-control gradient-input mb-3" required>
+            <input type="file" name="profileImage" accept="image/*" class="form-control gradient-input mb-3" required>
+            <select name="favoriteTeams" class="favoriteTeams-select mb-4" multiple required>
                 <% teams.forEach(t => { %>
                     <option value="<%= t._id %>" data-logo="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>"><%= t.school %> <%= t.mascot %></option>
                 <% }); %>
             </select>
-            <button type="submit" class="btn w-100 text-white" style="background-color:#14b8a6;">Sign Up</button>
+            <button type="submit" class="btn w-100 text-white gradient-glass-btn">Sign Up</button>
         </form>
         <div class="text-center mt-3">
             <a href="/login" class="text-decoration-none">Already have an account? Sign in</a>

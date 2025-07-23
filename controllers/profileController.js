@@ -78,15 +78,26 @@ exports.getLogin = (req, res) => {
     res.render('login', { layout: false });
 };
 
-exports.saveUser = async (req, res, next) => {
+exports.saveUser = [uploadMemory.single('profileImage'), async (req, res, next) => {
     const { username, email, phoneNumber, password, favoriteTeams } = req.body;
     try {
+        if(!req.file){
+            const teams = await Team.find();
+            return res.status(400).render('contact', { layout:false, teams, error:'Profile picture is required.' });
+        }
         const fav = favoriteTeams ? (Array.isArray(favoriteTeams) ? favoriteTeams : [favoriteTeams]) : [];
         if (fav.length === 0) {
             const teams = await Team.find();
             return res.status(400).render('contact', { layout: false, teams, error: 'Please select at least one favorite team.' });
         }
-        const newUser = new User({ username, email, phoneNumber, password, favoriteTeams: fav });
+        const newUser = new User({
+            username,
+            email,
+            phoneNumber,
+            password,
+            favoriteTeams: fav,
+            profileImage:{ data:req.file.buffer, contentType:req.file.mimetype }
+        });
         await newUser.save();
         const token = jwt.sign({ id: newUser._id, username: newUser.username, email: newUser.email, phoneNumber: newUser.phoneNumber }, 'secret');
         res.cookie('token', token, { httpOnly: true });
@@ -98,7 +109,7 @@ exports.saveUser = async (req, res, next) => {
         }
         next(error);
     }
-};
+}];
 
 exports.loginUser = async (req, res, next) => {
     const { email, password } = req.body;
@@ -346,6 +357,13 @@ exports.viewUser = async (req, res, next) => {
             .populate({ path: 'gamesList', populate: ['homeTeam','awayTeam'] });
         if (!user) return res.redirect('/profile');
 
+        if(req.user){
+            await User.findByIdAndUpdate(req.user.id, { $pull: { newFollowers: user._id } });
+            if(req.user.newFollowers){
+                req.user.newFollowers = req.user.newFollowers.filter(f => String(f) !== String(user._id));
+            }
+        }
+
         const wishlistGames = user.wishlist || [];
         const gameEntriesRaw = user.gameEntries || [];
         let enrichedEntries = [];
@@ -400,6 +418,9 @@ exports.followUser = async (req, res, next) => {
         currentUser.followingCount = currentUser.following.length;
         targetUser.followers.push(currentId);
         targetUser.followersCount = targetUser.followers.length;
+        if(!targetUser.newFollowers.some(f=>String(f)===currentId)){
+            targetUser.newFollowers.push(currentId);
+        }
         await Promise.all([currentUser.save(), targetUser.save()]);
         res.json({ success: true });
     } catch (err) {
@@ -421,6 +442,7 @@ exports.unfollowUser = async (req, res, next) => {
         currentUser.followingCount = currentUser.following.length;
         targetUser.followers = targetUser.followers.filter(f => String(f) !== currentId);
         targetUser.followersCount = targetUser.followers.length;
+        targetUser.newFollowers = targetUser.newFollowers.filter(f => String(f) !== currentId);
         await Promise.all([currentUser.save(), targetUser.save()]);
         res.json({ success: true });
     } catch (err) {

@@ -669,3 +669,23 @@
   pointer-events:none;
   transition:left .3s;
 }
+
+.inbox-follower-badge{
+  width:0.5rem;
+  height:0.5rem;
+}
+
+.gradient-input{
+  background:linear-gradient(to right,#14b8a6,#7e22ce);
+  color:#fff;
+  font-weight:bold;
+  border:1px solid rgba(255,255,255,0.3);
+  backdrop-filter:blur(8px);
+  border-radius:.5rem;
+}
+.gradient-input::placeholder{color:#fff;font-weight:bold;}
+.gradient-input:focus{
+  color:#fff;
+  background:linear-gradient(to right,#14b8a6,#7e22ce);
+  box-shadow:0 0 0 0.2rem rgba(255,255,255,0.3);
+}
