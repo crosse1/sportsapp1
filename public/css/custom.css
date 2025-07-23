@@ -521,6 +521,7 @@
 }
 
 /* Gradient glassy button used across the app */
+
 .gradient-glass-btn{
   background: linear-gradient(to right,#14b8a6,#7e22ce);
   color:#fff;
@@ -533,6 +534,18 @@
   filter:brightness(1.1);
 }
 
+/* Generic glass style button */
+.glassy-btn{
+  background:rgba(255,255,255,0.2);
+  color:#fff;
+  border:1px solid rgba(255,255,255,0.25);
+  backdrop-filter:blur(10px);
+  transition:filter .2s;
+}
+.glassy-btn:hover{
+  filter:brightness(1.1);
+}
+
 /* Profile games layouts */
 #profileGamesContainer,
 #wishlistContainer{
@@ -540,7 +553,7 @@
 }
 #profileGamesContainer .game-card,
 #wishlistContainer .game-card{
-  width:100%;
+  width:95%;
 }
 
 .modal {
