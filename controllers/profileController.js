@@ -249,6 +249,11 @@ exports.profileGames = async (req, res, next) => {
         let enrichedEntries = [];
         if (gameEntriesRaw.length) {
             enrichedEntries = await enrichGameEntries(gameEntriesRaw);
+            enrichedEntries.sort((a, b) => {
+                const da = a.game && (a.game.startDate || a.game.StartDate);
+                const db = b.game && (b.game.startDate || b.game.StartDate);
+                return new Date(db) - new Date(da);
+            });
         }
         res.render('profileGames', {
             user,

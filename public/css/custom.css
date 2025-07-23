@@ -109,6 +109,25 @@
 .follow-users-btn {
     transition: background-color 0.3s, color 0.3s;
 }
+
+.edit-profile-btn {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.75rem;
+}
+
+.add-game-btn {
+    font-size: 1.05rem;
+    font-weight: 700;
+    background: linear-gradient(to right,#14b8a6,#7e22ce);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.25);
+    backdrop-filter: blur(8px);
+    border-radius: 0.5rem;
+    transition: filter 0.2s;
+}
+.add-game-btn:hover {
+    filter: brightness(1.1);
+}
 .cropper-view-box,
 .cropper-face {
     border-radius: 50%;
@@ -198,6 +217,14 @@
 
 .game-date {
     font-weight: 600;
+}
+
+.game-date-banner {
+    background: rgba(255, 255, 255, 0.8);
+    color: #222;
+    font-weight: 700;
+    border-radius: 0.25rem;
+    padding: 0.25rem 0.5rem;
 }
 
 /* Interactive game link */

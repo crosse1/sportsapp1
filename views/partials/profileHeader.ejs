@@ -16,7 +16,9 @@
             <div class="col-md-6 text-center text-md-start">
                 <div class="d-flex flex-column flex-md-row align-items-center">
                     <h2 class="fw-bold mb-1 me-md-3">@<%= user.username %></h2>
-                    <% if(!isCurrentUser){ %>
+                    <% if(isCurrentUser){ %>
+                        <a href="/profile/edit" class="btn glassy-btn btn-sm ms-md-2 edit-profile-btn">Edit Profile</a>
+                    <% } else { %>
                         <% if(canMessage){ %>
                             <button class="btn glassy-btn btn-sm ms-md-2 message-btn" data-user="<%= user._id %>">Message</button>
                         <% } else { %>
@@ -46,8 +48,7 @@
             </div>
             <div class="col-md-3 text-center text-md-end">
                 <% if (isCurrentUser) { %>
-                    <a href="/profile/edit" class="btn glassy-btn rounded-pill px-4 mb-2">Edit Profile</a>
-                    <button id="addGameBtn" type="button" class="btn glassy-btn mb-2" data-bs-toggle="modal" data-bs-target="#addGameModal">+ Game</button>
+                    <button id="addGameBtn" type="button" class="btn glassy-btn mb-2 add-game-btn" data-bs-toggle="modal" data-bs-target="#addGameModal">+ Game</button>
                 <% } else if (viewer) { %>
                     <button id="followBtn" data-user="<%= user._id %>" class="btn glassy-btn rounded-pill px-4 follow-btn mb-2"><%= isFollowing ? 'Following' : 'Follow' %></button>
                 <% } %>
