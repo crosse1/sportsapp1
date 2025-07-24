@@ -41,6 +41,7 @@ const Team = require('../models/Team');
 const Game = require('../models/Game');
 const PastGame = require('../models/PastGame');
 const Venue = require('../models/Venue');
+const getStateFromCoordinates = require('../lib/stateLookup');
 
 async function enrichGameEntries(entries){
     if(!entries || !entries.length) return [];
@@ -267,8 +268,13 @@ exports.profileBadges = async (req, res, next) => {
 exports.profileStats = async (req, res, next) => {
     try {
         const userId = req.params.user || req.user.id;
-        const profileUser = await User.findById(userId).populate('favoriteTeams');
+        const profileUser = await User.findById(userId)
+            .populate('favoriteTeams')
+            .populate('teamsList')
+            .populate('venuesList');
+
         if (!profileUser) return res.redirect('/profileStats/' + req.user.id);
+
         const isCurrentUser = req.user && req.user.id.toString() === profileUser._id.toString();
         let isFollowing = false, canMessage = false;
         if (req.user && !isCurrentUser) {
@@ -277,13 +283,39 @@ exports.profileStats = async (req, res, next) => {
             const followsBack = profileUser.following.some(f => String(f) === String(viewer._id));
             canMessage = isFollowing && followsBack;
         }
+
+        const enrichedEntries = await enrichGameEntries(profileUser.gameEntries || []);
+
+        const uniqueTeamIds = [...new Set((profileUser.teamsList || []).map(t => String(t._id || t)))];
+        const uniqueVenueIds = [...new Set((profileUser.venuesList || []).map(v => String(v._id || v)))];
+
+        const teamsCount = uniqueTeamIds.length;
+        const venuesCount = uniqueVenueIds.length;
+
+        const statesVisited = new Set();
+        (profileUser.venuesList || []).forEach(v => {
+            let state = v.state;
+            if (!state && v.coordinates && Array.isArray(v.coordinates.coordinates)) {
+                const [lon, lat] = v.coordinates.coordinates;
+                state = getStateFromCoordinates(lat, lon);
+            }
+            if (state) statesVisited.add(state);
+        });
+        const statesCount = statesVisited.size;
+
         res.render('profileStats', {
             user: profileUser,
             isCurrentUser,
             isFollowing,
             canMessage,
             viewer: req.user,
-            activeTab: 'stats'
+            activeTab: 'stats',
+            gameEntries: enrichedEntries,
+            teamsList: profileUser.teamsList || [],
+            venuesList: profileUser.venuesList || [],
+            teamsCount,
+            venuesCount,
+            statesCount
         });
     } catch (err) {
         next(err);

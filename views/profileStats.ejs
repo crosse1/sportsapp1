@@ -163,9 +163,12 @@
     </div>
 
     <script>
-        const gameEntries = <%- JSON.stringify(user.gameEntries || []) %>;
-        const venuesList = <%- JSON.stringify(user.venuesList || []) %>;
-        const teamsList = <%- JSON.stringify(user.teamsList || []) %>;
+        const gameEntries = <%- JSON.stringify(gameEntries || []) %>;
+        const venuesList = <%- JSON.stringify(venuesList || []) %>;
+        const teamsList = <%- JSON.stringify(teamsList || []) %>;
+        const teamsCount = <%= typeof teamsCount !== 'undefined' ? teamsCount : 0 %>;
+        const venuesCount = <%= typeof venuesCount !== 'undefined' ? venuesCount : 0 %>;
+        const statesCount = <%= typeof statesCount !== 'undefined' ? statesCount : 0 %>;
 
         function ordinal(n){
             const s=["th","st","nd","rd"],v=n%100;
@@ -185,13 +188,13 @@
             const venueMap = {};
             venuesList.forEach(v=>{ const n=v.name||v; if(!n) return; venueMap[n]=(venueMap[n]||0)+1; });
             const venueEntries = Object.entries(venueMap).sort((a,b)=>b[1]-a[1]);
-            document.getElementById('venuesCount').textContent = Object.keys(venueMap).length;
+            document.getElementById('venuesCount').textContent = venuesCount;
             document.getElementById('venuesTop').innerHTML = venueEntries.slice(0,3).map((v,i)=>`<div class="top-list-item">${ordinal(i+1)}. ${v[0]} - ${v[1]}</div>`).join('');
 
             const teamMap = {};
             teamsList.forEach(t=>{ const n=t.school||t; if(!n) return; if(!teamMap[n]) teamMap[n]={count:0,team:t}; teamMap[n].count++; });
             const teamEntries = Object.values(teamMap).sort((a,b)=>b.count-a.count);
-            document.getElementById('teamsCount').textContent = Object.keys(teamMap).length;
+            document.getElementById('teamsCount').textContent = teamsCount;
             let prevCount, prevRank;
             document.getElementById('teamsTop').innerHTML = teamEntries.slice(0,3).map((item,index)=>{
                 let rank=index+1,prefix='';
@@ -204,7 +207,7 @@
             const stateMap = {};
             venuesList.forEach(v=>{ const s=v.state||(v.location&&v.location.state); if(!s) return; stateMap[s]=(stateMap[s]||0)+1; });
             const stateEntries = Object.entries(stateMap).sort((a,b)=>b[1]-a[1]);
-            document.getElementById('statesCount').textContent = Object.keys(stateMap).length;
+            document.getElementById('statesCount').textContent = statesCount;
             document.getElementById('statesTop').innerHTML = stateEntries.slice(0,3).map((s,i)=>{
                 let prefix='';
                 if(i>0 && s[1]===stateEntries[i-1][1]) prefix='T-';
