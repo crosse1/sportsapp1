@@ -126,15 +126,26 @@
         }
         #gamesTop {
             margin-top: -1rem;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            column-gap: 0.5rem;
+            row-gap: 0.5rem;
+            align-items: center;
         }
         .top-game-item {
+            display: contents;
+        }
+        .game-rank { text-align: left; }
+        .game-matchup {
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 0.25rem;
         }
+        .game-rating { text-align: right; }
+        .game-date { font-size: 0.75rem; }
         .game-logo-sm {
             width: 2rem;
             height: 2rem;
@@ -217,14 +228,16 @@
         }
         prevRating = g.rating;
         return `<div class="top-game-item">` +
-            `<div class="gradient-text small fw-light">${formatGameDate(g.gameDate)}</div>` +
-            `<div class="d-flex align-items-center justify-content-center flex-wrap gap-1">` +
-            `<span class="gradient-text fw-semibold">${prefix}${ordinal(rank)}</span>` +
-            `<img src="${g.awayTeamLogoUrl}" class="game-logo-sm">` +
-            `<span class="gradient-text">@</span>` +
-            `<img src="${g.homeTeamLogoUrl}" class="game-logo-sm">` +
-            `<span class="gradient-text fw-semibold">${g.rating}</span>` +
+            `<div class="game-rank gradient-text fw-semibold">${prefix}${ordinal(rank)}</div>` +
+            `<div class="game-matchup">` +
+                `<div class="gradient-text small fw-light game-date">${formatGameDate(g.gameDate)}</div>` +
+                `<div class="d-flex align-items-center justify-content-center flex-wrap gap-1">` +
+                    `<img src="${g.awayTeamLogoUrl}" class="game-logo-sm">` +
+                    `<span class="gradient-text">@</span>` +
+                    `<img src="${g.homeTeamLogoUrl}" class="game-logo-sm">` +
+                `</div>` +
             `</div>` +
+            `<div class="game-rating gradient-text fw-semibold">${g.rating}</div>` +
             `</div>`;
     }).join('');
 
