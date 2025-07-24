@@ -1,7 +1,7 @@
 const path = require("path");
 const multer = require("multer");
 const mongoose = require('mongoose');
-const toObjectId = id => mongoose.Types.ObjectId(id);
+const toObjectId = id => new mongoose.Types.ObjectId(id);
 
 const memoryStorage = multer.memoryStorage();
 const diskStorage = multer.diskStorage({
