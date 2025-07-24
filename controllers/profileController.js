@@ -268,14 +268,24 @@ exports.profileBadges = async (req, res, next) => {
 exports.profileStats = async (req, res, next) => {
     try {
         const userId = req.params.user || req.user.id;
+        console.log('[profileStats] Requested User ID:', userId);
+
         const profileUser = await User.findById(userId)
             .populate('favoriteTeams')
             .populate('teamsList')
             .populate('venuesList');
 
-        if (!profileUser) return res.redirect('/profileStats/' + req.user.id);
+        if (!profileUser) {
+            console.warn('[profileStats] No user found, redirecting to self');
+            return res.redirect('/profileStats/' + req.user.id);
+        }
+
+        console.log(`[profileStats] Found user: ${profileUser.username} (${profileUser._id})`);
+        console.log(`[profileStats] teamsList count: ${profileUser.teamsList?.length}`);
+        console.log(`[profileStats] venuesList count: ${profileUser.venuesList?.length}`);
 
         const isCurrentUser = req.user && req.user.id.toString() === profileUser._id.toString();
+
         let isFollowing = false, canMessage = false;
         if (req.user && !isCurrentUser) {
             const viewer = await User.findById(req.user.id);
@@ -289,19 +299,28 @@ exports.profileStats = async (req, res, next) => {
         const uniqueTeamIds = [...new Set((profileUser.teamsList || []).map(t => String(t._id || t)))];
         const uniqueVenueIds = [...new Set((profileUser.venuesList || []).map(v => String(v._id || v)))];
 
+        console.log('[profileStats] Unique Team IDs:', uniqueTeamIds);
+        console.log('[profileStats] Unique Venue IDs:', uniqueVenueIds);
+
         const teamsCount = uniqueTeamIds.length;
         const venuesCount = uniqueVenueIds.length;
 
         const statesVisited = new Set();
-        (profileUser.venuesList || []).forEach(v => {
+        for (const v of profileUser.venuesList || []) {
             let state = v.state;
             if (!state && v.coordinates && Array.isArray(v.coordinates.coordinates)) {
                 const [lon, lat] = v.coordinates.coordinates;
                 state = getStateFromCoordinates(lat, lon);
+                console.log(`[profileStats] Converted coordinates (${lat}, ${lon}) to state: ${state}`);
+            } else {
+                console.log(`[profileStats] Venue already has state: ${state}`);
             }
             if (state) statesVisited.add(state);
-        });
+        }
+
         const statesCount = statesVisited.size;
+        console.log('[profileStats] States visited:', [...statesVisited]);
+        console.log('[profileStats] Count of unique states:', statesCount);
 
         res.render('profileStats', {
             user: profileUser,
@@ -318,9 +337,11 @@ exports.profileStats = async (req, res, next) => {
             statesCount
         });
     } catch (err) {
+        console.error('[profileStats] Error occurred:', err);
         next(err);
     }
 };
+
 
 exports.profileGames = async (req, res, next) => {
     try {
