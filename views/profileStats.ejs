@@ -115,7 +115,7 @@
             font-size: 1.4rem;
             display: flex;
             align-items: center;
-            gap: 0.25rem;
+            gap: 0.35rem;
         }
 
         .top-list-item img {
@@ -125,17 +125,19 @@
             object-fit: cover;
         }
         #gamesTop {
-            margin-top: -1rem;
-            display: grid;
-            grid-template-columns: 1fr 2fr 1fr;
-            column-gap: 0.5rem;
-            row-gap: 0.5rem;
-            align-items: center;
-        }
+    margin-top: -1rem;
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    grid-template-rows: repeat(3, 1fr); /* three fixed rows */
+    column-gap: 0.5rem;
+    row-gap: 0.75rem;
+    align-items: center;
+    min-height: 12rem; /* Ensures full space exists */
+}
         .top-game-item {
             display: contents;
         }
-        .game-rank { text-align: left; }
+        .game-rank { text-align: left; font-size: 1.7rem; }
         .game-matchup {
             display: flex;
             flex-direction: column;
@@ -144,12 +146,12 @@
             text-align: center;
             gap: 0.25rem;
         }
-        .game-rating { text-align: right; }
+        .game-rating { text-align: right; font-size: 1.6rem;}
         .game-date { font-size: 0.75rem; }
         .game-logo-sm {
-            width: 2rem;
-            height: 2rem;
-            border-radius: 50%;
+            width: 1.79rem;
+            height: 1.79rem;
+            
             object-fit: cover;
         }
     </style>
@@ -217,29 +219,45 @@
     // Games section
     document.getElementById('gamesCount').textContent = gameEntries.length;
     const gamesTopEl = document.getElementById('gamesTop');
-    let prevRating, prevGameRank;
-    gamesTopEl.innerHTML = topRatedGames.map((g, i) => {
-        let rank = i + 1, prefix = '';
-        if (i > 0 && g.rating === prevRating) {
-            rank = prevGameRank;
-            prefix = 'T-';
-        } else {
-            prevGameRank = rank;
-        }
-        prevRating = g.rating;
-        return `<div class="top-game-item">` +
-            `<div class="game-rank gradient-text fw-semibold">${prefix}${ordinal(rank)}</div>` +
-            `<div class="game-matchup">` +
-                `<div class="gradient-text small fw-light game-date">${formatGameDate(g.gameDate)}</div>` +
-                `<div class="d-flex align-items-center justify-content-center flex-wrap gap-1">` +
-                    `<img src="${g.awayTeamLogoUrl}" class="game-logo-sm">` +
-                    `<span class="gradient-text">@</span>` +
-                    `<img src="${g.homeTeamLogoUrl}" class="game-logo-sm">` +
-                `</div>` +
-            `</div>` +
-            `<div class="game-rating gradient-text fw-semibold">${g.rating}</div>` +
-            `</div>`;
-    }).join('');
+    let prevRating = null;
+let displayRank = 0;
+let actualRank = 0;
+let tieCount = 0;
+
+gamesTopEl.innerHTML = topRatedGames.map((g, i) => {
+    let prefix = '';
+    actualRank++;
+
+    if (g.rating === prevRating) {
+        prefix = 'T-';
+        tieCount++;
+    } else {
+        // Advance the displayed rank by how many were tied before
+        displayRank = actualRank;
+        tieCount = 1;
+    }
+
+    prevRating = g.rating;
+
+    return `
+        <div class="top-game-item">
+            <div class="game-rank gradient-text fw-semibold">${prefix}${displayRank}.</div>
+            <div class="game-matchup">
+                <div class="gradient-text small fw-light game-date">${formatGameDate(g.gameDate)}</div>
+                <div class="d-flex align-items-center justify-content-center flex-wrap gap-1">
+                    <img src="${g.awayTeamLogoUrl}" class="game-logo-sm">
+                    <span class="gradient-text">@</span>
+                    <img src="${g.homeTeamLogoUrl}" class="game-logo-sm">
+                </div>
+            </div>
+            <div class="game-rating gradient-text fw-semibold">${Number(g.rating).toFixed(1)}</div>
+        </div>
+    `;
+}).join('');
+
+
+
+
 
     // Venues section
     const venueMap = {};
