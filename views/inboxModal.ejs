@@ -37,13 +37,13 @@
       </div>
     </div>
     <div class="tab-pane fade h-100" id="messagesPane" role="tabpanel">
-      <div class="d-flex h-100">
-        <div class="threads list-group flex-shrink-0" style="width:35%; max-height:60vh; overflow:auto;">
+      <% if(!currentThread){ %>
+        <div class="threads list-group list-group-flush w-100" style="max-height:60vh; overflow:auto;">
           <% if (threads.length === 0) { %>
             <div class="text-center text-white p-3">No Messages</div>
           <% } else { %>
             <% threads.forEach(function(t){ const other = t.participants.find(p=> String(p._id||p) !== loggedInUser.id); const last = t.messages[t.messages.length-1]; const unread = t.unreadBy.some(u=> String(u) === loggedInUser.id); %>
-              <a href="#" data-thread="<%= t._id %>" class="thread-link list-group-item list-group-item-action d-flex align-items-center position-relative <%= currentThread && String(currentThread._id)===String(t._id)?'active':'' %>">
+              <a href="#" data-thread="<%= t._id %>" class="thread-link list-group-item list-group-item-action d-flex align-items-center position-relative">
                 <img src="/users/<%= other._id %>/profile-image" class="avatar avatar-sm me-2">
                 <div class="flex-grow-1">
                   <div class="fw-bold"><%= other.username %></div>
@@ -54,8 +54,25 @@
             <% }) %>
           <% } %>
         </div>
-        <div class="conversation flex-grow-1 d-flex flex-column" style="background-color:rgba(255,255,255,0.2);">
-          <% if(currentThread){ %>
+      <% } else { %>
+        <div class="d-flex h-100">
+          <div class="threads list-group list-group-flush flex-shrink-0" style="width:35%; max-height:60vh; overflow:auto;">
+            <% if (threads.length === 0) { %>
+              <div class="text-center text-white p-3">No Messages</div>
+            <% } else { %>
+              <% threads.forEach(function(t){ const other = t.participants.find(p=> String(p._id||p) !== loggedInUser.id); const last = t.messages[t.messages.length-1]; const unread = t.unreadBy.some(u=> String(u) === loggedInUser.id); %>
+                <a href="#" data-thread="<%= t._id %>" class="thread-link list-group-item list-group-item-action d-flex align-items-center position-relative <%= currentThread && String(currentThread._id)===String(t._id)?'active':'' %>">
+                  <img src="/users/<%= other._id %>/profile-image" class="avatar avatar-sm me-2">
+                  <div class="flex-grow-1">
+                    <div class="fw-bold"><%= other.username %></div>
+                    <% if (last) { %><small class="text-muted"><%= last.content.slice(0,40) %></small><% } %>
+                  </div>
+                  <% if(unread){ %><span class="position-absolute top-0 end-0 translate-middle p-1 bg-danger border border-light rounded-circle"></span><% } %>
+                </a>
+              <% }) %>
+            <% } %>
+          </div>
+          <div class="conversation flex-grow-1 d-flex flex-column" style="background-color:rgba(255,255,255,0.2);">
             <div class="flex-grow-1 overflow-auto p-3" id="msgContainer">
               <% currentThread.messages.forEach(function(m){ const isMine = String(m.sender._id||m.sender) === loggedInUser.id; %>
                 <div class="d-flex mb-2 <%= isMine ? 'justify-content-end' : 'justify-content-start' %>">
@@ -70,11 +87,9 @@
               <input type="text" id="messageInput" class="form-control me-2" autocomplete="off" required placeholder="Type message here">
               <button class="btn btn-primary">Send</button>
             </form>
-          <% } else { %>
-            <div class="flex-grow-1 d-flex align-items-center justify-content-center text-white">Select a conversation</div>
-          <% } %>
+          </div>
         </div>
-      </div>
+      <% } %>
     </div>
   </div>
 </div>
