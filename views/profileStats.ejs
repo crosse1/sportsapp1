@@ -123,6 +123,22 @@
             border-radius: 50%;
             object-fit: cover;
         }
+        #gamesTop {
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .top-game-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .game-logo-sm {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -178,11 +194,31 @@
         function renderStats(){
             document.getElementById('gamesCount').textContent = gameEntries.length;
             const gamesTopEl = document.getElementById('gamesTop');
-            const sortedGames = gameEntries.slice().sort((a,b)=>(b.rating||0)-(a.rating||0)).slice(0,3);
+            const sortedGames = gameEntries.slice()
+                .sort((a,b)=>(b.rating||0)-(a.rating||0))
+                .filter(g=>typeof g.rating==='number')
+                .slice(0,3);
+            let prevRating, prevRank;
             gamesTopEl.innerHTML = sortedGames.map((e,i)=>{
                 const g = e.game || {};
-                const name = g.awayTeamName && g.homeTeamName ? `${g.awayTeamName} @ ${g.homeTeamName}` : (g.name||'Game');
-                return `<div class="top-list-item">${ordinal(i+1)}. ${name} - ${e.rating ?? ''}</div>`;
+                let rank=i+1,prefix='';
+                if(i>0 && e.rating===prevRating){ rank=prevRank; prefix='T-'; } else { prevRank=rank; }
+                prevRating=e.rating;
+                const dateObj=new Date(g.startDate||g.StartDate);
+                const dateStr=`${(dateObj.getMonth()+1).toString().padStart(2,'0')}/${dateObj.getDate().toString().padStart(2,'0')}/${dateObj.getFullYear()}`;
+                const awayLogo=g.awayTeam&&g.awayTeam.logos&&g.awayTeam.logos[0]?g.awayTeam.logos[0]:'/images/placeholder.jpg';
+                const homeLogo=g.homeTeam&&g.homeTeam.logos&&g.homeTeam.logos[0]?g.homeTeam.logos[0]:'/images/placeholder.jpg';
+                return `
+                    <div class="top-game-item">
+                        <div class="gradient-text small fw-light">${dateStr}</div>
+                        <div class="d-flex align-items-center justify-content-center flex-wrap gap-1">
+                            <span class="gradient-text fw-semibold">${prefix}${ordinal(rank)}</span>
+                            <img src="${awayLogo}" alt="${g.awayTeamName}" class="game-logo-sm">
+                            <span class="gradient-text">@</span>
+                            <img src="${homeLogo}" alt="${g.homeTeamName}" class="game-logo-sm">
+                            <span class="gradient-text fw-semibold">${e.rating}</span>
+                        </div>
+                    </div>`;
             }).join('');
 
             const venueMap = {};
