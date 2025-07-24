@@ -52,16 +52,16 @@
     <div class="container mt-4 pb-0">
         <ul class="nav nav-tabs profile-tabs" id="profileTabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <a href="/profile/badges" class="nav-link profile-tab <%= activeTab==='badges' ? 'active' : '' %>">Badges</a>
+                <a href="/profileBadges/<%= user._id %>" class="nav-link profile-tab <%= activeTab==='badges' ? 'active' : '' %>">Badges</a>
             </li>
             <li class="nav-item" role="presentation">
-                <a href="/profile/games" class="nav-link profile-tab <%= activeTab==='games' ? 'active' : '' %>">Games</a>
+                <a href="/profileGames/<%= user._id %>" class="nav-link profile-tab <%= activeTab==='games' ? 'active' : '' %>">Games</a>
             </li>
             <li class="nav-item" role="presentation">
-                <a href="/profile/stats" class="nav-link profile-tab <%= activeTab==='stats' ? 'active' : '' %>">Stats</a>
+                <a href="/profileStats/<%= user._id %>" class="nav-link profile-tab <%= activeTab==='stats' ? 'active' : '' %>">Stats</a>
             </li>
             <li class="nav-item" role="presentation">
-                <a href="/profile/waitlist" class="nav-link profile-tab <%= activeTab==='waitlist' ? 'active' : '' %>">Waitlist</a>
+                <a href="/profileWaitlist/<%= user._id %>" class="nav-link profile-tab <%= activeTab==='waitlist' ? 'active' : '' %>">Waitlist</a>
             </li>
         </ul>
     </div>

@@ -109,12 +109,12 @@ app.get('/logout', (req, res) => {
     res.clearCookie('token');
     res.redirect('/login');
 });
-app.get('/thanks', requireAuth, (req, res) => { res.redirect('/profile/badges'); });
-app.get('/profile', requireAuth, (req, res) => { res.redirect('/profile/badges'); });
-app.get('/profile/badges', requireAuth, profileController.profileBadges);
-app.get('/profile/games', requireAuth, profileController.profileGames);
-app.get('/profile/stats', requireAuth, profileController.profileStats);
-app.get('/profile/waitlist', requireAuth, profileController.profileWaitlist);
+app.get('/thanks', requireAuth, (req, res) => { res.redirect('/profileBadges/' + req.user.id); });
+app.get('/profile', requireAuth, (req, res) => { res.redirect('/profileBadges/' + req.user.id); });
+app.get('/profileBadges/:user?', requireAuth, profileController.profileBadges);
+app.get('/profileGames/:user?', requireAuth, profileController.profileGames);
+app.get('/profileStats/:user?', requireAuth, profileController.profileStats);
+app.get('/profileWaitlist/:user?', requireAuth, profileController.profileWaitlist);
 app.get('/profile/edit', requireAuth, profileController.getEditProfile);
 app.post('/profile/edit', requireAuth, profileController.updateProfile);
 app.post('/profile/photo', requireAuth, profileController.uploadProfilePhoto);
@@ -130,7 +130,9 @@ app.get('/users/:id/profile-image', profileController.getProfileImage);
 app.post('/users/:id/follow', requireAuth, profileController.followUser);
 app.post('/users/:id/unfollow', requireAuth, profileController.unfollowUser);
 app.post('/users/clear-new-followers', requireAuth, profileController.clearNewFollowers);
-app.get('/users/:id', requireAuth, profileController.viewUser);
+app.get('/users/:id', requireAuth, (req, res) => {
+    res.redirect('/profileBadges/' + req.params.id);
+});
 app.get('/users/:id/followers', requireAuth, profileController.viewFollowers);
 app.get('/users/:id/following', requireAuth, profileController.viewFollowing);
 

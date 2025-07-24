@@ -198,7 +198,7 @@ exports.updateProfile = [uploadMemory.single('profileImage'), async (req, res, n
         await user.save();
         const token = jwt.sign({ id: user._id, username: user.username, email: user.email, phoneNumber: user.phoneNumber }, 'secret');
         res.cookie('token', token, { httpOnly: true });
-        res.redirect('/profile/badges');
+        res.redirect('/profileBadges/' + user._id);
     } catch (err) {
         next(err);
     }
@@ -240,13 +240,22 @@ exports.getProfileImage = async (req, res, next) => {
 
 exports.profileBadges = async (req, res, next) => {
     try {
-        const user = await User.findById(req.user.id).populate('favoriteTeams');
-        if (!user) return res.redirect('/login');
+        const userId = req.params.user || req.user.id;
+        const profileUser = await User.findById(userId).populate('favoriteTeams');
+        if (!profileUser) return res.redirect('/profileBadges/' + req.user.id);
+        const isCurrentUser = req.user && req.user._id.toString() === profileUser._id.toString();
+        let isFollowing = false, canMessage = false;
+        if (req.user && !isCurrentUser) {
+            const viewer = await User.findById(req.user.id);
+            isFollowing = viewer.following.some(f => String(f) === String(profileUser._id));
+            const followsBack = profileUser.following.some(f => String(f) === String(viewer._id));
+            canMessage = isFollowing && followsBack;
+        }
         res.render('profileBadges', {
-            user,
-            isCurrentUser: true,
-            isFollowing: false,
-            canMessage: false,
+            user: profileUser,
+            isCurrentUser,
+            isFollowing,
+            canMessage,
             viewer: req.user,
             activeTab: 'badges'
         });
@@ -257,13 +266,22 @@ exports.profileBadges = async (req, res, next) => {
 
 exports.profileStats = async (req, res, next) => {
     try {
-        const user = await User.findById(req.user.id).populate('favoriteTeams');
-        if (!user) return res.redirect('/login');
+        const userId = req.params.user || req.user.id;
+        const profileUser = await User.findById(userId).populate('favoriteTeams');
+        if (!profileUser) return res.redirect('/profileStats/' + req.user.id);
+        const isCurrentUser = req.user && req.user._id.toString() === profileUser._id.toString();
+        let isFollowing = false, canMessage = false;
+        if (req.user && !isCurrentUser) {
+            const viewer = await User.findById(req.user.id);
+            isFollowing = viewer.following.some(f => String(f) === String(profileUser._id));
+            const followsBack = profileUser.following.some(f => String(f) === String(viewer._id));
+            canMessage = isFollowing && followsBack;
+        }
         res.render('profileStats', {
-            user,
-            isCurrentUser: true,
-            isFollowing: false,
-            canMessage: false,
+            user: profileUser,
+            isCurrentUser,
+            isFollowing,
+            canMessage,
             viewer: req.user,
             activeTab: 'stats'
         });
@@ -274,9 +292,10 @@ exports.profileStats = async (req, res, next) => {
 
 exports.profileGames = async (req, res, next) => {
     try {
-        const user = await User.findById(req.user.id).populate('favoriteTeams');
-        if (!user) return res.redirect('/login');
-        const gameEntriesRaw = user.gameEntries || [];
+        const userId = req.params.user || req.user.id;
+        const profileUser = await User.findById(userId).populate('favoriteTeams');
+        if (!profileUser) return res.redirect('/profileGames/' + req.user.id);
+        const gameEntriesRaw = profileUser.gameEntries || [];
         let enrichedEntries = [];
         if (gameEntriesRaw.length) {
             enrichedEntries = await enrichGameEntries(gameEntriesRaw);
@@ -286,11 +305,19 @@ exports.profileGames = async (req, res, next) => {
                 return new Date(db) - new Date(da);
             });
         }
+        const isCurrentUser = req.user && req.user._id.toString() === profileUser._id.toString();
+        let isFollowing = false, canMessage = false;
+        if (req.user && !isCurrentUser) {
+            const viewer = await User.findById(req.user.id);
+            isFollowing = viewer.following.some(f => String(f) === String(profileUser._id));
+            const followsBack = profileUser.following.some(f => String(f) === String(viewer._id));
+            canMessage = isFollowing && followsBack;
+        }
         res.render('profileGames', {
-            user,
-            isCurrentUser: true,
-            isFollowing: false,
-            canMessage: false,
+            user: profileUser,
+            isCurrentUser,
+            isFollowing,
+            canMessage,
             viewer: req.user,
             activeTab: 'games',
             gameEntries: enrichedEntries
@@ -302,18 +329,27 @@ exports.profileGames = async (req, res, next) => {
 
 exports.profileWaitlist = async (req, res, next) => {
     try {
-        const user = await User.findById(req.user.id)
+        const userId = req.params.user || req.user.id;
+        const profileUser = await User.findById(userId)
             .populate('favoriteTeams')
             .populate({ path: 'wishlist', populate: ['homeTeam', 'awayTeam'] });
-        if (!user) return res.redirect('/login');
+        if (!profileUser) return res.redirect('/profileWaitlist/' + req.user.id);
+        const isCurrentUser = req.user && req.user._id.toString() === profileUser._id.toString();
+        let isFollowing = false, canMessage = false;
+        if (req.user && !isCurrentUser) {
+            const viewer = await User.findById(req.user.id);
+            isFollowing = viewer.following.some(f => String(f) === String(profileUser._id));
+            const followsBack = profileUser.following.some(f => String(f) === String(viewer._id));
+            canMessage = isFollowing && followsBack;
+        }
         res.render('profileWaitlist', {
-            user,
-            isCurrentUser: true,
-            isFollowing: false,
-            canMessage: false,
+            user: profileUser,
+            isCurrentUser,
+            isFollowing,
+            canMessage,
             viewer: req.user,
             activeTab: 'waitlist',
-            wishlistGames: user.wishlist || []
+            wishlistGames: profileUser.wishlist || []
         });
     } catch (err) {
         next(err);
@@ -513,7 +549,7 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
         user.gameEntries.push(entry);
 
         await user.save();
-        res.redirect('/profile/games');
+        res.redirect('/profileGames/' + user._id);
     } catch(err){
         next(err);
     }
