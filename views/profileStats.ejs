@@ -34,19 +34,33 @@
         }
 
         .stat-block {
-            background-color: rgba(255,255,255,0.15);
-            border: 1px solid rgba(255,255,255,0.3);
+            position: relative;
+            overflow: hidden;
             border-radius: 1rem;
             padding: 1rem;
+            background-color: rgba(255,255,255,0.15);
+            backdrop-filter: blur(8px);
             display: flex;
             flex-direction: column;
             min-height: 8rem;
+        }
+        .stat-block::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            padding: 2px;
+            border-radius: 1rem;
+            background: linear-gradient(45deg,#14b8a6,#7e22ce);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
         }
 
         .stat-title {
             text-align: center;
             margin-bottom: 0.5rem;
-            background: linear-gradient(to right, #14b8a6, #7e22ce);
+            background: linear-gradient(to right,#14b8a6,#7e22ce);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -61,8 +75,37 @@
             gap: 1rem;
         }
 
-        .stat-left, .stat-right {
+        .stat-left,
+        .stat-right {
             flex: 1;
+        }
+
+        .stat-number,
+        .top-list-item {
+            background: linear-gradient(to right,#14b8a6,#7e22ce);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+        }
+
+        .top-list-item {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .top-list-item img {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
         }
     </style>
 </head>
@@ -75,33 +118,85 @@
             <div class="stat-block">
                 <div class="stat-title">Games</div>
                 <div class="stat-content">
-                    <div class="stat-left"></div>
-                    <div class="stat-right"></div>
+                    <div id="gamesCount" class="stat-left stat-number"></div>
+                    <div id="gamesTop" class="stat-right"></div>
                 </div>
             </div>
             <div class="stat-block">
                 <div class="stat-title">Venues</div>
                 <div class="stat-content">
-                    <div class="stat-left"></div>
-                    <div class="stat-right"></div>
+                    <div id="venuesCount" class="stat-left stat-number"></div>
+                    <div id="venuesTop" class="stat-right"></div>
                 </div>
             </div>
             <div class="stat-block">
                 <div class="stat-title">Teams</div>
                 <div class="stat-content">
-                    <div class="stat-left"></div>
-                    <div class="stat-right"></div>
+                    <div id="teamsCount" class="stat-left stat-number"></div>
+                    <div id="teamsTop" class="stat-right"></div>
                 </div>
             </div>
             <div class="stat-block">
                 <div class="stat-title">States</div>
                 <div class="stat-content">
-                    <div class="stat-left"></div>
-                    <div class="stat-right"></div>
+                    <div id="statesCount" class="stat-left stat-number"></div>
+                    <div id="statesTop" class="stat-right"></div>
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+        const gameEntries = <%- JSON.stringify(user.gameEntries || []) %>;
+        const venuesList = <%- JSON.stringify(user.venuesList || []) %>;
+        const teamsList = <%- JSON.stringify(user.teamsList || []) %>;
+
+        function ordinal(n){
+            const s=["th","st","nd","rd"],v=n%100;
+            return n+(s[(v-20)%10]||s[v]||s[0]);
+        }
+
+        function renderStats(){
+            document.getElementById('gamesCount').textContent = gameEntries.length;
+            const gamesTopEl = document.getElementById('gamesTop');
+            const sortedGames = gameEntries.slice().sort((a,b)=>(b.rating||0)-(a.rating||0)).slice(0,3);
+            gamesTopEl.innerHTML = sortedGames.map((e,i)=>{
+                const g = e.game || {};
+                const name = g.awayTeamName && g.homeTeamName ? `${g.awayTeamName} @ ${g.homeTeamName}` : (g.name||'Game');
+                return `<div class="top-list-item">${ordinal(i+1)}. ${name} - ${e.rating ?? ''}</div>`;
+            }).join('');
+
+            const venueMap = {};
+            venuesList.forEach(v=>{ const n=v.name||v; if(!n) return; venueMap[n]=(venueMap[n]||0)+1; });
+            const venueEntries = Object.entries(venueMap).sort((a,b)=>b[1]-a[1]);
+            document.getElementById('venuesCount').textContent = Object.keys(venueMap).length;
+            document.getElementById('venuesTop').innerHTML = venueEntries.slice(0,3).map((v,i)=>`<div class="top-list-item">${ordinal(i+1)}. ${v[0]} - ${v[1]}</div>`).join('');
+
+            const teamMap = {};
+            teamsList.forEach(t=>{ const n=t.school||t; if(!n) return; if(!teamMap[n]) teamMap[n]={count:0,team:t}; teamMap[n].count++; });
+            const teamEntries = Object.values(teamMap).sort((a,b)=>b.count-a.count);
+            document.getElementById('teamsCount').textContent = Object.keys(teamMap).length;
+            let prevCount, prevRank;
+            document.getElementById('teamsTop').innerHTML = teamEntries.slice(0,3).map((item,index)=>{
+                let rank=index+1,prefix='';
+                if(index>0 && item.count===prevCount){ rank=prevRank; prefix='T-'; } else { prevRank=rank; }
+                prevCount=item.count;
+                const logo=item.team&&item.team.logos&&item.team.logos[0]?`<img src="${item.team.logos[0]}" alt="${item.team.school}">`:'';
+                return `<div class="top-list-item">${prefix}${ordinal(rank)}. ${logo} ${item.team.school||item.team} - ${item.count}</div>`;
+            }).join('');
+
+            const stateMap = {};
+            venuesList.forEach(v=>{ const s=v.state||(v.location&&v.location.state); if(!s) return; stateMap[s]=(stateMap[s]||0)+1; });
+            const stateEntries = Object.entries(stateMap).sort((a,b)=>b[1]-a[1]);
+            document.getElementById('statesCount').textContent = Object.keys(stateMap).length;
+            document.getElementById('statesTop').innerHTML = stateEntries.slice(0,3).map((s,i)=>{
+                let prefix='';
+                if(i>0 && s[1]===stateEntries[i-1][1]) prefix='T-';
+                return `<div class="top-list-item">${prefix}${ordinal(i+1)}. ${s[0]} - ${s[1]}</div>`;
+            }).join('');
+        }
+        document.addEventListener('DOMContentLoaded', renderStats);
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
