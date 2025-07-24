@@ -383,6 +383,8 @@
                             <label class="form-label">Comment</label>
                             <textarea class="form-control glass-control" name="comment" rows="3"></textarea>
                         </div>
+                        <input type="hidden" name="teamsList" id="teamsListInput">
+                        <input type="hidden" name="venuesList" id="venuesListInput">
                     </div>
                     <div class="modal-footer border-0">
                         <button type="submit" class="btn btn-primary">Submit</button>
@@ -579,6 +581,8 @@
 
         $(function(){
             const gameSelect = $('#gameSelect');
+            const teamsListInput = $('#teamsListInput');
+            const venuesListInput = $('#venuesListInput');
             function formatGame(option){
                 if(!option.id) return option.text;
                 const homeLogo = option.homeLogo || '/images/placeholder.jpg';
@@ -615,6 +619,9 @@
                             const away = parts[1] || '';
                             return {
                                 id:g.id,
+                                homeTeamId:g.homeTeamId,
+                                awayTeamId:g.awayTeamId,
+                                venueId:g.venueId,
                                 homeTeamName:g.homeTeamName,
                                 awayTeamName:g.awayTeamName,
                                 homeLogo:g.homeLogo,
@@ -640,6 +647,17 @@
             $('#seasonSelect').on('change', function(){
                 const val = $(this).val();
                 gameSelect.prop('disabled', !val).val(null).trigger('change');
+            });
+
+            gameSelect.on('change', function(){
+                const data = gameSelect.select2('data')[0];
+                if(data && data.homeTeamId){
+                    teamsListInput.val(JSON.stringify([data.homeTeamId, data.awayTeamId]));
+                    venuesListInput.val(JSON.stringify([data.venueId]));
+                } else {
+                    teamsListInput.val('');
+                    venuesListInput.val('');
+                }
             });
         });
         const ratingRange=document.getElementById('ratingRange');
