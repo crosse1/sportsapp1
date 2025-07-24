@@ -151,8 +151,36 @@
         .game-logo-sm {
             width: 1.79rem;
             height: 1.79rem;
-            
+
             object-fit: cover;
+        }
+
+        #teamsTop {
+            display: flex;
+            gap: 0.5rem;
+            align-items: stretch;
+        }
+
+        .team-stat-col {
+            flex: 1;
+            border-radius: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            color: #fff;
+        }
+
+        .team-count {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .team-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
         }
     </style>
 </head>
@@ -219,27 +247,25 @@
     // Games section
     document.getElementById('gamesCount').textContent = gameEntries.length;
     const gamesTopEl = document.getElementById('gamesTop');
+    const sortedGames = [...topRatedGames].sort((a,b) => b.rating - a.rating);
+    const ratingCounts = {};
+    sortedGames.forEach(g => {
+        ratingCounts[g.rating] = (ratingCounts[g.rating] || 0) + 1;
+    });
+
     let prevRating = null;
-let displayRank = 0;
-let actualRank = 0;
-let tieCount = 0;
+    let rankIndex = 0;
+    let displayRank = 0;
 
-gamesTopEl.innerHTML = topRatedGames.map((g, i) => {
-    let prefix = '';
-    actualRank++;
+    gamesTopEl.innerHTML = sortedGames.map(g => {
+        rankIndex++;
+        if (g.rating !== prevRating) {
+            displayRank = rankIndex;
+        }
+        const prefix = ratingCounts[g.rating] > 1 ? 'T-' : '';
+        prevRating = g.rating;
 
-    if (g.rating === prevRating) {
-        prefix = 'T-';
-        tieCount++;
-    } else {
-        // Advance the displayed rank by how many were tied before
-        displayRank = actualRank;
-        tieCount = 1;
-    }
-
-    prevRating = g.rating;
-
-    return `
+        return `
         <div class="top-game-item">
             <div class="game-rank gradient-text fw-semibold">${prefix}${displayRank}.</div>
             <div class="game-matchup">
@@ -251,9 +277,8 @@ gamesTopEl.innerHTML = topRatedGames.map((g, i) => {
                 </div>
             </div>
             <div class="game-rating gradient-text fw-semibold">${Number(g.rating).toFixed(1)}</div>
-        </div>
-    `;
-}).join('');
+        </div>`;
+    }).join('');
 
 
 
@@ -282,20 +307,31 @@ gamesTopEl.innerHTML = topRatedGames.map((g, i) => {
     });
     const teamEntries = Object.values(teamMap).sort((a, b) => b.count - a.count);
     document.getElementById('teamsCount').textContent = teamsCount;
-    let prevCount, prevTeamRank;
-    document.getElementById('teamsTop').innerHTML = teamEntries.slice(0, 3).map((item, index) => {
-        let rank = index + 1, prefix = '';
-        if (index > 0 && item.count === prevCount) {
-            rank = prevTeamRank;
-            prefix = 'T-';
-        } else {
-            prevTeamRank = rank;
-        }
-        prevCount = item.count;
-        const logo = item.team && item.team.logos && item.team.logos[0]
-            ? `<img src="${item.team.logos[0]}" alt="${item.team.school}">`
-            : '';
-        return `<div class="top-list-item">${prefix}${ordinal(rank)}. ${logo} ${item.team.school || item.team} - ${item.count}</div>`;
+
+    function useAltColor(team){
+        const alt = team.alternateColor || '';
+        if(!alt) return false;
+        return !/^#?f{3,6}$/i.test(alt.replace(/[^0-9a-f]/gi,''));
+    }
+    function isLight(hex){
+        hex = hex.replace('#','');
+        if(hex.length===3){ hex = hex.split('').map(c=>c+c).join(''); }
+        const r=parseInt(hex.substr(0,2),16), g=parseInt(hex.substr(2,2),16), b=parseInt(hex.substr(4,2),16);
+        const lum=(0.299*r+0.587*g+0.114*b)/255;
+        return lum>0.6;
+    }
+
+    const teamsTopEl = document.getElementById('teamsTop');
+    teamsTopEl.innerHTML = teamEntries.slice(0,3).map(item => {
+        const team = item.team;
+        let bg = useAltColor(team) ? team.alternateColor : (team.color || '#666');
+        if(!bg.startsWith('#')) bg = '#'+bg;
+        const txtColor = isLight(bg) ? '#000' : '#fff';
+        const logo = team.logos && team.logos[0] ? team.logos[0] : '/images/placeholder.jpg';
+        return `<div class="team-stat-col" style="background-color:${bg};color:${txtColor};">
+            <div class="team-count">${item.count}</div>
+            <img src="${logo}" alt="${team.school}" class="team-logo">
+        </div>`;
     }).join('');
 
     // States section
