@@ -1,5 +1,7 @@
 const path = require("path");
 const multer = require("multer");
+const mongoose = require('mongoose');
+const toObjectId = id => mongoose.Types.ObjectId(id);
 
 const memoryStorage = multer.memoryStorage();
 const diskStorage = multer.diskStorage({
@@ -586,10 +588,10 @@ exports.setLocation = async (req, res, next) => {
 
 exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
     try {
-        const { gameId, rating, comment } = req.body;
+        const { gameId, rating, comment, teamsList, venuesList } = req.body;
 
         const user = await User.findById(req.user.id);
-        if(!user) return res.redirect('/login');
+        if (!user) return res.redirect('/login');
 
         const entry = {
             game: gameId,
@@ -598,12 +600,27 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
             image: req.file ? '/uploads/' + req.file.filename : null
         };
 
-        if(!user.gameEntries) user.gameEntries = [];
+        if (!user.gameEntries) user.gameEntries = [];
         user.gameEntries.push(entry);
+
+        // 👇 Parse and dedupe team/venue IDs
+        const newTeams = JSON.parse(teamsList || '[]').map(String);
+const newVenues = JSON.parse(venuesList || '[]').map(String);
+
+user.teamsList = Array.from(new Set([
+  ...(user.teamsList || []).map(String),
+  ...newTeams
+])).map(toObjectId);
+
+user.venuesList = Array.from(new Set([
+  ...(user.venuesList || []).map(String),
+  ...newVenues
+])).map(toObjectId);
 
         await user.save();
         res.redirect('/profileGames/' + user._id);
-    } catch(err){
+    } catch (err) {
         next(err);
     }
 }];
+
