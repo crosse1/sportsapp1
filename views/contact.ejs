@@ -94,7 +94,7 @@
             <input type="text" name="phoneNumber" placeholder="Phone Number" pattern="[0-9]{10}" class="form-control gradient-input mb-3" required>
             <input type="file" name="profileImage" id="profileImageInput" accept="image/*" class="d-none" required>
             <label for="profileImageInput" id="profileImageLabel" class="gradient-input file-input-label mb-3  d-block">Click to add Profile Image</label>
-            <select name="favoriteTeams" class="favoriteTeams-select mb-4" multiple required>
+            <select name="favoriteTeams" class="favoriteTeams-select gradient-input mb-4" multiple required>
                 <% teams.forEach(t => { %>
                     <option value="<%= t._id %>" data-logo="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>"><%= t.school %> <%= t.mascot %></option>
                 <% }); %>

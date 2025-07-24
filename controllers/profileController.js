@@ -472,6 +472,16 @@ exports.viewFollowing = async (req, res, next) => {
     }
 };
 
+exports.clearNewFollowers = async (req, res, next) => {
+    try {
+        await User.findByIdAndUpdate(req.user.id, { newFollowers: [] });
+        req.user.newFollowers = [];
+        res.json({ success: true });
+    } catch (err) {
+        next(err);
+    }
+};
+
 exports.setLocation = async (req, res, next) => {
     try {
         if(!req.user) return res.status(401).json({ error: 'Unauthorized' });

@@ -35,7 +35,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Favorite Teams</label>
-                        <select name="favoriteTeams" class="form-control favoriteTeams-select" multiple required>
+                        <select name="favoriteTeams" class="form-control favoriteTeams-select gradient-input" multiple required>
                             <% teams.forEach(t => { %>
                                 <option value="<%= t._id %>" data-logo="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>" <%= user.favoriteTeams.some(ft => String(ft._id) === String(t._id)) ? 'selected' : '' %>><%= t.school %> <%= t.mascot %></option>
                             <% }); %>
