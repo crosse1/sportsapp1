@@ -10,11 +10,80 @@
         body {
             background: linear-gradient(to right, #7e22ce, #14b8a6);
         }
+
+        .gradient-text {
+    background: linear-gradient(to right, #14b8a6, #7e22ce);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text; /* for Firefox */
+    color: transparent;
+    font-weight: bold;
+}
+
+.select2-container--default .select2-selection--multiple {
+    background: linear-gradient(to right, #14b8a6, #7e22ce);
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background: rgba(255, 255, 255, 0.15); /* translucent for depth */
+    color: white;
+    font-weight: bold;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.5rem;
+    backdrop-filter: blur(10px) saturate(150%);
+    -webkit-backdrop-filter: blur(10px) saturate(150%);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2),
+                inset 0 0 6px rgba(255, 255, 255, 0.1);
+    padding: 6px 10px;
+    margin: 4px 6px 4px 0;
+    transition: all 0.25s ease-in-out;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    color: white;
+    font-weight: bold;
+}
+
+.select2-container--default .select2-results__option {
+    background: linear-gradient(to right, #14b8a6, #7e22ce);
+    color: white;
+    font-weight: bold;
+    border-radius: 0.3rem;
+    margin: 2px 4px;
+    padding: 6px 10px;
+    backdrop-filter: blur(6px);
+}
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background: linear-gradient(to right, #7e22ce, #14b8a6);
+    color: white;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background: rgba(255, 255, 255, 0.1); /* transparent enough for blur */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 0.5rem;
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px); /* Safari */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1), inset 0 0 8px rgba(255,255,255,0.1);
+    color: white;
+    font-weight: 600;
+    padding: 6px 12px;
+    margin: 3px;
+    transition: all 0.2s ease-in-out;
+}
+
     </style>
 </head>
 <body class="d-flex justify-content-center align-items-center min-vh-100">
     <div class="card shadow p-4" style="max-width: 450px; width: 100%;">
-        <h1 class="text-center mb-4">Create Account</h1>
+        <h1 class="text-center mb-4 gradient-text">Create Account</h1>
         <form action="/signup" method="post" enctype="multipart/form-data">
             <% if (typeof error !== 'undefined') { %>
                 <div class="alert alert-danger"><%= error %></div>
@@ -24,12 +93,14 @@
             <input type="password" name="password" placeholder="Password" class="form-control gradient-input mb-3" required>
             <input type="text" name="phoneNumber" placeholder="Phone Number" pattern="[0-9]{10}" class="form-control gradient-input mb-3" required>
             <input type="file" name="profileImage" id="profileImageInput" accept="image/*" class="d-none" required>
-            <label for="profileImageInput" id="profileImageLabel" class="gradient-input file-input-label mb-3 text-center d-block">Profile Image</label>
+            <label for="profileImageInput" id="profileImageLabel" class="gradient-input file-input-label mb-3  d-block">Click to add Profile Image</label>
             <select name="favoriteTeams" class="favoriteTeams-select mb-4" multiple required>
                 <% teams.forEach(t => { %>
                     <option value="<%= t._id %>" data-logo="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>"><%= t.school %> <%= t.mascot %></option>
                 <% }); %>
             </select>
+            <br>
+            <br>
             <button type="submit" class="btn w-100 text-white gradient-glass-btn">Sign Up</button>
         </form>
         <div class="text-center mt-3">
