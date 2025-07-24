@@ -243,7 +243,7 @@ exports.profileBadges = async (req, res, next) => {
         const userId = req.params.user || req.user.id;
         const profileUser = await User.findById(userId).populate('favoriteTeams');
         if (!profileUser) return res.redirect('/profileBadges/' + req.user.id);
-        const isCurrentUser = req.user && req.user._id.toString() === profileUser._id.toString();
+        const isCurrentUser = req.user && req.user.id.toString() === profileUser._id.toString();
         let isFollowing = false, canMessage = false;
         if (req.user && !isCurrentUser) {
             const viewer = await User.findById(req.user.id);
@@ -269,7 +269,7 @@ exports.profileStats = async (req, res, next) => {
         const userId = req.params.user || req.user.id;
         const profileUser = await User.findById(userId).populate('favoriteTeams');
         if (!profileUser) return res.redirect('/profileStats/' + req.user.id);
-        const isCurrentUser = req.user && req.user._id.toString() === profileUser._id.toString();
+        const isCurrentUser = req.user && req.user.id.toString() === profileUser._id.toString();
         let isFollowing = false, canMessage = false;
         if (req.user && !isCurrentUser) {
             const viewer = await User.findById(req.user.id);
@@ -305,7 +305,7 @@ exports.profileGames = async (req, res, next) => {
                 return new Date(db) - new Date(da);
             });
         }
-        const isCurrentUser = req.user && req.user._id.toString() === profileUser._id.toString();
+        const isCurrentUser = req.user && req.user.id.toString() === profileUser._id.toString();
         let isFollowing = false, canMessage = false;
         if (req.user && !isCurrentUser) {
             const viewer = await User.findById(req.user.id);
@@ -334,7 +334,7 @@ exports.profileWaitlist = async (req, res, next) => {
             .populate('favoriteTeams')
             .populate({ path: 'wishlist', populate: ['homeTeam', 'awayTeam'] });
         if (!profileUser) return res.redirect('/profileWaitlist/' + req.user.id);
-        const isCurrentUser = req.user && req.user._id.toString() === profileUser._id.toString();
+        const isCurrentUser = req.user && req.user.id.toString() === profileUser._id.toString();
         let isFollowing = false, canMessage = false;
         if (req.user && !isCurrentUser) {
             const viewer = await User.findById(req.user.id);
