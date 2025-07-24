@@ -1,10 +1,21 @@
+<% const unreadThreads = threads.filter(t => t.unreadBy.some(u => String(u) === loggedInUser.id)); %>
 <div class="modal-header border-0 pb-0">
   <ul class="nav nav-tabs" id="inboxTab" role="tablist">
     <li class="nav-item" role="presentation">
-      <button class="nav-link active" id="followers-tab" data-bs-toggle="tab" data-bs-target="#followersPane" type="button" role="tab">Followers</button>
+      <button class="nav-link active position-relative" id="followers-tab" data-bs-toggle="tab" data-bs-target="#followersPane" type="button" role="tab">
+        Followers
+        <% if(followers.length){ %>
+          <span id="followers-tab-dot" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
+        <% } %>
+      </button>
     </li>
     <li class="nav-item" role="presentation">
-      <button class="nav-link" id="messages-tab" data-bs-toggle="tab" data-bs-target="#messagesPane" type="button" role="tab">Messages</button>
+      <button class="nav-link position-relative" id="messages-tab" data-bs-toggle="tab" data-bs-target="#messagesPane" type="button" role="tab">
+        Messages
+        <% if(unreadThreads.length){ %>
+          <span id="messages-tab-dot" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
+        <% } %>
+      </button>
     </li>
   </ul>
   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

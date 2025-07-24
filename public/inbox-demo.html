@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Inbox Modal Demo</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    .inbox-dot{width:8px;height:8px;}
+  </style>
+</head>
+<body class="p-3">
+  <a href="#" id="navInbox" class="position-relative">
+    <i class="bi bi-envelope-fill fs-3"></i>
+    <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle inbox-dot"></span>
+  </a>
+
+  <div class="modal fade" id="inboxModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header border-0 pb-0">
+          <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active position-relative" id="followers-tab" data-bs-toggle="tab" data-bs-target="#followersPane" type="button" role="tab">
+                Followers
+                <span id="followers-tab-dot" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link position-relative" id="messages-tab" data-bs-toggle="tab" data-bs-target="#messagesPane" type="button" role="tab">
+                Messages
+                <span id="messages-tab-dot" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
+              </button>
+            </li>
+          </ul>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-0">
+          <div class="tab-content">
+            <div class="tab-pane fade show active" id="followersPane" role="tabpanel">
+              <div id="followerList" class="list-group list-group-flush"></div>
+            </div>
+            <div class="tab-pane fade" id="messagesPane" role="tabpanel">
+              <div id="threadList" class="list-group list-group-flush"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const followers=['Alex','Jordan'];
+const threads=[{user:'Jamie',last:'Hey there!',unread:true},{user:'Sam',last:'Got it',unread:false}];
+const inboxIcon=document.getElementById('navInbox');
+const modalEl=document.getElementById('inboxModal');
+const followersList=document.getElementById('followerList');
+const threadList=document.getElementById('threadList');
+const bsModal=new bootstrap.Modal(modalEl);
+const followTabDot=document.getElementById('followers-tab-dot');
+const messagesTabDot=document.getElementById('messages-tab-dot');
+
+followers.forEach(name=>{
+  const item=document.createElement('div');
+  item.className='list-group-item';
+  item.textContent=`${name} followed you`;
+  followersList.appendChild(item);
+});
+if(!followers.length) followTabDot.remove();
+
+threads.forEach(t=>{
+  const a=document.createElement('a');
+  a.href='#';
+  a.className='list-group-item d-flex align-items-center position-relative';
+  a.innerHTML=`<div class="flex-grow-1"><div class="fw-bold">${t.user}</div><small class="text-muted">${t.last}</small></div>`;
+  if(t.unread){
+    const dot=document.createElement('span');
+    dot.className='position-absolute top-0 end-0 translate-middle p-1 bg-danger border border-light rounded-circle';
+    a.appendChild(dot);
+  }
+  threadList.appendChild(a);
+});
+if(!threads.some(t=>t.unread)) messagesTabDot.remove();
+
+if(!followers.length && !threads.some(t=>t.unread)){
+  inboxIcon.querySelector('.inbox-dot').remove();
+}
+
+inboxIcon.addEventListener('click',e=>{
+  e.preventDefault();
+  bsModal.show();
+  const dot=inboxIcon.querySelector('.inbox-dot');
+  if(dot) dot.remove();
+});
+
+modalEl.addEventListener('shown.bs.tab',e=>{
+  if(e.target.id==='followers-tab') followTabDot?.remove();
+  if(e.target.id==='messages-tab') messagesTabDot?.remove();
+});
+</script>
+</body>
+</html>
