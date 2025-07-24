@@ -182,6 +182,7 @@
 
     <script>
         const gameEntries = <%- JSON.stringify(gameEntries || []) %>;
+        const topRatedGames = <%- JSON.stringify(topRatedGames || []) %>;
         const venuesList = <%- JSON.stringify(venuesList || []) %>;
         const teamsList = <%- JSON.stringify(teamsList || []) %>;
         const teamsCount = <%= typeof teamsCount !== 'undefined' ? teamsCount : 0 %>;
@@ -193,14 +194,30 @@
             return n+(s[(v-20)%10]||s[v]||s[0]);
         }
 
+        function formatGameDate(d){
+            if(!d) return '';
+            const date = new Date(d);
+            return new Intl.DateTimeFormat(navigator.language,{dateStyle:'medium'}).format(date);
+        }
+
         function renderStats(){
             document.getElementById('gamesCount').textContent = gameEntries.length;
             const gamesTopEl = document.getElementById('gamesTop');
-            const sortedGames = gameEntries.slice().sort((a,b)=>(b.rating||0)-(a.rating||0)).slice(0,3);
-            gamesTopEl.innerHTML = sortedGames.map((e,i)=>{
-                const g = e.game || {};
-                const name = g.awayTeamName && g.homeTeamName ? `${g.awayTeamName} @ ${g.homeTeamName}` : (g.name||'Game');
-                return `<div class="top-list-item">${ordinal(i+1)}. ${name} - ${e.rating ?? ''}</div>`;
+            let prevRating, prevRank;
+            gamesTopEl.innerHTML = topRatedGames.map((g,i)=>{
+                let rank = i+1, prefix='';
+                if(i>0 && g.rating===prevRating){ rank=prevRank; prefix='T-'; } else { prevRank=rank; }
+                prevRating = g.rating;
+                return `<div class="top-game-item">`+
+                    `<div class="gradient-text small fw-light">${formatGameDate(g.gameDate)}</div>`+
+                    `<div class="d-flex align-items-center justify-content-center flex-wrap gap-1">`+
+                    `<span class="gradient-text fw-semibold">${prefix}${ordinal(rank)}</span>`+
+                    `<img src="${g.awayTeamLogoUrl}" class="game-logo-sm">`+
+                    `<span class="gradient-text">@</span>`+
+                    `<img src="${g.homeTeamLogoUrl}" class="game-logo-sm">`+
+                    `<span class="gradient-text fw-semibold">${g.rating}</span>`+
+                    `</div>`+
+                    `</div>`;
             }).join('');
 
             const venueMap = {};
