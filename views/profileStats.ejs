@@ -112,7 +112,7 @@
 
         .top-list-item {
             font-weight: 600;
-            font-size: 1.25rem;
+            font-size: 1.4rem;
             display: flex;
             align-items: center;
             gap: 0.25rem;
@@ -136,8 +136,8 @@
             align-items: flex-start;
         }
         .game-logo-sm {
-            width: 24px;
-            height: 24px;
+            width: 2rem;
+            height: 2rem;
             border-radius: 50%;
             object-fit: cover;
         }
@@ -185,9 +185,9 @@
         const topRatedGames = <%- JSON.stringify(topRatedGames || []) %>;
         const venuesList = <%- JSON.stringify(venuesList || []) %>;
         const teamsList = <%- JSON.stringify(teamsList || []) %>;
-        const teamsCount = <%= typeof teamsCount !== 'undefined' ? teamsCount : 0 %>;
-        const venuesCount = <%= typeof venuesCount !== 'undefined' ? venuesCount : 0 %>;
-        const statesCount = <%= typeof statesCount !== 'undefined' ? statesCount : 0 %>;
+        const teamsCount = <%- typeof teamsCount !== 'undefined' ? teamsCount : 0 %>;
+        const venuesCount = <%- typeof venuesCount !== 'undefined' ? venuesCount : 0 %>;
+        const statesCount = <%- typeof statesCount !== 'undefined' ? statesCount : 0 %>;
 
         function ordinal(n){
             const s=["th","st","nd","rd"],v=n%100;
@@ -200,56 +200,92 @@
             return new Intl.DateTimeFormat(navigator.language,{dateStyle:'medium'}).format(date);
         }
 
-        function renderStats(){
-            document.getElementById('gamesCount').textContent = gameEntries.length;
-            const gamesTopEl = document.getElementById('gamesTop');
-            let prevRating, prevRank;
-            gamesTopEl.innerHTML = topRatedGames.map((g,i)=>{
-                let rank = i+1, prefix='';
-                if(i>0 && g.rating===prevRating){ rank=prevRank; prefix='T-'; } else { prevRank=rank; }
-                prevRating = g.rating;
-                return `<div class="top-game-item">`+
-                    `<div class="gradient-text small fw-light">${formatGameDate(g.gameDate)}</div>`+
-                    `<div class="d-flex align-items-center justify-content-center flex-wrap gap-1">`+
-                    `<span class="gradient-text fw-semibold">${prefix}${ordinal(rank)}</span>`+
-                    `<img src="${g.awayTeamLogoUrl}" class="game-logo-sm">`+
-                    `<span class="gradient-text">@</span>`+
-                    `<img src="${g.homeTeamLogoUrl}" class="game-logo-sm">`+
-                    `<span class="gradient-text fw-semibold">${g.rating}</span>`+
-                    `</div>`+
-                    `</div>`;
-            }).join('');
+        function renderStats() {
+    console.log({ gameEntries, topRatedGames, venuesList, teamsList });
 
-            const venueMap = {};
-            venuesList.forEach(v=>{ const n=v.name||v; if(!n) return; venueMap[n]=(venueMap[n]||0)+1; });
-            const venueEntries = Object.entries(venueMap).sort((a,b)=>b[1]-a[1]);
-            document.getElementById('venuesCount').textContent = venuesCount;
-            document.getElementById('venuesTop').innerHTML = venueEntries.slice(0,3).map((v,i)=>`<div class="top-list-item">${ordinal(i+1)}. ${v[0]} - ${v[1]}</div>`).join('');
-
-            const teamMap = {};
-            teamsList.forEach(t=>{ const n=t.school||t; if(!n) return; if(!teamMap[n]) teamMap[n]={count:0,team:t}; teamMap[n].count++; });
-            const teamEntries = Object.values(teamMap).sort((a,b)=>b.count-a.count);
-            document.getElementById('teamsCount').textContent = teamsCount;
-            let prevCount, prevRank;
-            document.getElementById('teamsTop').innerHTML = teamEntries.slice(0,3).map((item,index)=>{
-                let rank=index+1,prefix='';
-                if(index>0 && item.count===prevCount){ rank=prevRank; prefix='T-'; } else { prevRank=rank; }
-                prevCount=item.count;
-                const logo=item.team&&item.team.logos&&item.team.logos[0]?`<img src="${item.team.logos[0]}" alt="${item.team.school}">`:'';
-                return `<div class="top-list-item">${prefix}${ordinal(rank)}. ${logo} ${item.team.school||item.team} - ${item.count}</div>`;
-            }).join('');
-
-            const stateMap = {};
-            venuesList.forEach(v=>{ const s=v.state||(v.location&&v.location.state); if(!s) return; stateMap[s]=(stateMap[s]||0)+1; });
-            const stateEntries = Object.entries(stateMap).sort((a,b)=>b[1]-a[1]);
-            document.getElementById('statesCount').textContent = statesCount;
-            document.getElementById('statesTop').innerHTML = stateEntries.slice(0,3).map((s,i)=>{
-                let prefix='';
-                if(i>0 && s[1]===stateEntries[i-1][1]) prefix='T-';
-                return `<div class="top-list-item">${prefix}${ordinal(i+1)}. ${s[0]} - ${s[1]}</div>`;
-            }).join('');
+    // Games section
+    document.getElementById('gamesCount').textContent = gameEntries.length;
+    const gamesTopEl = document.getElementById('gamesTop');
+    let prevRating, prevGameRank;
+    gamesTopEl.innerHTML = topRatedGames.map((g, i) => {
+        let rank = i + 1, prefix = '';
+        if (i > 0 && g.rating === prevRating) {
+            rank = prevGameRank;
+            prefix = 'T-';
+        } else {
+            prevGameRank = rank;
         }
-        document.addEventListener('DOMContentLoaded', renderStats);
+        prevRating = g.rating;
+        return `<div class="top-game-item">` +
+            `<div class="gradient-text small fw-light">${formatGameDate(g.gameDate)}</div>` +
+            `<div class="d-flex align-items-center justify-content-center flex-wrap gap-1">` +
+            `<span class="gradient-text fw-semibold">${prefix}${ordinal(rank)}</span>` +
+            `<img src="${g.awayTeamLogoUrl}" class="game-logo-sm">` +
+            `<span class="gradient-text">@</span>` +
+            `<img src="${g.homeTeamLogoUrl}" class="game-logo-sm">` +
+            `<span class="gradient-text fw-semibold">${g.rating}</span>` +
+            `</div>` +
+            `</div>`;
+    }).join('');
+
+    // Venues section
+    const venueMap = {};
+    venuesList.forEach(v => {
+        const n = v.name || v;
+        if (!n) return;
+        venueMap[n] = (venueMap[n] || 0) + 1;
+    });
+    const venueEntries = Object.entries(venueMap).sort((a, b) => b[1] - a[1]);
+    document.getElementById('venuesCount').textContent = venuesCount;
+    document.getElementById('venuesTop').innerHTML = venueEntries.slice(0, 3).map((v, i) =>
+        `<div class="top-list-item">${ordinal(i + 1)}. ${v[0]} - ${v[1]}</div>`
+    ).join('');
+
+    // Teams section
+    const teamMap = {};
+    teamsList.forEach(t => {
+        const n = t.school || t;
+        if (!n) return;
+        if (!teamMap[n]) teamMap[n] = { count: 0, team: t };
+        teamMap[n].count++;
+    });
+    const teamEntries = Object.values(teamMap).sort((a, b) => b.count - a.count);
+    document.getElementById('teamsCount').textContent = teamsCount;
+    let prevCount, prevTeamRank;
+    document.getElementById('teamsTop').innerHTML = teamEntries.slice(0, 3).map((item, index) => {
+        let rank = index + 1, prefix = '';
+        if (index > 0 && item.count === prevCount) {
+            rank = prevTeamRank;
+            prefix = 'T-';
+        } else {
+            prevTeamRank = rank;
+        }
+        prevCount = item.count;
+        const logo = item.team && item.team.logos && item.team.logos[0]
+            ? `<img src="${item.team.logos[0]}" alt="${item.team.school}">`
+            : '';
+        return `<div class="top-list-item">${prefix}${ordinal(rank)}. ${logo} ${item.team.school || item.team} - ${item.count}</div>`;
+    }).join('');
+
+    // States section
+    const stateMap = {};
+    venuesList.forEach(v => {
+        const s = v.state || (v.location && v.location.state);
+        if (!s) return;
+        stateMap[s] = (stateMap[s] || 0) + 1;
+    });
+    const stateEntries = Object.entries(stateMap).sort((a, b) => b[1] - a[1]);
+    document.getElementById('statesCount').textContent = statesCount;
+    document.getElementById('statesTop').innerHTML = stateEntries.slice(0, 3).map((s, i) => {
+        let prefix = '';
+        if (i > 0 && s[1] === stateEntries[i - 1][1]) prefix = 'T-';
+        return `<div class="top-list-item">${prefix}${ordinal(i + 1)}. ${s[0]} - ${s[1]}</div>`;
+    }).join('');
+}
+
+document.addEventListener('DOMContentLoaded', renderStats);
+
+        console.log("DOMContentLoaded event listener registered");
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
