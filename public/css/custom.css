@@ -573,6 +573,16 @@
   filter:brightness(1.1);
 }
 
+/* Reusable gradient text style */
+.gradient-text{
+  background: linear-gradient(to right,#14b8a6,#7e22ce);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text; /* for Firefox */
+  color:transparent;
+  font-weight:bold;
+}
+
 /* Generic glass style button */
 .glassy-btn{
   background:rgba(255,255,255,0.2);
