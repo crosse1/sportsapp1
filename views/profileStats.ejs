@@ -29,8 +29,8 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 2rem;
         }
 
         .stat-block {
@@ -42,7 +42,7 @@
             backdrop-filter: blur(8px);
             display: flex;
             flex-direction: column;
-            min-height: 8rem;
+            min-height: 12rem;
         }
         .stat-block::before {
             content: '';
@@ -57,8 +57,21 @@
             pointer-events: none;
         }
 
+        .stat-block::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(to bottom, #14b8a6, #7e22ce);
+  z-index: 1;
+}
+
         .stat-title {
-            text-align: center;
+            text-align: left;
+            margin-top: -0.75rem;
             margin-bottom: 0.5rem;
             background: linear-gradient(to right,#14b8a6,#7e22ce);
             -webkit-background-clip: text;
@@ -76,9 +89,12 @@
         }
 
         .stat-left,
-        .stat-right {
-            flex: 1;
-        }
+.stat-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
         .stat-number,
         .top-list-item {
@@ -90,7 +106,7 @@
         }
 
         .stat-number {
-            font-size: 2.5rem;
+            font-size: 6rem;
             font-weight: 800;
         }
 
