@@ -129,12 +129,14 @@ app.get('/users/search', requireAuth, profileController.searchUsers);
 app.get('/users/:id/profile-image', profileController.getProfileImage);
 app.post('/users/:id/follow', requireAuth, profileController.followUser);
 app.post('/users/:id/unfollow', requireAuth, profileController.unfollowUser);
+app.post('/users/clear-new-followers', requireAuth, profileController.clearNewFollowers);
 app.get('/users/:id', requireAuth, profileController.viewUser);
 app.get('/users/:id/followers', requireAuth, profileController.viewFollowers);
 app.get('/users/:id/following', requireAuth, profileController.viewFollowing);
 
 app.get('/messages', requireAuth, messagesController.listThreads);
 app.get('/messages/modal', requireAuth, messagesController.renderModal);
+app.get('/inbox/modal', requireAuth, messagesController.renderInboxModal);
 app.get('/messages/:id', requireAuth, messagesController.viewThread);
 app.post('/messages/start/:id', requireAuth, messagesController.startThread);
 app.post('/messages/:id/send', requireAuth, messagesController.sendMessage);

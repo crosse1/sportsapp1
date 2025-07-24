@@ -695,3 +695,19 @@
   background:linear-gradient(to right,#14b8a6,#7e22ce);
   box-shadow:0 0 0 0.2rem rgba(255,255,255,0.3);
 }
+
+/* Glass style for Select2 multi select choices */
+.select2-container--default .select2-selection--multiple{
+  background:linear-gradient(to right,#14b8a6,#7e22ce);
+  border:1px solid rgba(255,255,255,0.3);
+  backdrop-filter:blur(8px);
+  border-radius:.5rem;
+  padding:.25rem;
+}
+.select2-container--default .select2-selection__choice{
+  background-color:rgba(255,255,255,0.2) !important;
+  border:1px solid rgba(255,255,255,0.4) !important;
+  backdrop-filter:blur(6px);
+  color:#fff !important;
+  font-weight:bold;
+}

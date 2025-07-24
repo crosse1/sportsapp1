@@ -113,3 +113,25 @@ exports.sendMessage = async (req, res, next) => {
         next(err);
     }
 };
+
+exports.renderInboxModal = async (req, res, next) => {
+    try {
+        const threads = await Message.find({ participants: req.user.id })
+            .sort({ lastUpdated: -1 })
+            .populate('participants messages.sender');
+        let currentThread = null;
+        if(req.query.thread){
+            currentThread = threads.find(t => String(t._id) === String(req.query.thread));
+            if(currentThread){
+                currentThread.unreadBy = currentThread.unreadBy.filter(u => String(u) !== req.user.id);
+                await currentThread.save();
+            }
+        }
+        const followers = await User.find({ _id: { $in: req.user.newFollowers || [] } })
+            .select('username profileImage');
+        res.render('inboxModal', { layout:false, threads, currentThread, followers });
+    } catch (err) {
+        next(err);
+    }
+};
+

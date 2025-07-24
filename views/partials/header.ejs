@@ -12,13 +12,10 @@
     </ul>
     <div class="text-nowrap d-flex align-items-center">
       <% if (loggedInUser) { %>
-        <a href="<%= hasNewFollowers ? ('/users/' + newFollowers[0]) : '/messages' %>" id="navMessages" class="me-3 position-relative <%= currentPath.startsWith('/messages') ? 'text-primary' : 'text-body' %>">
+        <a href="#" id="navInbox" data-unread="<%= hasUnreadMessages ? '1' : '' %>" data-new-followers="<%= hasNewFollowers ? '1' : '' %>" class="me-3 position-relative <%= currentPath.startsWith('/messages') ? 'text-primary' : 'text-body' %>">
           <i class="bi bi-envelope-fill fs-4"></i>
-          <% if(hasUnreadMessages){ %>
-            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
-          <% } %>
-          <% if(hasNewFollowers){ %>
-            <span class="position-absolute bottom-0 start-100 translate-middle-x p-1 bg-info border border-light rounded-circle inbox-follower-badge"></span>
+          <% if(hasUnreadMessages || hasNewFollowers){ %>
+            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle inbox-dot"></span>
           <% } %>
         </a>
         <a href="/profile" class="me-3 <%= currentPath.startsWith('/profile') ? 'active-profile' : '' %>">
@@ -33,10 +30,10 @@
     </div>
   </nav>
 </header>
-<div class="modal fade messages-modal" id="messagesModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="inboxModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content"></div>
   </div>
 </div>
-<script src="/js/messagesModal.js"></script>
+<script src="/js/inboxModal.js"></script>
 <script>window.loggedInUser = <%- JSON.stringify(loggedInUser || null) %>;</script>
