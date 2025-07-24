@@ -588,7 +588,7 @@ exports.setLocation = async (req, res, next) => {
 
 exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
     try {
-        const { gameId, rating, comment, teamsList, venuesList } = req.body;
+        const { gameId, rating, comment } = req.body;
 
         const user = await User.findById(req.user.id);
         if (!user) return res.redirect('/login');
@@ -603,19 +603,37 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
         if (!user.gameEntries) user.gameEntries = [];
         user.gameEntries.push(entry);
 
-        // 👇 Parse and dedupe team/venue IDs
-        const newTeams = JSON.parse(teamsList || '[]').map(String);
-const newVenues = JSON.parse(venuesList || '[]').map(String);
+        // Look up the past game to infer teams and venue
+        const pastGame = await PastGame.findById(gameId).lean();
 
-user.teamsList = Array.from(new Set([
-  ...(user.teamsList || []).map(String),
-  ...newTeams
-])).map(toObjectId);
+        const teamsToAdd = [];
+        const venuesToAdd = [];
 
-user.venuesList = Array.from(new Set([
-  ...(user.venuesList || []).map(String),
-  ...newVenues
-])).map(toObjectId);
+        if (pastGame) {
+            if (pastGame.HomeId) {
+                const homeTeam = await Team.findOne({ teamId: pastGame.HomeId }).select('_id');
+                if (homeTeam) teamsToAdd.push(String(homeTeam._id));
+            }
+            if (pastGame.AwayId) {
+                const awayTeam = await Team.findOne({ teamId: pastGame.AwayId }).select('_id');
+                if (awayTeam) teamsToAdd.push(String(awayTeam._id));
+            }
+            if (pastGame.VenueId) {
+                const venue = await Venue.findOne({ venueId: pastGame.VenueId }).select('_id');
+                if (venue) venuesToAdd.push(String(venue._id));
+            }
+        }
+
+        // Dedupe and cast to ObjectId
+        user.teamsList = Array.from(new Set([
+            ...(user.teamsList || []).map(String),
+            ...teamsToAdd
+        ])).map(toObjectId);
+
+        user.venuesList = Array.from(new Set([
+            ...(user.venuesList || []).map(String),
+            ...venuesToAdd
+        ])).map(toObjectId);
 
         await user.save();
         res.redirect('/profileGames/' + user._id);
