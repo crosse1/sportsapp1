@@ -166,11 +166,14 @@
             display: flex;
             gap: 0.5rem;
             align-items: stretch;
+            height: 100%;
+            width: 100%;
+            border-radius: 0.5rem;
+            overflow: hidden;
         }
 
         .team-stat-col {
             flex: 1;
-            border-radius: 0.5rem;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -338,14 +341,23 @@
     }
 
     const teamsTopEl = document.getElementById('teamsTop');
-    teamsTopEl.innerHTML = teamEntries.slice(0,3).map(item => {
+    const topTeams = teamEntries.slice(0, 3);
+    const colors = topTeams.map(item => {
+        const t = item.team;
+        let c = t.alternateColor && t.alternateColor.toLowerCase() !== '#ffffff'
+            ? t.alternateColor : (t.color || '#666');
+        if(!c.startsWith('#')) c = '#' + c;
+        return c;
+    });
+    if(colors.length){
+        const gradient = `linear-gradient(to right, ${colors.join(',')})`;
+        teamsTopEl.style.background = gradient;
+        teamsTopEl.style.borderRadius = '0.5rem';
+    }
+    teamsTopEl.innerHTML = topTeams.map(item => {
         const team = item.team;
-        let bg = team.alternateColor && team.alternateColor.toLowerCase() !== '#ffffff'
-            ? team.alternateColor : (team.color || '#666');
-        if(!bg.startsWith('#')) bg = '#'+bg;
-        const txtColor = isLight(bg) ? '#000' : '#fff';
         const logo = team.logos && team.logos[0] ? team.logos[0] : '/images/placeholder.jpg';
-        return `<div class="team-stat-col" style="background-color:${bg};color:${txtColor};">
+        return `<div class="team-stat-col">
             <div class="team-count">${item.count}</div>
             <img src="${logo}" alt="${team.school}" class="team-logo">
         </div>`;
