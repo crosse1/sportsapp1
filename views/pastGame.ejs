@@ -28,8 +28,10 @@
           <div class="avg-rating-container d-flex justify-content-between align-items-center">
             <div class="avg-label fw-bold">AVG Rating:</div>
             <div class="text-end">
+              <div class="avg-number-wrapper">
               <div class="avg-number fw-bold"><%= average %></div>
               <a href="#" id="toggleReviews" class="avg-reviews-link fw-bold text-decoration-none">(<%= reviewCount %> review<%= reviewCount===1?'':'s' %>)</a>
+              </div>
             </div>
           </div>
           <div id="reviewsSection" class="d-none">

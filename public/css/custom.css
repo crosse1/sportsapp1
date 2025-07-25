@@ -765,24 +765,44 @@
 
 /* Average rating layout on past game page */
 .avg-rating-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.avg-label {
-  font-size: 2rem;
-  white-space: nowrap;
-}
-
-.avg-number {
-  font-size: 4rem;
-  line-height: 1;
-}
-
-.avg-reviews-link {
-  font-size: 0.95rem;
-}
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .avg-label {
+    font-size: 2rem;
+    white-space: nowrap;
+    margin-left: 1rem;
+    color: white;
+  }
+  
+  .avg-number-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin-right: 1rem;
+  }
+  
+  .avg-number {
+    font-size: 5.5rem;
+    line-height: 1;
+    color: white;
+    margin-right:1rem;
+  }
+  
+  .avg-reviews-link {
+    font-size: 0.95rem;
+    color: white;
+    margin-top: 0.05rem;
+    margin-right: 1rem;
+  }
+  
+  .avg-reviews-link:hover {
+    color: grey;
+    cursor: pointer;
+  }
+  
 
 @media (max-width: 576px) {
   .avg-label {
