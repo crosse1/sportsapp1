@@ -37,7 +37,7 @@
             position: relative;
             overflow: hidden;
             border-radius: 1rem;
-            padding: 1rem;
+            
             background-color: rgba(255,255,255,0.15);
             backdrop-filter: blur(8px);
             display: flex;
@@ -71,8 +71,8 @@
 
         .stat-title {
             text-align: left;
-            margin-top: -0.75rem;
-            margin-bottom: 0.5rem;
+            margin-top: 0rem;
+            
             background: linear-gradient(to right,#14b8a6,#7e22ce);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -80,6 +80,7 @@
             color: transparent;
             font-weight: bold;
             font-size: 1.1rem;
+            
         }
 
         .stat-content {
@@ -101,6 +102,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    min-height: 100%; /* force it to fill parent */
+    padding: 0.5rem;
+    border-radius: 0.5rem;
 }
 
         .stat-number,
@@ -184,7 +188,7 @@
         }
 
         .team-count {
-            font-size: 2rem;
+            font-size: 3.5rem;
             font-weight: 700;
         }
 
@@ -216,16 +220,20 @@
                 </div>
             </div>
             <div class="stat-block">
-                <div class="stat-title">Teams</div>
+                
                 <div class="stat-content">
-                    <div id="teamsCount" class="stat-left stat-number"></div>
+                    <div id="teamsCount" class="stat-left stat-number">
+                        <div class="stat-title">Teams</div>
+                    </div>
                     <div id="teamsTop" class="stat-right"></div>
                 </div>
             </div>
             <div class="stat-block">
-                <div class="stat-title">States</div>
+                
                 <div class="stat-content">
-                    <div id="statesCount" class="stat-left stat-number"></div>
+                    <div id="statesCount" class="stat-left stat-number">
+                        <div class="stat-title">States</div>
+                    </div>
                     <div id="statesTop" class="stat-right"></div>
                 </div>
             </div>
@@ -353,6 +361,7 @@
         const gradient = `linear-gradient(to right, ${colors.join(',')})`;
         teamsTopEl.style.background = gradient;
         teamsTopEl.style.borderRadius = '0.5rem';
+        
     }
     teamsTopEl.innerHTML = topTeams.map(item => {
         const team = item.team;
