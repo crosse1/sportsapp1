@@ -751,3 +751,8 @@
   color:#fff !important;
   font-weight:bold;
 }
+
+/* Larger text for past game page */
+.past-game-page {
+  font-size: 1.25rem;
+}
