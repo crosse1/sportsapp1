@@ -157,6 +157,7 @@ app.get('/games/searchGames', gamesController.searchGames);
 app.get('/pastGames/seasons', gamesController.listPastGameSeasons);
 app.get('/pastGames/teams', gamesController.listPastGameTeams);
 app.get('/pastGames/search', gamesController.searchPastGames);
+app.get('/pastGames/:id', gamesController.showPastGame);
 app.get('/games/:id', gamesController.showGame);
 app.post('/games/:id/checkin', gamesController.checkIn);
 app.post('/games/:id/wishlist', requireAuth, gamesController.toggleWishlist);
