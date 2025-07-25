@@ -297,20 +297,40 @@ exports.listPastGameSeasons = async (req, res, next) => {
   }
 };
 
+exports.listPastGameTeams = async (req, res, next) => {
+  try {
+    const season = parseInt(req.query.season);
+    if(isNaN(season)) return res.json([]);
+    const homeIds = await PastGame.distinct('HomeId', { Season: season });
+    const awayIds = await PastGame.distinct('AwayId', { Season: season });
+    const ids = [...new Set([...homeIds, ...awayIds])].filter(Boolean);
+    const teams = await Team.find({ teamId: { $in: ids } })
+      .select('teamId school logos')
+      .sort({ school: 1 })
+      .lean();
+    res.json(teams);
+  } catch(err){
+    next(err);
+  }
+};
+
 exports.searchPastGames = async (req, res, next) => {
   try {
     const season = parseInt(req.query.season);
+    const teamId = parseInt(req.query.teamId);
     const q = req.query.q || '';
     if(isNaN(season)) return res.json([]);
     const match = { Season: season };
-    if(q){
+    if(!isNaN(teamId)){
+      match.$or = [{ HomeId: teamId }, { AwayId: teamId }];
+    } else if(q){
       match.$or = [
         { HomeTeam: { $regex: q, $options: 'i' } },
         { AwayTeam: { $regex: q, $options: 'i' } }
       ];
     }
     const games = await PastGame.find(match)
-      .sort({ StartDate: -1 })
+      .sort({ StartDate: 1 })
       .limit(10)
       .lean();
     const teamIds = [...new Set(games.flatMap(g => [g.HomeId, g.AwayId]))];

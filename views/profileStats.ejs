@@ -485,6 +485,10 @@ document.addEventListener('DOMContentLoaded', renderStats);
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
+        window.existingGameIds = <%- JSON.stringify((user.gameEntries || []).map(e => String(e.game))) %>;
+    </script>
+    <script src="/js/addGameModal.js"></script>
+    <script>
         const searchInput = document.getElementById('searchInput');
         const resultsEl = document.getElementById('searchResults');
         const followBtn = document.getElementById('followBtn');
@@ -603,78 +607,7 @@ document.addEventListener('DOMContentLoaded', renderStats);
                 }
             });
         }
-        $(function(){
-            const gameSelect = $('#gameSelect');
-            function formatGame(option){
-                if(!option.id) return option.text;
-                const homeLogo = option.homeLogo || '/images/placeholder.jpg';
-                const awayLogo = option.awayLogo || '/images/placeholder.jpg';
-                return $(
-                    `<div class="d-flex align-items-center">`+
-                    `<img src="${awayLogo}" style="width:30px;height:30px;border-radius:50%;" class="me-2">`+
-                    `<span>${option.awayTeamName}</span>`+
-                    `<span class="mx-1">vs</span>`+
-                    `<span>${option.homeTeamName}</span>`+
-                    `<img src="${homeLogo}" style="width:30px;height:30px;border-radius:50%;" class="ms-2">`+
-                    `<span class="ms-2 text-white">(${option.scoreDisplay})</span>`+
-                    `</div>`
-                );
-            }
-            gameSelect.select2({
-                dropdownParent: $('#addGameModal'),
-                placeholder:'Search Game',
-                width:'100%',
-                templateResult: formatGame,
-                templateSelection: formatGame,
-                containerCssClass:'glass-select2',
-                dropdownCssClass:'glass-select2',
-                ajax:{
-                    url:'/pastGames/search',
-                    dataType:'json',
-                    delay:250,
-                    data:function(params){ return { q: params.term, season: $('#seasonSelect').val() }; },
-                    processResults:function(data){
-                        return { results: data.map(g=>{
-                            const parts = g.score.split('-');
-                            const home = parts[0] || '';
-                            const away = parts[1] || '';
-                            return {
-                                id:g.id,
-                                homeTeamName:g.homeTeamName,
-                                awayTeamName:g.awayTeamName,
-                                homeLogo:g.homeLogo,
-                                awayLogo:g.awayLogo,
-                                score:g.score,
-                                scoreDisplay:`${away}-${home}`,
-                                text:`${g.awayTeamName} vs ${g.homeTeamName}`
-                            };
-                        }) };
-                    }
-                }
-            });
-            $('#addGameModal').on('shown.bs.modal', function(){
-                if(!$('#seasonSelect option').length){
-                    fetch('/pastGames/seasons').then(r=>r.json()).then(data=>{
-                        const opts = data.map(s=>`<option value="${s}">${s}</option>`).join('');
-                        $('#seasonSelect').append('<option value="">Select season</option>'+opts);
-                    });
-                }
-            });
-            $('#seasonSelect').on('change', function(){
-                const val = $(this).val();
-                gameSelect.prop('disabled', !val).val(null).trigger('change');
-            });
-        });
-        const ratingRange=document.getElementById('ratingRange');
-        const ratingValue=document.getElementById('ratingValue');
-        if(ratingRange){
-            function updateRating(){
-                const val=ratingRange.value;
-                ratingValue.textContent=val;
-            }
-            updateRating();
-            ratingRange.addEventListener('input',updateRating);
-        }
+
     </script>
 </body>
 </html>

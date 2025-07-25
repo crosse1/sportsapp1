@@ -100,6 +100,10 @@
                         <select id="seasonSelect" class="form-select glass-control"></select>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Team</label>
+                        <select id="teamSelect" class="form-select glass-control" disabled></select>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Game</label>
                         <select id="gameSelect" name="gameId" class="form-select glass-control" required disabled></select>
                     </div>
@@ -117,12 +121,15 @@
                         <input type="file" name="photo" class="form-control glass-control">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Comment</label>
-                        <textarea class="form-control glass-control" name="comment" rows="3"></textarea>
+                        <label class="form-label d-flex justify-content-between">
+                            <span>Comment</span>
+                            <small id="commentCounter">0/100</small>
+                        </label>
+                        <textarea id="commentInput" class="form-control glass-control" name="comment" rows="3" maxlength="100"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
-                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <button type="submit" id="submitGameBtn" class="btn btn-primary" disabled>Submit</button>
                 </div>
             </form>
         </div>
