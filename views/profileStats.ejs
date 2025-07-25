@@ -194,6 +194,33 @@
             height: 40px;
             object-fit: contain;
         }
+
+        #statesTop {
+            display: flex;
+            gap: 0.5rem;
+            align-items: stretch;
+            height: 100%;
+            width: 100%;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            background: linear-gradient(to right, #FFD700, #C0C0C0, #CD7F32);
+        }
+
+        .state-stat-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            color: #333;
+            height: 100%;
+        }
+
+        .state-abbr {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -382,11 +409,16 @@
     });
     const stateEntries = Object.entries(stateMap).sort((a, b) => b[1] - a[1]);
     document.getElementById('statesCount').textContent = statesCount;
-    document.getElementById('statesTop').innerHTML = stateEntries.slice(0, 3).map((s, i) => {
-        let prefix = '';
-        if (i > 0 && s[1] === stateEntries[i - 1][1]) prefix = 'T-';
-        return `<div class="top-list-item">${prefix}${ordinal(i + 1)}. ${s[0]} - ${s[1]}</div>`;
-    }).join('');
+    const statesTopEl = document.getElementById('statesTop');
+    statesTopEl.style.background = 'linear-gradient(to right, #FFD700, #C0C0C0, #CD7F32)';
+    statesTopEl.style.borderRadius = '0.5rem';
+    statesTopEl.style.color = '#333';
+    statesTopEl.innerHTML = stateEntries.slice(0, 3).map(s =>
+        `<div class="state-stat-col">
+            <div class="team-count">${s[1]}</div>
+            <div class="state-abbr">${s[0]}</div>
+        </div>`
+    ).join('');
 }
 
 document.addEventListener('DOMContentLoaded', renderStats);
