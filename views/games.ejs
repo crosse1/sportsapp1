@@ -35,7 +35,7 @@
       %>
       <div class="col" data-id="<%= game._id %>" data-distance="<%= typeof game.distance === 'number' ? game.distance.toFixed(1) : '' %>" data-start="<%= game.startDate.toISOString() %>">
         <div class="position-relative">
-          <a href="<%= isPastGame ? '/pastGames/' + game._id : '/games/' + game._id %>">
+          <a href="<%= isPastGame ? '/pastGames/' + game._id : '/games/' + game._id %>" class="game-link">
             <div class="card shadow-sm h-100 game-card p-3 text-center position-relative" data-away-color="<%= awayColor %>" data-home-color="<%= homeColor %>" style="background: linear-gradient(to right, <%= awayColor %>, <%= homeColor %>);">
               <div class="wishlist-wrapper">
                 <div class="wishlist-btn"><i class="bi <%= game.isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i></div>

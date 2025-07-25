@@ -115,6 +115,7 @@ exports.listGames = async (req, res, next) => {
 
     res.render('games', {
       games,
+      isPastGame: false, 
       filters: { team, teamId, date, lat, lng }
     });
   } catch (err) {
