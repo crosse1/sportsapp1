@@ -613,6 +613,22 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
         };
 
         if (!user.gameEntries) user.gameEntries = [];
+
+        const alreadyExists = user.gameEntries.some(e => String(e.game) === String(gameId));
+        if (alreadyExists) {
+            const enrichedEntries = await enrichGameEntries(user.gameEntries);
+            return res.status(400).render('profileGames', {
+                user,
+                isCurrentUser: true,
+                isFollowing: false,
+                canMessage: false,
+                viewer: req.user,
+                activeTab: 'games',
+                gameEntries: enrichedEntries,
+                error: 'You’ve already entered a rating for this game.'
+            });
+        }
+        
         user.gameEntries.push(entry);
 
         // Look up the past game to infer teams and venue
@@ -637,15 +653,15 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
         }
 
         // Dedupe and cast to ObjectId
-        user.teamsList = Array.from(new Set([
-            ...(user.teamsList || []).map(String),
-            ...teamsToAdd
-        ])).map(toObjectId);
-
-        user.venuesList = Array.from(new Set([
-            ...(user.venuesList || []).map(String),
-            ...venuesToAdd
-        ])).map(toObjectId);
+        user.teamsList = [
+            ...(user.teamsList || []),
+            ...teamsToAdd.map(toObjectId)
+        ];
+        
+        user.venuesList = [
+            ...(user.venuesList || []),
+            ...venuesToAdd.map(toObjectId)
+        ];
 
         await user.save();
         res.redirect('/profileGames/' + user._id);
