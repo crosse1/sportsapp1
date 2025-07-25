@@ -297,7 +297,7 @@
                          const homeColor = game.homeTeam && game.homeTeam.color ? game.homeTeam.color : '#ffffff'; %>
                     <div class="col">
                         <div class="position-relative">
-                            <a href="/games/<%= game._id %>" class="wishlist-game-link d-block">
+                            <a href="<%= isPastGame ? '/pastGames/' + game._id : '/games/' + game._id %>">
                                 <div class="card shadow-sm h-100 game-card p-3 text-center position-relative" data-away-color="<%= awayColor %>" data-home-color="<%= homeColor %>" style="background: linear-gradient(to right, <%= awayColor %>, <%= homeColor %>);">
                                     <div class="game-date mb-2" data-start="<%= game.startDate.toISOString() %>"></div>
                                     <div class="d-flex justify-content-between align-items-center position-relative mb-2 px-3">

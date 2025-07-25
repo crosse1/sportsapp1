@@ -401,7 +401,8 @@ exports.profileGames = async (req, res, next) => {
             canMessage,
             viewer: req.user,
             activeTab: 'games',
-            gameEntries: enrichedEntries
+            gameEntries: enrichedEntries,
+            usePastGameLinks: true
         });
     } catch (err) {
         next(err);
@@ -430,7 +431,9 @@ exports.profileWaitlist = async (req, res, next) => {
             canMessage,
             viewer: req.user,
             activeTab: 'waitlist',
-            wishlistGames: profileUser.wishlist || []
+            wishlistGames: profileUser.wishlist || [],
+            
+            usePastGameLinks: false
         });
     } catch (err) {
         next(err);
