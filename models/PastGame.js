@@ -33,6 +33,15 @@ const pastGameSchema = new mongoose.Schema({
       }
     ],
     default: []
+  },
+  comments: {
+    type: [
+      {
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        comment: String
+      }
+    ],
+    default: []
   }
 });
 
