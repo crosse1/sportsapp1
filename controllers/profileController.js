@@ -45,6 +45,20 @@ const PastGame = require('../models/PastGame');
 const Venue = require('../models/Venue');
 const getStateFromCoordinates = require('../lib/stateLookup');
 
+function sanitizeComment(text) {
+    if (!text) return '';
+    const badWords = [
+        'fuck', 'shit', 'damn', 'bitch', 'asshole', 'bastard',
+        'dick', 'crap', 'slut'
+    ];
+    let result = text;
+    for (const word of badWords) {
+        const re = new RegExp(`\\b${word}\\b`, 'gi');
+        result = result.replace(re, match => '*'.repeat(match.length));
+    }
+    return result;
+}
+
 async function enrichGameEntries(entries){
     if(!entries || !entries.length) return [];
     const ids = entries.map(e => e.game).filter(Boolean);
@@ -602,13 +616,15 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
     try {
         const { gameId, rating, comment } = req.body;
 
+        const sanitizedComment = sanitizeComment(comment || '');
+
         const user = await User.findById(req.user.id);
         if (!user) return res.redirect('/login');
 
         const entry = {
             game: gameId,
             rating: parseFloat(rating),
-            comment: comment || null,
+            comment: sanitizedComment || null,
             image: req.file ? '/uploads/' + req.file.filename : null
         };
 
@@ -635,9 +651,18 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
         const pastGameDoc = await PastGame.findById(gameId);
 
         if (pastGameDoc) {
+            let updated = false;
             const rated = pastGameDoc.ratings.some(r => String(r.userId) === String(user._id));
             if (!rated) {
                 pastGameDoc.ratings.push({ userId: user._id, rating: parseFloat(rating) });
+                updated = true;
+            }
+            const reviewed = pastGameDoc.comments.some(c => String(c.userId) === String(user._id));
+            if (!reviewed && sanitizedComment) {
+                pastGameDoc.comments.push({ userId: user._id, comment: sanitizedComment });
+                updated = true;
+            }
+            if (updated) {
                 await pastGameDoc.save();
             }
         }
