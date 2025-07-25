@@ -229,17 +229,23 @@
 }
 
 /* Interactive game link */
-.game-link {
+.game-link,
+.past-game-link,
+.wishlist-game-link {
     display: inline-block;
     text-decoration: none;
     color: inherit;
 }
 
-.game-link .game-card {
+.game-link .game-card,
+.past-game-link .game-card,
+.wishlist-game-link .game-card {
     transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
 }
 
-.game-link:hover .game-card {
+.game-link:hover .game-card,
+.past-game-link:hover .game-card,
+.wishlist-game-link:hover .game-card {
     transform: scale(1.05);
     box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.3);
     filter: brightness(1.05);
