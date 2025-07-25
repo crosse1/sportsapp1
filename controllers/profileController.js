@@ -632,7 +632,17 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
         user.gameEntries.push(entry);
 
         // Look up the past game to infer teams and venue
-        const pastGame = await PastGame.findById(gameId).lean();
+        const pastGameDoc = await PastGame.findById(gameId);
+
+        if (pastGameDoc) {
+            const rated = pastGameDoc.ratings.some(r => String(r.userId) === String(user._id));
+            if (!rated) {
+                pastGameDoc.ratings.push({ userId: user._id, rating: parseFloat(rating) });
+                await pastGameDoc.save();
+            }
+        }
+
+        const pastGame = pastGameDoc ? pastGameDoc.toObject() : null;
 
         const teamsToAdd = [];
         const venuesToAdd = [];
