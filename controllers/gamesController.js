@@ -168,8 +168,8 @@ exports.showGame = async (req, res, next) => {
     const game = await Game.findById(req.params.id)
       .populate('homeTeam')
       .populate('awayTeam');
-    const venue = await Venue.findOne({ venueId: game.venueId });
     if (!game) return res.status(404).render('error', { message: 'Game not found' });
+    const venue = await Venue.findOne({ venueId: game.venueId });
     let homeBgColor = game.homeTeam && game.homeTeam.alternateColor ? game.homeTeam.alternateColor : '#ffffff';
     const awayBgColor = game.awayTeam && game.awayTeam.alternateColor ? game.awayTeam.alternateColor : '#ffffff';
 
