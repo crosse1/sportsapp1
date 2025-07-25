@@ -132,6 +132,27 @@
             border-radius: 50%;
             object-fit: cover;
         }
+        #venuesTop {
+            display: grid;
+            grid-template-columns: 1fr 3fr 1fr;
+            row-gap: 0.5rem;
+            column-gap: 0.5rem;
+            align-items: center;
+        }
+        .venue-name {
+            font-size: 0.9rem;
+            line-height: 1.2;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .venue-count {
+            text-align: right;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
         #gamesTop {
     margin-top: 0.5rem;
     display: grid;
@@ -353,9 +374,21 @@
     });
     const venueEntries = Object.entries(venueMap).sort((a, b) => b[1] - a[1]);
     document.getElementById('venuesCount').textContent = venuesCount;
-    document.getElementById('venuesTop').innerHTML = venueEntries.slice(0, 3).map((v, i) =>
-        `<div class="top-list-item">${ordinal(i + 1)}. ${v[0]} - ${v[1]}</div>`
-    ).join('');
+    const venuesTopEl = document.getElementById('venuesTop');
+    let prevCount = null;
+    let rank = 0;
+    let displayRank = 0;
+    venuesTopEl.innerHTML = venueEntries.slice(0, 9).map(([name, count], i) => {
+        rank++;
+        if (count !== prevCount) displayRank = rank;
+        const prefix = venueEntries.filter(e => e[1] === count).length > 1 ? 'T-' : '';
+        prevCount = count;
+        return `
+            <div class="top-list-item">${prefix}${displayRank}.</div>
+            <div class="venue-name">${name}</div>
+            <div class="venue-count">${count}</div>
+        `;
+    }).join('');
 
     // Teams section
     const teamMap = {};
