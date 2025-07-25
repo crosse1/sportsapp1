@@ -12,7 +12,7 @@
   <div class="container my-4 flex-grow-1">
     <% const average = (game.ratings && game.ratings.length ? (game.ratings.reduce((s,r)=>s+(r.rating||r),0)/game.ratings.length).toFixed(1) : 'N/A'); %>
     <% const reviewCount = reviews ? reviews.length : 0; %>
-    <div class="row g-4 align-items-center">
+    <div class="row g-4 align-items-start">
       <div class="col-md-5">
         <div class="team-diagonal-square mx-auto" style="--homeColor:<%= homeBgColor %>; --awayColor:<%= awayBgColor %>">
           <div class="triangle away-bg" style="background: var(--awayColor); clip-path: polygon(0 0, 100% 0, 0 100%);">
@@ -60,18 +60,26 @@
       <div class="col-md-7 text-white text-center text-md-start">
         <% const awayLogo = (game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0]) ? game.awayTeam.logos[0] : '/images/placeholder.jpg'; %>
         <% const homeLogo = (game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0]) ? game.homeTeam.logos[0] : '/images/placeholder.jpg'; %>
-        <div class="game-score-grid mb-3">
-          <div><img src="<%= awayLogo %>" alt="<%= game.AwayTeam || game.awayTeamName %>"></div>
-          <div></div>
-          <div><img src="<%= homeLogo %>" alt="<%= game.HomeTeam || game.homeTeamName %>"></div>
-          <div class="fw-bold"><%= game.AwayTeam || game.awayTeamName %></div>
-          <div class="at-symbol">@</div>
-          <div class="fw-bold"><%= game.HomeTeam || game.homeTeamName %></div>
-          <div class="fs-4 fw-bold"><%= game.AwayPoints ?? game.awayPoints %></div>
-          <div></div>
-          <div class="fs-4 fw-bold"><%= game.HomePoints ?? game.homePoints %></div>
+        <% const dateObj = new Date(game.startDate || game.StartDate); %>
+        <div class="d-flex align-items-start mb-2">
+          <div class="me-3 text-start venue-date">
+            <div class="venue-name"><%= (venue && venue.name) ? venue.name : (game.Venue || game.venue) %></div>
+            <div class="game-date"><%= (dateObj.getMonth() + 1).toString().padStart(2,'0') %>/<%= dateObj.getDate().toString().padStart(2,'0') %>/<%= dateObj.getFullYear() %></div>
+          </div>
+          <div class="flex-grow-1">
+            <div class="game-score-grid mb-3">
+              <div><img class="score-logo" src="<%= awayLogo %>" alt="<%= game.AwayTeam || game.awayTeamName %>"></div>
+              <div></div>
+              <div><img class="score-logo" src="<%= homeLogo %>" alt="<%= game.HomeTeam || game.homeTeamName %>"></div>
+              <div class="team-name-large fw-bold"><%= game.AwayTeam || game.awayTeamName %></div>
+              <div class="at-symbol">@</div>
+              <div class="team-name-large fw-bold"><%= game.HomeTeam || game.homeTeamName %></div>
+              <div class="score-number fw-bold"><%= game.AwayPoints ?? game.awayPoints %></div>
+              <div></div>
+              <div class="score-number fw-bold"><%= game.HomePoints ?? game.homePoints %></div>
+            </div>
+          </div>
         </div>
-        <p class="mb-1"><%= game.Venue || game.venue %></p>
       </div>
     </div>
   </div>

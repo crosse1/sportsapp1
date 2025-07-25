@@ -812,3 +812,48 @@
     font-size: 3rem;
   }
 }
+
+/* Past game score scaling */
+.past-game-page .score-logo {
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.8);
+}
+
+.past-game-page .team-name-large {
+  font-size: 1.8rem;
+}
+
+.past-game-page .score-number {
+  font-size: 2.7rem;
+}
+
+.past-game-page .venue-name {
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+.past-game-page .game-date {
+  font-size: 1rem;
+}
+
+@media (max-width: 576px) {
+  .past-game-page .score-logo {
+    width: 72px;
+    height: 72px;
+  }
+  .past-game-page .team-name-large {
+    font-size: 1.25rem;
+  }
+  .past-game-page .score-number {
+    font-size: 1.8rem;
+  }
+  .past-game-page .venue-name {
+    font-size: 1.1rem;
+  }
+  .past-game-page .game-date {
+    font-size: 0.85rem;
+  }
+}
