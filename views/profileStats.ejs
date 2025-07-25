@@ -245,9 +245,22 @@
     console.log({ gameEntries, topRatedGames, venuesList, teamsList });
 
     // Games section
-    document.getElementById('gamesCount').textContent = gameEntries.length;
+    const validGames = [];
+    const seenGameIds = new Set();
+    for (const entry of gameEntries) {
+        const g = entry && entry.game;
+        if (!g || !g._id || seenGameIds.has(g._id)) continue;
+        seenGameIds.add(g._id);
+        validGames.push(entry);
+    }
+    document.getElementById('gamesCount').textContent = validGames.length;
+
     const gamesTopEl = document.getElementById('gamesTop');
-    const sortedGames = [...topRatedGames].sort((a,b) => b.rating - a.rating);
+    const sortedGames = [...topRatedGames]
+        .filter(g => g && typeof g.rating === 'number')
+        .sort((a, b) => b.rating - a.rating)
+        .slice(0, 3);
+
     const ratingCounts = {};
     sortedGames.forEach(g => {
         ratingCounts[g.rating] = (ratingCounts[g.rating] || 0) + 1;
@@ -300,19 +313,14 @@
     // Teams section
     const teamMap = {};
     teamsList.forEach(t => {
-        const n = t.school || t;
-        if (!n) return;
-        if (!teamMap[n]) teamMap[n] = { count: 0, team: t };
-        teamMap[n].count++;
+        if (!t || !t._id) return;
+        const id = t._id;
+        if (!teamMap[id]) teamMap[id] = { count: 0, team: t };
+        teamMap[id].count++;
     });
     const teamEntries = Object.values(teamMap).sort((a, b) => b.count - a.count);
-    document.getElementById('teamsCount').textContent = teamsCount;
+    document.getElementById('teamsCount').textContent = Object.keys(teamMap).length;
 
-    function useAltColor(team){
-        const alt = team.alternateColor || '';
-        if(!alt) return false;
-        return !/^#?f{3,6}$/i.test(alt.replace(/[^0-9a-f]/gi,''));
-    }
     function isLight(hex){
         hex = hex.replace('#','');
         if(hex.length===3){ hex = hex.split('').map(c=>c+c).join(''); }
@@ -324,7 +332,8 @@
     const teamsTopEl = document.getElementById('teamsTop');
     teamsTopEl.innerHTML = teamEntries.slice(0,3).map(item => {
         const team = item.team;
-        let bg = useAltColor(team) ? team.alternateColor : (team.color || '#666');
+        let bg = team.alternateColor && team.alternateColor.toLowerCase() !== '#ffffff'
+            ? team.alternateColor : (team.color || '#666');
         if(!bg.startsWith('#')) bg = '#'+bg;
         const txtColor = isLight(bg) ? '#000' : '#fff';
         const logo = team.logos && team.logos[0] ? team.logos[0] : '/images/placeholder.jpg';
