@@ -254,6 +254,36 @@
     font-weight: bold;
 }
 
+/* Venue label overlay for profile games */
+.venue-overlay{
+  position:absolute;
+  top:0.25rem;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:0.75rem;
+  color:#fff;
+  text-align:center;
+  width:100%;
+  pointer-events:none;
+}
+
+/* Past game score grid */
+.game-score-grid{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  grid-template-rows:auto auto auto;
+  gap:0.25rem;
+  align-items:center;
+}
+
+.game-score-grid img{
+  width:60px;
+  height:60px;
+  object-fit:cover;
+  border-radius:50%;
+  border:2px solid rgba(255,255,255,0.8);
+}
+
 /* Game listing diagonal logos */
 .game-diagonal-square {
     position: relative;
