@@ -25,7 +25,13 @@
           </div>
         </div>
         <div class="mt-3 text-white text-center text-md-start">
-          <p class="mb-1">Average Rating: <%= average %> <a href="#" id="toggleReviews" class="text-decoration-none text-white">(<%= reviewCount %> review<%= reviewCount===1?'':'s' %>)</a></p>
+          <div class="avg-rating-container d-flex justify-content-between align-items-center">
+            <div class="avg-label fw-bold">AVG Rating:</div>
+            <div class="text-end">
+              <div class="avg-number fw-bold"><%= average %></div>
+              <a href="#" id="toggleReviews" class="avg-reviews-link fw-bold text-decoration-none">(<%= reviewCount %> review<%= reviewCount===1?'':'s' %>)</a>
+            </div>
+          </div>
           <div id="reviewsSection" class="d-none">
             <div id="reviewList">
               <% if(reviews && reviews.length){ reviews.forEach(function(r, idx){ %>
