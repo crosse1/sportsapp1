@@ -69,43 +69,40 @@
   z-index: 1;
 }
 
-        .stat-title {
-            text-align: left;
-            margin-top: 0rem;
-            
-            background: linear-gradient(to right,#14b8a6,#7e22ce);
+        .stat-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-right {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 100%;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+        }
+
+        .stat-label {
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-top: 0.25rem;
+            background: linear-gradient(to right, #14b8a6, #7e22ce);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             color: transparent;
-            font-weight: bold;
-            font-size: 1.1rem;
-            
         }
-
         .stat-content {
             flex: 1;
             display: flex;
             gap: 1rem;
         }
-
-        .stat-left,
-.stat-right {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.stat-right {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 100%; /* force it to fill parent */
-    padding: 0.5rem;
-    border-radius: 0.5rem;
-}
 
         .stat-number,
         .top-list-item {
@@ -206,33 +203,37 @@
     <div class="container my-4 flex-grow-1">
         <div class="stats-grid">
             <div class="stat-block">
-                <div class="stat-title">Games</div>
                 <div class="stat-content">
-                    <div id="gamesCount" class="stat-left stat-number"></div>
+                    <div class="stat-left">
+                        <div id="gamesCount" class="stat-number"></div>
+                        <div class="stat-label">Games</div>
+                    </div>
                     <div id="gamesTop" class="stat-right"></div>
                 </div>
             </div>
             <div class="stat-block">
-                <div class="stat-title">Venues</div>
                 <div class="stat-content">
-                    <div id="venuesCount" class="stat-left stat-number"></div>
+                    <div class="stat-left">
+                        <div id="venuesCount" class="stat-number"></div>
+                        <div class="stat-label">Venues</div>
+                    </div>
                     <div id="venuesTop" class="stat-right"></div>
                 </div>
             </div>
             <div class="stat-block">
-                
                 <div class="stat-content">
-                    <div id="teamsCount" class="stat-left stat-number">
-                        <div class="stat-title">Teams</div>
+                    <div class="stat-left">
+                        <div id="teamsCount" class="stat-number"></div>
+                        <div class="stat-label">Teams</div>
                     </div>
                     <div id="teamsTop" class="stat-right"></div>
                 </div>
             </div>
             <div class="stat-block">
-                
                 <div class="stat-content">
-                    <div id="statesCount" class="stat-left stat-number">
-                        <div class="stat-title">States</div>
+                    <div class="stat-left">
+                        <div id="statesCount" class="stat-number"></div>
+                        <div class="stat-label">States</div>
                     </div>
                     <div id="statesTop" class="stat-right"></div>
                 </div>
