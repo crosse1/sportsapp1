@@ -220,26 +220,30 @@
         }
 
         #statesTop {
-            display: flex;
-            gap: 0.5rem;
-            align-items: stretch;
-            justify-content: space-between;
-            height: 100%;
-            width: 100%;
-            border-radius: 0.5rem;
-            overflow: hidden;
-        }
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start; /* <-- fix this */
+    align-items: stretch;
+    width: 100%;
+    height: 100%;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    text-align: center;
+    gap: 0.5rem; /* optional: adds space between items */
+}
 
-        .state-stat-col {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.5rem;
-            color: #ffffff;
-            height: 100%;
-        }
+.state-stat-col {
+    flex: 0 0 33.33%;
+    max-width: 33.33%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    color: #ffffff;
+    height: 100%;
+    text-align: center;
+}
 
         .state-abbr {
             font-size: 1.5rem;
