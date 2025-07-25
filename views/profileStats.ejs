@@ -135,9 +135,12 @@
         #venuesTop {
             display: grid;
             grid-template-columns: 1fr 3fr 1fr;
+            grid-template-rows: repeat(3, 1fr);
             row-gap: 0.5rem;
             column-gap: 0.5rem;
             align-items: center;
+            align-content: start;
+            min-height: 12rem;
         }
 
         .venue-count {
@@ -220,11 +223,11 @@
             display: flex;
             gap: 0.5rem;
             align-items: stretch;
+            justify-content: space-between;
             height: 100%;
             width: 100%;
             border-radius: 0.5rem;
             overflow: hidden;
-            background: linear-gradient(to right, #FFD700, #C0C0C0, #CD7F32);
         }
 
         .state-stat-col {
@@ -379,7 +382,7 @@
 let rank = 0;
 let displayVenueRank = 0; // renamed
 
-venuesTopEl.innerHTML = venueEntries.slice(0, 9).map(([name, count], i) => {
+venuesTopEl.innerHTML = venueEntries.slice(0, 3).map(([name, count], i) => {
     rank++;
     if (count !== prevCount) displayVenueRank = rank;
     const prefix = venueEntries.filter(e => e[1] === count).length > 1 ? 'T-' : '';
@@ -444,15 +447,29 @@ venuesTopEl.innerHTML = venueEntries.slice(0, 9).map(([name, count], i) => {
     const stateEntries = Object.entries(stateMap).sort((a, b) => b[1] - a[1]);
     document.getElementById('statesCount').textContent = statesCount;
     const statesTopEl = document.getElementById('statesTop');
-    statesTopEl.style.background = 'linear-gradient(to right, #FFD700, #C0C0C0, #CD7F32)';
     statesTopEl.style.borderRadius = '0.5rem';
     statesTopEl.style.color = '#333';
-    statesTopEl.innerHTML = stateEntries.slice(0, 3).map(s =>
-        `<div class="state-stat-col">
-            <div class="team-count">${s[1]}</div>
-            <div class="state-abbr">${s[0]}</div>
-        </div>`
-    ).join('');
+
+    if (stateEntries.length === 0) {
+        statesTopEl.style.background = 'none';
+        statesTopEl.innerHTML = '';
+    } else {
+        let gradient;
+        if (stateEntries.length === 1) {
+            gradient = 'linear-gradient(to right, #FFD700, white)';
+        } else if (stateEntries.length === 2) {
+            gradient = 'linear-gradient(to right, #FFD700, #C0C0C0, white)';
+        } else {
+            gradient = 'linear-gradient(to right, #FFD700, #C0C0C0, #CD7F32)';
+        }
+        statesTopEl.style.background = gradient;
+        statesTopEl.innerHTML = stateEntries.slice(0, 3).map(s =>
+            `<div class="state-stat-col">
+                <div class="team-count">${s[1]}</div>
+                <div class="state-abbr">${s[0]}</div>
+            </div>`
+        ).join('');
+    }
 }
 
 document.addEventListener('DOMContentLoaded', renderStats);
