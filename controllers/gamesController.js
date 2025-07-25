@@ -352,3 +352,45 @@ exports.searchPastGames = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.showPastGame = async (req, res, next) => {
+  try {
+    const game = await PastGame.findById(req.params.id).lean();
+    if (!game) return res.status(404).render('error', { message: 'Game not found' });
+
+    const teams = await Team.find({ teamId: { $in: [game.HomeId, game.AwayId] } });
+    const teamMap = {};
+    teams.forEach(t => { teamMap[t.teamId] = t; });
+    game.homeTeam = teamMap[game.HomeId] || null;
+    game.awayTeam = teamMap[game.AwayId] || null;
+
+    const venue = await Venue.findOne({ venueId: game.VenueId });
+
+    let homeBgColor = game.homeTeam && game.homeTeam.alternateColor ? game.homeTeam.alternateColor : '#ffffff';
+    const awayBgColor = game.awayTeam && game.awayTeam.alternateColor ? game.awayTeam.alternateColor : '#ffffff';
+
+    if (game.homeTeam && game.awayTeam && game.homeTeam.alternateColor && game.awayTeam.alternateColor) {
+      const diff = colorDistance(hexToRgb(game.homeTeam.alternateColor), hexToRgb(game.awayTeam.alternateColor));
+      if (diff < 60 && game.homeTeam.color) {
+        homeBgColor = game.homeTeam.color;
+      }
+    }
+
+    const ratingMap = {};
+    (game.ratings || []).forEach(r => { ratingMap[String(r.userId)] = r.rating; });
+    const userIds = (game.comments || []).map(c => c.userId);
+    const users = await require('../models/users').find({ _id: { $in: userIds } }).select('username');
+    const userMap = {};
+    users.forEach(u => { userMap[String(u._id)] = u.username; });
+    const reviews = (game.comments || []).map(c => ({
+      userId: c.userId,
+      username: userMap[String(c.userId)] || 'User',
+      comment: c.comment,
+      rating: ratingMap[String(c.userId)] || null
+    }));
+
+    res.render('pastGame', { game, homeBgColor, awayBgColor, reviews, venue });
+  } catch(err){
+    next(err);
+  }
+};
