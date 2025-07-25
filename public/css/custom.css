@@ -762,3 +762,33 @@
 .past-game-page {
   font-size: 1.25rem;
 }
+
+/* Average rating layout on past game page */
+.avg-rating-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.avg-label {
+  font-size: 2rem;
+  white-space: nowrap;
+}
+
+.avg-number {
+  font-size: 4rem;
+  line-height: 1;
+}
+
+.avg-reviews-link {
+  font-size: 0.95rem;
+}
+
+@media (max-width: 576px) {
+  .avg-label {
+    font-size: 1.5rem;
+  }
+  .avg-number {
+    font-size: 3rem;
+  }
+}
