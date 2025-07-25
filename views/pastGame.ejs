@@ -12,16 +12,24 @@
   <div class="container my-4 flex-grow-1">
     <% const average = (game.ratings && game.ratings.length ? (game.ratings.reduce((s,r)=>s+(r.rating||r),0)/game.ratings.length).toFixed(1) : 'N/A'); %>
     <% const reviewCount = reviews ? reviews.length : 0; %>
+    <% const dateObj = new Date(game.startDate || game.StartDate); %>
+    <% const gameDateString = dateObj.toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }); %>
     <div class="row g-4 align-items-start">
       <div class="col-md-5">
-        <div class="team-diagonal-square mx-auto" style="--homeColor:<%= homeBgColor %>; --awayColor:<%= awayBgColor %>">
-          <div class="triangle away-bg" style="background: var(--awayColor); clip-path: polygon(0 0, 100% 0, 0 100%);">
-            <img src="<%= game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0] ? game.awayTeam.logos[0] : '/images/placeholder.jpg' %>"
-                 alt="<%= game.AwayTeam || game.awayTeamName %>" class="team-logo-detail away-logo">
+        <div class="position-relative d-inline-block logo-wrapper">
+          <div class="team-diagonal-square mx-auto" style="--homeColor:<%= homeBgColor %>; --awayColor:<%= awayBgColor %>">
+            <div class="triangle away-bg" style="background: var(--awayColor); clip-path: polygon(0 0, 100% 0, 0 100%);">
+              <img src="<%= game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0] ? game.awayTeam.logos[0] : '/images/placeholder.jpg' %>"
+                   alt="<%= game.AwayTeam || game.awayTeamName %>" class="team-logo-detail away-logo">
+            </div>
+            <div class="triangle home-bg" style="background: var(--homeColor); clip-path: polygon(100% 0, 100% 100%, 0 100%);">
+              <img src="<%= game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0] ? game.homeTeam.logos[0] : '/images/placeholder.jpg' %>"
+                   alt="<%= game.HomeTeam || game.homeTeamName %>" class="team-logo-detail home-logo">
+            </div>
           </div>
-          <div class="triangle home-bg" style="background: var(--homeColor); clip-path: polygon(100% 0, 100% 100%, 0 100%);">
-            <img src="<%= game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0] ? game.homeTeam.logos[0] : '/images/placeholder.jpg' %>"
-                 alt="<%= game.HomeTeam || game.homeTeamName %>" class="team-logo-detail home-logo">
+          <div class="venue-date-overlay position-absolute top-0 start-100 ms-3 text-start">
+            <div class="venue-name fw-bold text-white"><%= (venue && venue.name) || game.Venue || game.venue %></div>
+            <div class="game-date fw-bold text-white"><%= gameDateString %></div>
           </div>
         </div>
         <div class="mt-3 text-white text-center text-md-start">
@@ -40,10 +48,12 @@
                 <div class="row review-item <%= idx>=3 ? 'd-none' : '' %> align-items-center mb-3">
                   <div class="col-3 col-md-2 text-center">
                     <img src="/users/<%= r.userId %>/profile-image" class="avatar avatar-sm mb-1">
-                    <div><%= r.username %></div>
                   </div>
-                  <div class="col-6 col-md-8"><%= r.comment %></div>
-                  <div class="col-3 col-md-2 fw-bold text-end"><%= r.rating %></div>
+                  <div class="col-6 col-md-8">
+                    <div class="comment-username fw-bold text-white mb-1"><%= r.username %></div>
+                    <%= r.comment %>
+                  </div>
+                  <div class="col-3 col-md-2 fw-bold text-end rating-value"><%= r.rating %></div>
                 </div>
               <% }) } else { %>
                 <p class="text-white">No reviews yet.</p>
@@ -60,7 +70,6 @@
       <div class="col-md-7 text-white text-center text-md-start d-flex align-items-center">
         <% const awayLogo = (game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0]) ? game.awayTeam.logos[0] : '/images/placeholder.jpg'; %>
         <% const homeLogo = (game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0]) ? game.homeTeam.logos[0] : '/images/placeholder.jpg'; %>
-        <% const dateObj = new Date(game.startDate || game.StartDate); %>
         <div class="d-flex align-items-center justify-content-center matchup-container mb-2 w-100">
           
           <div class="flex-grow-1">
