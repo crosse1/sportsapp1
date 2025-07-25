@@ -62,10 +62,7 @@
         <% const homeLogo = (game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0]) ? game.homeTeam.logos[0] : '/images/placeholder.jpg'; %>
         <% const dateObj = new Date(game.startDate || game.StartDate); %>
         <div class="d-flex align-items-center justify-content-center matchup-container mb-2 w-100">
-          <div class="me-3 text-start venue-date">
-            <div class="venue-name"><%= (venue && venue.name) ? venue.name : (game.Venue || game.venue) %></div>
-            <div class="game-date"><%= (dateObj.getMonth() + 1).toString().padStart(2,'0') %>/<%= dateObj.getDate().toString().padStart(2,'0') %>/<%= dateObj.getFullYear() %></div>
-          </div>
+          
           <div class="flex-grow-1">
             <div class="game-score-grid mb-3">
               <div class="team-column text-center">

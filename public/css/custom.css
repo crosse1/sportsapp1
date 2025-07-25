@@ -253,6 +253,7 @@
 
 .at-symbol {
     color: #fff;
+    font-size:3rem;
 }
 
 .score-text {
@@ -278,7 +279,9 @@
   display:flex;
   justify-content:center;
   align-items:center;
-  gap:2rem;
+  gap:4rem;
+  margin-top: 12rem;
+  margin-left: -6rem;
   flex-wrap:wrap;
 }
 
