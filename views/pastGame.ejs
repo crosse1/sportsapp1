@@ -69,8 +69,9 @@
         <% const awayLogo = (game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0]) ? game.awayTeam.logos[0] : '/images/placeholder.jpg'; %>
         <% const homeLogo = (game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0]) ? game.homeTeam.logos[0] : '/images/placeholder.jpg'; %>
         <div class="venue-date-info d-flex justify-content-center mb-2 w-100">
-          <div class="venue-name fw-bold text-white me-2"><%= (venue && venue.name) || game.Venue || game.venue %></div>
-          <div class="game-date fw-bold text-white"><%= gameDateString %></div>
+          
+          
+          
         </div>
         <div class="d-flex align-items-center justify-content-center matchup-container mb-2 w-100">
           
@@ -81,7 +82,13 @@
                 <div class="team-name-large fw-bold"><%= game.AwayTeam || game.awayTeamName %></div>
                 <div class="score-number fw-bold"><%= game.AwayPoints ?? game.awayPoints %></div>
               </div>
-              <div class="at-symbol d-flex align-items-center justify-content-center">@</div>
+              <div class="at-symbol d-flex flex-column align-items-center justify-content-center">
+                <div class="game-date fw-bold text-white"><%= gameDateString %></div>
+                <div class="venue-name fw-bold text-white me-2"><%= (venue && venue.name) || game.Venue || game.venue %></div>
+                
+                @
+              </div>
+              
               <div class="team-column text-center">
                 <img class="score-logo" src="<%= homeLogo %>" alt="<%= game.HomeTeam || game.homeTeamName %>">
                 <div class="team-name-large fw-bold"><%= game.HomeTeam || game.homeTeamName %></div>

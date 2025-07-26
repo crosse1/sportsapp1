@@ -872,12 +872,14 @@
 }
 
 .past-game-page .venue-name {
-  font-size: 1.4rem;
+  font-size: 0.6rem;
   font-weight: bold;
+
 }
 
 .past-game-page .game-date {
   font-size: 1rem;
+  
 }
 
 @media (max-width: 576px) {
