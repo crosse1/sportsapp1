@@ -27,10 +27,6 @@
                    alt="<%= game.HomeTeam || game.homeTeamName %>" class="team-logo-detail home-logo">
             </div>
           </div>
-          <div class="venue-date-overlay position-absolute top-0 start-100 ms-3 text-start">
-            <div class="venue-name fw-bold text-white"><%= (venue && venue.name) || game.Venue || game.venue %></div>
-            <div class="game-date fw-bold text-white"><%= gameDateString %></div>
-          </div>
         </div>
         <div class="mt-3 text-white text-center text-md-start">
           <div class="avg-rating-container d-flex justify-content-between align-items-center">
@@ -50,7 +46,9 @@
                     <img src="/users/<%= r.userId %>/profile-image" class="avatar avatar-sm mb-1">
                   </div>
                   <div class="col-6 col-md-8">
-                    <div class="comment-username fw-bold text-white mb-1"><%= r.username %></div>
+                    <div class="comment-username fw-bold text-white mb-1">
+                      <a href="/user/<%= r.username %>" class="comment-user-link">@<%= r.username %></a>
+                    </div>
                     <%= r.comment %>
                   </div>
                   <div class="col-3 col-md-2 fw-bold text-end rating-value"><%= r.rating %></div>
@@ -67,9 +65,13 @@
           </div>
         </div>
       </div>
-      <div class="col-md-7 text-white text-center text-md-start d-flex align-items-center">
+      <div class="col-md-7 text-white text-center text-md-start d-flex flex-column align-items-center justify-content-center">
         <% const awayLogo = (game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0]) ? game.awayTeam.logos[0] : '/images/placeholder.jpg'; %>
         <% const homeLogo = (game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0]) ? game.homeTeam.logos[0] : '/images/placeholder.jpg'; %>
+        <div class="venue-date-info d-flex justify-content-center mb-2 w-100">
+          <div class="venue-name fw-bold text-white me-2"><%= (venue && venue.name) || game.Venue || game.venue %></div>
+          <div class="game-date fw-bold text-white"><%= gameDateString %></div>
+        </div>
         <div class="d-flex align-items-center justify-content-center matchup-container mb-2 w-100">
           
           <div class="flex-grow-1">
