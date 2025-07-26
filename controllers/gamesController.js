@@ -2,6 +2,7 @@ const Game = require('../models/Game');
 const Team = require('../models/Team');
 const Venue = require('../models/Venue');
 const PastGame = require('../models/PastGame');
+const mongoose = require('mongoose');
 
 function hexToRgb(hex) {
   if (!hex) return null;
@@ -166,7 +167,11 @@ exports.searchGames = async (req, res, next) => {
 
 exports.showGame = async (req, res, next) => {
   try {
-    const game = await Game.findById(req.params.id)
+    const id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).render('error', { message: 'Invalid game id' });
+    }
+    const game = await Game.findById(id)
       .populate('homeTeam')
       .populate('awayTeam');
     if (!game) return res.status(404).render('error', { message: 'Game not found' });
@@ -356,7 +361,11 @@ exports.searchPastGames = async (req, res, next) => {
 
 exports.showPastGame = async (req, res, next) => {
   try {
-    const game = await PastGame.findById(req.params.id).lean();
+    const id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).render('error', { message: 'Invalid game id' });
+    }
+    const game = await PastGame.findById(id).lean();
     if (!game) return res.status(404).render('error', { message: 'Game not found' });
 
     const teams = await Team.find({ teamId: { $in: [game.HomeId, game.AwayId] } });
