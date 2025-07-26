@@ -889,23 +889,6 @@
   }
 }
 
-.past-game-page .logo-wrapper .venue-date-overlay {
-  position: absolute;
-  left: 100%;
-  top: 0;
-  margin-left: 1rem;
-}
 
-.past-game-page .rating-value {
-  font-size: 1.25em;
-}
 
-/* Enlarged logo container for past games */
-.past-game-page .logo-wrapper {
-  width: 216px;
-}
 
-.past-game-page .team-logo-detail {
-  width: 45%;
-  height: 45%;
-}
