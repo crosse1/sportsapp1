@@ -833,6 +833,16 @@
     color: grey;
     cursor: pointer;
   }
+
+  .comment-user-link {
+    color: white;
+    text-decoration: none;
+  }
+
+  .comment-user-link:hover {
+    text-decoration: underline;
+    cursor: pointer;
+  }
   
 
 @media (max-width: 576px) {
