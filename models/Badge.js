@@ -5,7 +5,13 @@ const badgeSchema = new mongoose.Schema({
   badgeName: String,
   leagueConstraints: { type: [String], default: [] },
   teamConstraints: { type: [String], default: [] },
-  iconURL: String,
+  iconUrl: {
+    data: Buffer,
+    contentType: {
+      type: String,
+      enum: ['image/jpeg', 'image/png']
+    }
+  },
   reqGames: Number,
   description: String,
   pointValue: Number
