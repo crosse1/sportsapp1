@@ -5,6 +5,7 @@ const badgeSchema = new mongoose.Schema({
   badgeName: String,
   leagueConstraints: { type: [String], default: [] },
   teamConstraints: { type: [String], default: [] },
+  conferenceConstraints: { type: [String], default: [] },
   iconUrl: {
     data: Buffer,
     contentType: {
@@ -13,6 +14,7 @@ const badgeSchema = new mongoose.Schema({
     }
   },
   reqGames: Number,
+  homeTeamOnly: { type: Boolean, default: false },
   timeConstraints: { type: Number, min: 1 },
   description: String,
   pointValue: Number
