@@ -159,15 +159,19 @@
         #gamesTop {
     margin-top: 0.5rem;
     display: grid;
-    grid-template-columns: 1fr 2fr 1fr;
-    grid-template-rows: repeat(3, 1fr); /* three fixed rows */
-    column-gap: 0.5rem;
     row-gap: 0.75rem;
-    align-items: center;
     min-height: 12rem; /* Ensures full space exists */
 }
-        .top-game-item {
-            display: contents;
+        .top-game-link {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            column-gap: 0.5rem;
+            align-items: center;
+            text-decoration: none;
+            transition: transform 0.2s;
+        }
+        .top-game-link:hover {
+            transform: scale(1.03);
         }
         .game-rank { text-align: left; font-size: 1.7rem; margin-left: 1rem;}
         .game-matchup {
@@ -354,18 +358,18 @@
         prevRating = g.rating;
 
         return `
-        <div class="top-game-item">
+        <a href="/pastGames/${g._id}" class="top-game-link">
             <div class="game-rank gradient-text fw-semibold">${prefix}${displayRank}.</div>
             <div class="game-matchup">
                 <div class="gradient-text small fw-light game-date">${formatGameDate(g.gameDate)}</div>
                 <div class="d-flex align-items-center justify-content-center flex-wrap gap-1">
-                    <img src="${g.awayTeamLogoUrl}" class="game-logo-sm">
+                    <img src="${g.awayTeamLogoUrl}" class="game-logo-sm" alt="">
                     <span class="gradient-text">@</span>
-                    <img src="${g.homeTeamLogoUrl}" class="game-logo-sm">
+                    <img src="${g.homeTeamLogoUrl}" class="game-logo-sm" alt="">
                 </div>
             </div>
             <div class="game-rating gradient-text fw-semibold">${Number(g.rating).toFixed(1)}</div>
-        </div>`;
+        </a>`;
     }).join('');
 
 
