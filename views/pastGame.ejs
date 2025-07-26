@@ -47,7 +47,7 @@
                   </div>
                   <div class="col-6 col-md-8">
                     <div class="comment-username fw-bold text-white mb-1">
-                      <a href="/user/<%= r.username %>" class="comment-user-link">@<%= r.username %></a>
+                      <a href="/profileBadges/<%= r.userId %>" class="comment-user-link">@<%= r.username %></a>
                     </div>
                     <%= r.comment %>
                   </div>
@@ -85,7 +85,7 @@
               <div class="at-symbol d-flex flex-column align-items-center justify-content-center">
                 <div class="game-date fw-bold text-white"><%= gameDateString %></div>
                 <div class="venue-name fw-bold text-white me-2"><%= (venue && venue.name) || game.Venue || game.venue %></div>
-                
+
                 @
               </div>
               
