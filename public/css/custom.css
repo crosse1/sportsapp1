@@ -891,4 +891,21 @@
 
 
 
+/* Enlarged logo container for past games */
+.past-game-page .logo-wrapper {
+  width: 100%;
+}
 
+.past-game-page .logo-wrapper .team-diagonal-square {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.past-game-page .team-logo-detail {
+  width: 90%;
+  height: 90%;
+}
+
+.past-game-page .row.g-4.align-items-start {
+  align-items: center;
+}
