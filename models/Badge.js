@@ -13,6 +13,7 @@ const badgeSchema = new mongoose.Schema({
     }
   },
   reqGames: Number,
+  timeConstraints: { type: Number, min: 1 },
   description: String,
   pointValue: Number
 });
