@@ -154,6 +154,7 @@ app.get('/newProject', requireAuth, projectsController.getNewProject);
 app.get('/games', gamesController.listGames);
 app.get('/teams/search', gamesController.searchTeams);
 app.get('/games/searchGames', gamesController.searchGames);
+app.get('/pastGames/leagues', gamesController.listPastGameLeagues);
 app.get('/pastGames/seasons', gamesController.listPastGameSeasons);
 app.get('/pastGames/teams', gamesController.listPastGameTeams);
 app.get('/pastGames/search', gamesController.searchPastGames);
