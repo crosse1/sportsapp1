@@ -2,6 +2,7 @@
   window.addEventListener('load', function(){
     const modal = $('#addGameModal');
     if(!modal.length) return;
+    const leagueSelect = $('#leagueSelect');
     const seasonSelect = $('#seasonSelect');
     const teamSelect = $('#teamSelect');
     const gameSelect = $('#gameSelect');
@@ -53,14 +54,15 @@
       width:'100%',
       containerCssClass:'glass-select2',
       dropdownCssClass:'glass-select2',
-      minimumResultsForSearch: Infinity,
       templateResult: formatTeam,
       templateSelection: formatTeam,
       ajax:{
         url:'/pastGames/teams',
         dataType:'json',
         delay:250,
-        data:function(){ return { season: seasonSelect.val() }; },
+        data:function(params){
+          return { leagueId: leagueSelect.val(), season: seasonSelect.val(), q: params.term };
+        },
         processResults:function(data){
           return { results:data.map(t=>({ id:t.teamId, text:t.school, logo:(t.logos&&t.logos[0]) })) };
         }
@@ -75,13 +77,17 @@
       templateSelection: formatGame,
       containerCssClass:'glass-select2',
       dropdownCssClass:'glass-select2',
-      minimumResultsForSearch: Infinity,
       ajax:{
         url:'/pastGames/search',
         dataType:'json',
         delay:250,
-        data:function(){
-          return { season: seasonSelect.val(), teamId: teamSelect.val() };
+        data:function(params){
+          return {
+            leagueId: leagueSelect.val(),
+            season: seasonSelect.val(),
+            teamId: teamSelect.val(),
+            q: params.term
+          };
         },
         processResults:function(data){
           return { results:data.map(g=>{
@@ -104,16 +110,33 @@
     });
 
     function updateSubmitState(){
+      const league = leagueSelect.val();
       const season = seasonSelect.val();
       const team = teamSelect.val();
       const game = gameSelect.val();
       const commentValid = commentInput.val().length <= 100;
       const duplicate = game && existingGameIds.includes(game);
-      submitBtn.prop('disabled', !(season && team && game && commentValid && !duplicate));
+      submitBtn.prop('disabled', !(league && season && team && game && commentValid && !duplicate));
     }
 
     commentInput.on('input', function(){
       commentCounter.text(`${this.value.length}/100`);
+      updateSubmitState();
+    });
+
+    leagueSelect.on('change', function(){
+      const val = $(this).val();
+      seasonSelect.prop('disabled', !val).val(null).trigger('change');
+      teamSelect.prop('disabled', true).val(null).trigger('change');
+      gameSelect.prop('disabled', true).val(null).trigger('change');
+      if(val){
+        fetch('/pastGames/seasons?leagueId='+val).then(r=>r.json()).then(data=>{
+          const opts = data.map(s=>`<option value="${s}">${s}</option>`).join('');
+          seasonSelect.html('<option value="">Select season</option>'+opts);
+        });
+      } else {
+        seasonSelect.html('<option value="">Select season</option>');
+      }
       updateSubmitState();
     });
 
@@ -134,10 +157,10 @@
 
     modal.on('shown.bs.modal', function(){
       updateSubmitState();
-      if(!$('#seasonSelect option').length){
-        fetch('/pastGames/seasons').then(r=>r.json()).then(data=>{
-          const opts = data.map(s=>`<option value="${s}">${s}</option>`).join('');
-          seasonSelect.append('<option value="">Select season</option>'+opts);
+      if(!$('#leagueSelect option').length){
+        fetch('/pastGames/leagues').then(r=>r.json()).then(data=>{
+          const opts = data.map(l=>`<option value="${l.leagueId}">${l.leagueName}</option>`).join('');
+          leagueSelect.append('<option value="">Select league</option>'+opts);
         });
       }
     });
