@@ -51,6 +51,15 @@
             color: #fff !important;
         }
 
+        .venue-name-text {
+    font-size: 0.7rem; /* Or even 0.95rem if you need it tighter */
+    font-weight: 600;
+    max-width: 10rem;
+    
+    
+}
+
+
         #statesModal .venue-name-text {
             font-size: 1.75rem;
         }
@@ -180,7 +189,7 @@
             background-clip: text;
             color: transparent;
             font-weight: 700;
-            font-size: 1.25rem;
+            
         }
         #venuesTop {
             display: grid;
@@ -449,7 +458,7 @@
                 const img = v.imgUrl || '/images/placeholder.jpg';
                 return `
                     <div class="top-list-item">${prefix}${displayVenueRank}.</div>
-                    <div class="venue-name"><img src="${img}" alt="${name}" class="avatar avatar-sm"><span class="venue-name-text">${name}</span></div>
+                    <div class="venue-name"><img src="${img}" alt="${name}" class="avatar avatar-sm"><p class="venue-name-text">${name}</p></div>
                     <div class="venue-count">${item.count}</div>
                 `;
             }).join('');

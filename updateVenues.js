@@ -50,7 +50,7 @@ function updateVenues(filePath) {
   });
 }
 
-const file = process.argv[2] || 'public/files/venueImages.csv';
+const file = process.argv[2] || 'public/files/stadiumImg.csv';
 
 updateVenues(file)
   .then(() => console.log('Venue update completed'))
