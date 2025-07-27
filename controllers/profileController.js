@@ -65,14 +65,24 @@ async function enrichGameEntries(entries){
     const pastGames = await PastGame.find({ _id: { $in: ids } }).lean();
     console.log('Entry Game IDs:', ids);
     console.log('Found PastGame IDs:', pastGames.map(g => String(g._id)));
+
     const teamIds = [...new Set(pastGames.flatMap(g => [g.HomeId, g.AwayId]))];
-    const teams = await Team.find({ teamId: { $in: teamIds } }).select('teamId logos color alternateColor').lean();
+    const teams = await Team.find({ teamId: { $in: teamIds } })
+        .select('teamId logos color alternateColor')
+        .lean();
     const teamMap = {};
     teams.forEach(t => { teamMap[t.teamId] = t; });
+
+    const venueIds = [...new Set(pastGames.map(g => g.VenueId).filter(v => v !== undefined))];
+    const venues = await Venue.find({ venueId: { $in: venueIds } }).lean();
+    const venueMap = {};
+    venues.forEach(v => { venueMap[v.venueId] = v; });
+
     const pgMap = {};
     pastGames.forEach(pg => {
         pg.homeTeam = teamMap[pg.HomeId] || null;
         pg.awayTeam = teamMap[pg.AwayId] || null;
+        pg.venue = venueMap[pg.VenueId] || null;
         pgMap[String(pg._id)] = pg;
     });
     return entries.map(e => {

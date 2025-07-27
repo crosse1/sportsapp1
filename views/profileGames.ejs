@@ -34,25 +34,45 @@
         .avatar-lg { width: clamp(80px, 20vw, 300px); height: clamp(80px, 20vw, 300px); }
         .avatar-sm { width: clamp(40px, 10vw, 60px); height: clamp(40px, 10vw, 60px); }
         .rating-wrapper {
-            flex: 1;
             margin-left: 1rem;
-            
-            display: flex;
-            align-items: left;
-            justify-content: left;
+            width: 5rem;
+            height: 3rem;
             position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .rating-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+        .rating-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, #14b8a6, #7e22ce);
+            mix-blend-mode: multiply;
+            opacity: 0.8;
+            z-index: 1;
         }
         .rating-number {
+            position: relative;
+            z-index: 2;
             display: inline-block;
             transform: scaleY(1.3);
-            font-size: 2.6rem; 
+            font-size: 2.6rem;
             font-weight: 800;
             line-height: 1;
-            background: linear-gradient(to right, #7e22ce, #14b8a6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text; /* For Firefox */
-  color: transparent;
+            color: #fff;
         }
         .rating-comment {
             display: none;
@@ -69,6 +89,8 @@
   color: transparent;
         }
         .rating-wrapper:hover .rating-number { display: none; }
+        .rating-wrapper:hover img { display: none; }
+        .rating-wrapper:hover::after { opacity: 0; }
         .rating-wrapper:hover .rating-comment { display: block; }
     </style>
 </head>
@@ -120,7 +142,8 @@
                         </a>
                     </div>
                     <% if(entry.rating){ %>
-                        <div class="rating-wrapper">
+                        <div class="rating-wrapper gradient-overlay">
+                            <img class="bw-img" src="<%= game.venue && game.venue.imgUrl ? game.venue.imgUrl : '/images/placeholder.jpg' %>" alt="<%= game.Venue || game.venue %>">
                             <span class="rating-number"><%= entry.rating %>/10</span>
                             <% if(entry.comment){ %><span class="rating-comment"><%= entry.comment %></span><% } %>
                         </div>
