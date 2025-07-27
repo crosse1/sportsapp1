@@ -15,6 +15,7 @@ const geoSchema = new mongoose.Schema({
 const venueSchema = new mongoose.Schema({
   venueId: { type: Number, unique: true },
   name: String,
+  imgUrl: String,
   capacity: Number,
   grass: Boolean,
   dome: Boolean,
