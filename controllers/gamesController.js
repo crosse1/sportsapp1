@@ -293,9 +293,33 @@ exports.toggleVenueList = async (req, res, next) => {
   }
 };
 
+exports.listPastGameLeagues = async (req, res, next) => {
+  try {
+    const homeIds = await PastGame.distinct('homeLeagueId');
+    const awayIds = await PastGame.distinct('awayLeagueId');
+    const ids = [...new Set([...homeIds, ...awayIds])].filter(id => id !== undefined && id !== null);
+    const League = require('../models/League');
+    const leagues = await League.find({ leagueId: { $in: ids.map(String) } })
+      .select('leagueId leagueName')
+      .lean();
+    const map = {};
+    leagues.forEach(l => { map[parseInt(l.leagueId)] = l.leagueName; });
+    const results = ids.map(id => ({ leagueId: id, leagueName: map[id] || String(id) }))
+      .sort((a,b)=> a.leagueName.localeCompare(b.leagueName));
+    res.json(results);
+  } catch(err){
+    next(err);
+  }
+};
+
 exports.listPastGameSeasons = async (req, res, next) => {
   try {
-    let seasons = await PastGame.distinct('Season');
+    const leagueId = parseInt(req.query.leagueId);
+    const match = {};
+    if(!isNaN(leagueId)) {
+      match.$or = [{ homeLeagueId: leagueId }, { awayLeagueId: leagueId }];
+    }
+    let seasons = await PastGame.distinct('Season', match);
     seasons = seasons.filter(s => !!s).sort((a,b) => b - a);
     res.json(seasons);
   } catch(err){
@@ -306,11 +330,19 @@ exports.listPastGameSeasons = async (req, res, next) => {
 exports.listPastGameTeams = async (req, res, next) => {
   try {
     const season = parseInt(req.query.season);
+    const leagueId = parseInt(req.query.leagueId);
+    const search = req.query.q || '';
     if(isNaN(season)) return res.json([]);
-    const homeIds = await PastGame.distinct('HomeId', { Season: season });
-    const awayIds = await PastGame.distinct('AwayId', { Season: season });
+    const match = { Season: season };
+    if(!isNaN(leagueId)) {
+      match.$or = [{ homeLeagueId: leagueId }, { awayLeagueId: leagueId }];
+    }
+    const homeIds = await PastGame.distinct('HomeId', match);
+    const awayIds = await PastGame.distinct('AwayId', match);
     const ids = [...new Set([...homeIds, ...awayIds])].filter(Boolean);
-    const teams = await Team.find({ teamId: { $in: ids } })
+    const teamQuery = { teamId: { $in: ids } };
+    if(search) teamQuery.school = { $regex: search, $options:'i' };
+    const teams = await Team.find(teamQuery)
       .select('teamId school logos')
       .sort({ school: 1 })
       .lean();
@@ -324,9 +356,13 @@ exports.searchPastGames = async (req, res, next) => {
   try {
     const season = parseInt(req.query.season);
     const teamId = parseInt(req.query.teamId);
+    const leagueId = parseInt(req.query.leagueId);
     const q = req.query.q || '';
     if(isNaN(season)) return res.json([]);
     const match = { Season: season };
+    if(!isNaN(leagueId)){
+      match.$and = [{ $or: [{ homeLeagueId: leagueId }, { awayLeagueId: leagueId }] }];
+    }
     if(!isNaN(teamId)){
       match.$or = [{ HomeId: teamId }, { AwayId: teamId }];
     } else if(q){
