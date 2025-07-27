@@ -27,6 +27,21 @@
         .avatar-lg { width: clamp(80px, 20vw, 300px); height: clamp(80px, 20vw, 300px); }
         .avatar-sm { width: clamp(40px, 10vw, 60px); height: clamp(40px, 10vw, 60px); }
 
+
+        #gamesModal, #venuesModal { color: #fff; }
+        #gamesModal .gradient-text,
+        #venuesModal .gradient-text,
+        #gamesModal .top-list-item,
+        #gamesModal .venue-name,
+        #gamesModal .venue-count,
+        #venuesModal .top-list-item,
+        #venuesModal .venue-name,
+        #venuesModal .venue-count {
+            background: none !important;
+            -webkit-background-clip: initial !important;
+            -webkit-text-fill-color: #fff !important;
+            color: #fff !important;
+        }
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
@@ -99,6 +114,11 @@
             color: transparent;
             cursor: pointer;
         }
+
+        .stat-label:hover {
+  transform: scale(1.1);
+  letter-spacing: 0.05em;
+}
         .stat-content {
             flex: 1;
             display: flex;
@@ -185,7 +205,7 @@
             text-align: center;
             gap: 0.25rem;
         }
-        .game-rating { text-align: right; font-size: 1.6rem; margin-right: 1rem;}
+        .game-rating { text-align: right; font-size: 1.6rem; margin-left: 2.5rem; margin-right: 0.5rem;}
         .game-date { font-size: 0.75rem; }
         .game-logo-sm {
             width: 1.79rem;
