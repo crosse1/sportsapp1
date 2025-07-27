@@ -336,7 +336,7 @@
 
     const gamesTopEl = document.getElementById('gamesTop');
     const sortedGames = [...topRatedGames]
-        .filter(g => g && typeof g.rating === 'number')
+        .filter(g => g && g._id && typeof g.rating === 'number')
         .sort((a, b) => b.rating - a.rating)
         .slice(0, 3);
 

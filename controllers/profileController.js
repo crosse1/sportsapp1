@@ -312,16 +312,20 @@ exports.profileStats = async (req, res, next) => {
 
         const enrichedEntries = await enrichGameEntries(profileUser.gameEntries || []);
 
-        const topRatedGames = enrichedEntries.map(e => {
-            const game = e.game || {};
-            const rating = typeof e.rating === 'number' ? e.rating : 0;
-            const gameDate = game.startDate || game.StartDate || null;
-            const awayLogo = (game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0]) ?
-                game.awayTeam.logos[0] : '/images/placeholder.jpg';
-            const homeLogo = (game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0]) ?
-                game.homeTeam.logos[0] : '/images/placeholder.jpg';
-            return { gameDate, awayTeamLogoUrl: awayLogo, homeTeamLogoUrl: homeLogo, rating };
-        }).sort((a,b) => b.rating - a.rating).slice(0,3);
+        const topRatedGames = enrichedEntries
+            .filter(e => e.game && e.game._id)
+            .map(e => {
+                const game = e.game;
+                const rating = typeof e.rating === 'number' ? e.rating : 0;
+                const gameDate = game.startDate || game.StartDate || null;
+                const awayLogo = (game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0]) ?
+                    game.awayTeam.logos[0] : '/images/placeholder.jpg';
+                const homeLogo = (game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0]) ?
+                    game.homeTeam.logos[0] : '/images/placeholder.jpg';
+                return { _id: game._id, gameDate, awayTeamLogoUrl: awayLogo, homeTeamLogoUrl: homeLogo, rating };
+            })
+            .sort((a,b) => b.rating - a.rating)
+            .slice(0,3);
 
         const uniqueTeamIds = [...new Set((profileUser.teamsList || []).map(t => String(t._id || t)))];
         const uniqueVenueIds = [...new Set((profileUser.venuesList || []).map(v => String(v._id || v)))];
