@@ -97,6 +97,7 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
             color: transparent;
+            cursor: pointer;
         }
         .stat-content {
             flex: 1;
@@ -267,7 +268,7 @@
                 <div class="stat-content">
                     <div class="stat-left">
                         <div id="gamesCount" class="stat-number"></div>
-                        <div class="stat-label">Games</div>
+                        <h3 id="gamesHeader" class="stat-label">Games</h3>
                     </div>
                     <div id="gamesTop" class="stat-right"></div>
                 </div>
@@ -276,7 +277,7 @@
                 <div class="stat-content">
                     <div class="stat-left">
                         <div id="venuesCount" class="stat-number"></div>
-                        <div class="stat-label">Venues</div>
+                        <h3 id="venuesHeader" class="stat-label">Venues</h3>
                     </div>
                     <div id="venuesTop" class="stat-right"></div>
                 </div>
@@ -302,6 +303,34 @@
         </div>
     </div>
 
+    <div class="modal fade user-search-modal" id="gamesModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-3">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">All Games</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="gamesModalBody" class="d-flex flex-column gap-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade user-search-modal" id="venuesModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-3">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">All Venues</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="venuesModalBody" class="d-grid" style="grid-template-columns: 1fr 3fr 1fr; row-gap:0.5rem; column-gap:0.5rem;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const gameEntries = <%- JSON.stringify(gameEntries || []) %>;
         const topRatedGames = <%- JSON.stringify(topRatedGames || []) %>;
@@ -310,6 +339,50 @@
         const teamsCount = <%- typeof teamsCount !== 'undefined' ? teamsCount : 0 %>;
         const venuesCount = <%- typeof venuesCount !== 'undefined' ? venuesCount : 0 %>;
         const statesCount = <%- typeof statesCount !== 'undefined' ? statesCount : 0 %>;
+
+        function buildGameRows(games) {
+            const ratingCounts = {};
+            games.forEach(g => { ratingCounts[g.rating] = (ratingCounts[g.rating] || 0) + 1; });
+            let prevRating = null;
+            let rankIndex = 0;
+            let displayRank = 0;
+            return games.map(g => {
+                rankIndex++;
+                if (g.rating !== prevRating) displayRank = rankIndex;
+                const prefix = ratingCounts[g.rating] > 1 ? 'T-' : '';
+                prevRating = g.rating;
+                return `
+                <a href="/pastGames/${g._id}" class="top-game-link">
+                    <div class="game-rank gradient-text fw-semibold">${prefix}${displayRank}.</div>
+                    <div class="game-matchup">
+                        <div class="gradient-text small fw-light game-date">${formatGameDate(g.gameDate)}</div>
+                        <div class="d-flex align-items-center justify-content-center flex-wrap gap-1">
+                            <img src="${g.awayTeamLogoUrl}" class="game-logo-sm" alt="">
+                            <span class="gradient-text">@</span>
+                            <img src="${g.homeTeamLogoUrl}" class="game-logo-sm" alt="">
+                        </div>
+                    </div>
+                    <div class="game-rating gradient-text fw-semibold">${Number(g.rating).toFixed(1)}</div>
+                </a>`;
+            }).join('');
+        }
+
+        function buildVenueRows(entries){
+            let prevCount = null;
+            let rank = 0;
+            let displayVenueRank = 0;
+            return entries.map(([name,count]) => {
+                rank++;
+                if(count !== prevCount) displayVenueRank = rank;
+                const prefix = entries.filter(e => e[1] === count).length > 1 ? 'T-' : '';
+                prevCount = count;
+                return `
+                    <div class="top-list-item">${prefix}${displayVenueRank}.</div>
+                    <div class="venue-name">${name}</div>
+                    <div class="venue-count">${count}</div>
+                `;
+            }).join('');
+        }
 
         function ordinal(n){
             const s=["th","st","nd","rd"],v=n%100;
@@ -337,42 +410,21 @@
     document.getElementById('gamesCount').textContent = validGames.length;
 
     const gamesTopEl = document.getElementById('gamesTop');
-    const sortedGames = [...topRatedGames]
-        .filter(g => g && g._id && typeof g.rating === 'number')
-        .sort((a, b) => b.rating - a.rating)
-        .slice(0, 3);
+    const allGames = gameEntries
+        .filter(e => e && e.game && e.game._id)
+        .map(e => {
+            const g = e.game;
+            const gameDate = g.startDate || g.StartDate || null;
+            const awayLogo = g.awayTeam && g.awayTeam.logos && g.awayTeam.logos[0] ? g.awayTeam.logos[0] : '/images/placeholder.jpg';
+            const homeLogo = g.homeTeam && g.homeTeam.logos && g.homeTeam.logos[0] ? g.homeTeam.logos[0] : '/images/placeholder.jpg';
+            const rating = typeof e.rating === 'number' ? e.rating : 0;
+            return { _id: g._id, gameDate, awayTeamLogoUrl: awayLogo, homeTeamLogoUrl: homeLogo, rating };
+        })
+        .sort((a,b) => b.rating - a.rating);
 
-    const ratingCounts = {};
-    sortedGames.forEach(g => {
-        ratingCounts[g.rating] = (ratingCounts[g.rating] || 0) + 1;
-    });
+    window.allRankedGames = allGames;
 
-    let prevRating = null;
-    let rankIndex = 0;
-    let displayRank = 0;
-
-    gamesTopEl.innerHTML = sortedGames.map(g => {
-        rankIndex++;
-        if (g.rating !== prevRating) {
-            displayRank = rankIndex;
-        }
-        const prefix = ratingCounts[g.rating] > 1 ? 'T-' : '';
-        prevRating = g.rating;
-
-        return `
-        <a href="/pastGames/${g._id}" class="top-game-link">
-            <div class="game-rank gradient-text fw-semibold">${prefix}${displayRank}.</div>
-            <div class="game-matchup">
-                <div class="gradient-text small fw-light game-date">${formatGameDate(g.gameDate)}</div>
-                <div class="d-flex align-items-center justify-content-center flex-wrap gap-1">
-                    <img src="${g.awayTeamLogoUrl}" class="game-logo-sm" alt="">
-                    <span class="gradient-text">@</span>
-                    <img src="${g.homeTeamLogoUrl}" class="game-logo-sm" alt="">
-                </div>
-            </div>
-            <div class="game-rating gradient-text fw-semibold">${Number(g.rating).toFixed(1)}</div>
-        </a>`;
-    }).join('');
+    gamesTopEl.innerHTML = buildGameRows(allGames.slice(0, 3));
 
 
 
@@ -386,23 +438,11 @@
         venueMap[n] = (venueMap[n] || 0) + 1;
     });
     const venueEntries = Object.entries(venueMap).sort((a, b) => b[1] - a[1]);
+    window.allRankedVenues = venueEntries;
     document.getElementById('venuesCount').textContent = venuesCount;
     const venuesTopEl = document.getElementById('venuesTop');
-    let prevCount = null;
-let rank = 0;
-let displayVenueRank = 0; // renamed
 
-venuesTopEl.innerHTML = venueEntries.slice(0, 3).map(([name, count], i) => {
-    rank++;
-    if (count !== prevCount) displayVenueRank = rank;
-    const prefix = venueEntries.filter(e => e[1] === count).length > 1 ? 'T-' : '';
-    prevCount = count;
-    return `
-        <div class="top-list-item">${prefix}${displayVenueRank}.</div>
-        <div class="venue-name">${name}</div>
-        <div class="venue-count">${count}</div>
-    `;
-}).join('');
+    venuesTopEl.innerHTML = buildVenueRows(venueEntries.slice(0,3));
 
     // Teams section
     const teamMap = {};
@@ -602,6 +642,28 @@ document.addEventListener('DOMContentLoaded', renderStats);
                 if(modalEl){
                     bootstrap.Modal.getOrCreateInstance(modalEl).show();
                 }
+            });
+        }
+        const gamesHeader = document.getElementById('gamesHeader');
+        const venuesHeader = document.getElementById('venuesHeader');
+        const gamesModal = document.getElementById('gamesModal');
+        const venuesModal = document.getElementById('venuesModal');
+        if(gamesHeader && gamesModal){
+            gamesHeader.addEventListener('click', () => {
+                const body = document.getElementById('gamesModalBody');
+                if(body){
+                    body.innerHTML = buildGameRows(window.allRankedGames);
+                }
+                bootstrap.Modal.getOrCreateInstance(gamesModal).show();
+            });
+        }
+        if(venuesHeader && venuesModal){
+            venuesHeader.addEventListener('click', () => {
+                const body = document.getElementById('venuesModalBody');
+                if(body){
+                    body.innerHTML = buildVenueRows(window.allRankedVenues);
+                }
+                bootstrap.Modal.getOrCreateInstance(venuesModal).show();
             });
         }
         const openUserModalBtn = document.getElementById('openUserModal');
