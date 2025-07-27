@@ -28,15 +28,23 @@
         .avatar-sm { width: clamp(40px, 10vw, 60px); height: clamp(40px, 10vw, 60px); }
 
 
-        #gamesModal, #venuesModal { color: #fff; }
+        #gamesModal, #venuesModal, #teamsModal, #statesModal { color: #fff; }
         #gamesModal .gradient-text,
         #venuesModal .gradient-text,
+        #teamsModal .gradient-text,
+        #statesModal .gradient-text,
         #gamesModal .top-list-item,
         #gamesModal .venue-name,
         #gamesModal .venue-count,
         #venuesModal .top-list-item,
         #venuesModal .venue-name,
-        #venuesModal .venue-count {
+        #venuesModal .venue-count,
+        #teamsModal .top-list-item,
+        #teamsModal .venue-name,
+        #teamsModal .venue-count,
+        #statesModal .top-list-item,
+        #statesModal .venue-name,
+        #statesModal .venue-count {
             background: none !important;
             -webkit-background-clip: initial !important;
             -webkit-text-fill-color: #fff !important;
@@ -306,7 +314,7 @@
                 <div class="stat-content">
                     <div class="stat-left">
                         <div id="teamsCount" class="stat-number"></div>
-                        <div class="stat-label">Teams</div>
+                        <h3 id="teamsHeader" class="stat-label">Teams</h3>
                     </div>
                     <div id="teamsTop" class="stat-right"></div>
                 </div>
@@ -315,7 +323,7 @@
                 <div class="stat-content">
                     <div class="stat-left">
                         <div id="statesCount" class="stat-number"></div>
-                        <div class="stat-label">States</div>
+                        <h3 id="statesHeader" class="stat-label">States</h3>
                     </div>
                     <div id="statesTop" class="stat-right"></div>
                 </div>
@@ -346,6 +354,34 @@
                 </div>
                 <div class="modal-body">
                     <div id="venuesModalBody" class="d-grid" style="grid-template-columns: 1fr 3fr 1fr; row-gap:0.5rem; column-gap:0.5rem;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade user-search-modal" id="teamsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-3">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">All Teams</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="teamsModalBody" class="d-grid" style="grid-template-columns: 1fr 1fr 3fr 1fr; row-gap:0.5rem; column-gap:0.5rem;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade user-search-modal" id="statesModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-3">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">All States</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="statesModalBody" class="d-grid" style="grid-template-columns: 1fr 3fr 1fr; row-gap:0.5rem; column-gap:0.5rem;"></div>
                 </div>
             </div>
         </div>
@@ -398,6 +434,44 @@
                 prevCount = count;
                 return `
                     <div class="top-list-item">${prefix}${displayVenueRank}.</div>
+                    <div class="venue-name">${name}</div>
+                    <div class="venue-count">${count}</div>
+                `;
+            }).join('');
+        }
+
+        function buildTeamRows(entries){
+            let prevCount = null;
+            let rank = 0;
+            let displayTeamRank = 0;
+            return entries.map(item => {
+                rank++;
+                if(item.count !== prevCount) displayTeamRank = rank;
+                const prefix = entries.filter(e => e.count === item.count).length > 1 ? 'T-' : '';
+                prevCount = item.count;
+                const team = item.team;
+                const logo = team.logos && team.logos[0] ? team.logos[0] : '/images/placeholder.jpg';
+                const name = team.school || team.name;
+                return `
+                    <div class="top-list-item">${prefix}${displayTeamRank}.</div>
+                    <img src="${logo}" alt="${name}" class="game-logo-sm">
+                    <div class="venue-name">${name}</div>
+                    <div class="venue-count">${item.count}</div>
+                `;
+            }).join('');
+        }
+
+        function buildStateRows(entries){
+            let prevCount = null;
+            let rank = 0;
+            let displayStateRank = 0;
+            return entries.map(([name,count]) => {
+                rank++;
+                if(count !== prevCount) displayStateRank = rank;
+                const prefix = entries.filter(e => e[1] === count).length > 1 ? 'T-' : '';
+                prevCount = count;
+                return `
+                    <div class="top-list-item">${prefix}${displayStateRank}.</div>
                     <div class="venue-name">${name}</div>
                     <div class="venue-count">${count}</div>
                 `;
@@ -473,6 +547,7 @@
         teamMap[id].count++;
     });
     const teamEntries = Object.values(teamMap).sort((a, b) => b.count - a.count);
+    window.allRankedTeams = teamEntries;
     document.getElementById('teamsCount').textContent = Object.keys(teamMap).length;
 
     function isLight(hex){
@@ -515,6 +590,7 @@
         stateMap[s] = (stateMap[s] || 0) + 1;
     });
     const stateEntries = Object.entries(stateMap).sort((a, b) => b[1] - a[1]);
+    window.allRankedStates = stateEntries;
     document.getElementById('statesCount').textContent = statesCount;
     const statesTopEl = document.getElementById('statesTop');
     statesTopEl.style.borderRadius = '0.5rem';
@@ -666,8 +742,12 @@ document.addEventListener('DOMContentLoaded', renderStats);
         }
         const gamesHeader = document.getElementById('gamesHeader');
         const venuesHeader = document.getElementById('venuesHeader');
+        const teamsHeader = document.getElementById('teamsHeader');
+        const statesHeader = document.getElementById('statesHeader');
         const gamesModal = document.getElementById('gamesModal');
         const venuesModal = document.getElementById('venuesModal');
+        const teamsModal = document.getElementById('teamsModal');
+        const statesModal = document.getElementById('statesModal');
         if(gamesHeader && gamesModal){
             gamesHeader.addEventListener('click', () => {
                 const body = document.getElementById('gamesModalBody');
@@ -684,6 +764,24 @@ document.addEventListener('DOMContentLoaded', renderStats);
                     body.innerHTML = buildVenueRows(window.allRankedVenues);
                 }
                 bootstrap.Modal.getOrCreateInstance(venuesModal).show();
+            });
+        }
+        if(teamsHeader && teamsModal){
+            teamsHeader.addEventListener('click', () => {
+                const body = document.getElementById('teamsModalBody');
+                if(body){
+                    body.innerHTML = buildTeamRows(window.allRankedTeams);
+                }
+                bootstrap.Modal.getOrCreateInstance(teamsModal).show();
+            });
+        }
+        if(statesHeader && statesModal){
+            statesHeader.addEventListener('click', () => {
+                const body = document.getElementById('statesModalBody');
+                if(body){
+                    body.innerHTML = buildStateRows(window.allRankedStates);
+                }
+                bootstrap.Modal.getOrCreateInstance(statesModal).show();
             });
         }
         const openUserModalBtn = document.getElementById('openUserModal');
