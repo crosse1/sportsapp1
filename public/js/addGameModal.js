@@ -69,7 +69,6 @@
     function showComparison(){
       if(compareIdx >= eloGames.length){
         rankingDone = true;
-        $('#comparisonButtons').hide();
         $('#comparisonPrompt').text('Placement recorded');
         updateSubmitState();
         return;
@@ -119,7 +118,6 @@
     if(betterBtn){
       betterBtn.on('click', function(){
         rankingDone = true;
-        $('#comparisonButtons').hide();
         $('#comparisonPrompt').text('Placement recorded');
         updateSubmitState();
       });
@@ -128,6 +126,18 @@
       worseBtn.on('click', function(){
         compareIdx++;
         showComparison();
+      });
+    }
+
+    if(newCard){
+      newCard.on('click', function(){
+        if(betterBtn) betterBtn.trigger('click');
+      });
+    }
+
+    if(existingCard){
+      existingCard.on('click', function(){
+        if(worseBtn) worseBtn.trigger('click');
       });
     }
 
@@ -295,7 +305,6 @@
         eloStep.hide();
         infoStep.show();
         backBtn.addClass('d-none');
-        $('#comparisonButtons').show();
         $('#comparisonPrompt').text('');
       } else {
         if(ratingGroup) ratingGroup.show();
