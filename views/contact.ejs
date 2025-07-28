@@ -88,7 +88,10 @@
             <% if (typeof error !== 'undefined') { %>
                 <div class="alert alert-danger"><%= error %></div>
             <% } %>
-            <input type="text" name="username" placeholder="Username" class="form-control gradient-input mb-3" maxlength="20" pattern="^[a-zA-Z0-9_]+$" required>
+            <div class="position-relative mb-3">
+            <input type="text" id="username" name="username" placeholder="Username" class="form-control gradient-input pe-5" maxlength="20" pattern="^[a-zA-Z0-9_]+$" required>
+            <span id="usernameStatus" class="username-status"></span>
+        </div>
             <input type="email" name="email" placeholder="Email" class="form-control gradient-input mb-3" required>
             <input type="password" name="password" placeholder="Password" class="form-control gradient-input mb-3" required>
             <input type="text" name="phoneNumber" placeholder="Phone Number" pattern="[0-9]{10}" class="form-control gradient-input mb-3" required>
@@ -131,6 +134,32 @@
         const fileLabel = document.getElementById('profileImageLabel');
         fileInput.addEventListener('change', function(){
             fileLabel.textContent = this.files[0] ? this.files[0].name : 'Profile Image';
+        });
+        const usernameInput = document.getElementById("username");
+        const usernameStatus = document.getElementById("usernameStatus");
+        let usernameTimer;
+        usernameInput.addEventListener("input", function(){
+            clearTimeout(usernameTimer);
+            const val = this.value.trim();
+            if(!val){
+                usernameStatus.textContent = "";
+                return;
+            }
+            usernameTimer = setTimeout(async () => {
+                try{
+                    const res = await fetch(`/check-username/${encodeURIComponent(val)}`);
+                    const data = await res.json();
+                    if(data.available){
+                        usernameStatus.textContent = "✅";
+                        usernameStatus.style.color = "green";
+                    }else{
+                        usernameStatus.textContent = "❌";
+                        usernameStatus.style.color = "red";
+                    }
+                }catch(e){
+                    usernameStatus.textContent = "";
+                }
+            }, 300);
         });
     </script>
 </body>

@@ -105,6 +105,7 @@ app.get('/signup', profileController.getSignUp);
 app.get('/login', profileController.getLogin);
 app.post('/signup', profileController.saveUser);
 app.post('/login', profileController.loginUser);
+app.get("/check-username/:username", profileController.checkUsername);
 app.get('/logout', (req, res) => {
     res.clearCookie('token');
     res.redirect('/login');
