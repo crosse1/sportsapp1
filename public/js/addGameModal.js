@@ -12,7 +12,26 @@
     const submitBtn = $('#submitGameBtn');
     const ratingRange = document.getElementById('ratingRange');
     const ratingValue = document.getElementById('ratingValue');
+    const ratingGroup = $('#ratingGroup');
+    const nextBtn = $('#nextBtn');
+    const comparisonContainer = $('#comparisonContainer');
+    const betterBtn = $('#betterBtn');
+    const worseBtn = $('#worseBtn');
     const existingGameIds = window.existingGameIds || [];
+    const gameEntryCount = window.gameEntryCount || 0;
+    const gameEntryNames = window.gameEntryNames || [];
+    let rankingDone = gameEntryCount < 5;
+    let compareIdx = 0;
+
+    if(gameEntryCount >= 5){
+      if(ratingGroup) ratingGroup.hide();
+      if(nextBtn) nextBtn.show();
+      if(comparisonContainer) comparisonContainer.hide();
+      submitBtn.prop('disabled', true);
+    } else {
+      if(nextBtn) nextBtn.hide();
+      if(comparisonContainer) comparisonContainer.hide();
+    }
 
     function updateRating(){
       if(ratingRange && ratingValue){ ratingValue.textContent = ratingRange.value; }
@@ -20,6 +39,41 @@
     if(ratingRange){
       updateRating();
       ratingRange.addEventListener('input', updateRating);
+    }
+
+    function showComparison(){
+      if(!comparisonContainer) return;
+      if(compareIdx >= gameEntryNames.length){
+        rankingDone = true;
+        $('#comparisonButtons').hide();
+        $('#comparisonPrompt').text('Placement recorded');
+        updateSubmitState();
+        return;
+      }
+      $('#comparisonPrompt').text(`Was this game better than ${gameEntryNames[compareIdx]}?`);
+    }
+
+    if(nextBtn){
+      nextBtn.on('click', function(){
+        nextBtn.hide();
+        if(comparisonContainer) comparisonContainer.show();
+        showComparison();
+      });
+    }
+
+    if(betterBtn){
+      betterBtn.on('click', function(){
+        rankingDone = true;
+        $('#comparisonButtons').hide();
+        $('#comparisonPrompt').text('Placement recorded');
+        updateSubmitState();
+      });
+    }
+    if(worseBtn){
+      worseBtn.on('click', function(){
+        compareIdx++;
+        showComparison();
+      });
     }
 
     function formatTeam(option){
@@ -123,7 +177,9 @@
       const game = gameSelect.val();
       const commentValid = commentInput.val().length <= 100;
       const duplicate = game && existingGameIds.includes(game);
-      submitBtn.prop('disabled', !(league && season && team && game && commentValid && !duplicate));
+      let enable = league && season && team && game && commentValid && !duplicate;
+      if(gameEntryCount >= 5 && !rankingDone) enable = false;
+      submitBtn.prop('disabled', !enable);
     }
 
     commentInput.on('input', function(){
@@ -163,6 +219,21 @@
     gameSelect.on('change', updateSubmitState);
 
     modal.on('shown.bs.modal', function(){
+      if(gameEntryCount >= 5){
+        rankingDone = false;
+        compareIdx = 0;
+        if(ratingGroup) ratingGroup.hide();
+        if(nextBtn) nextBtn.show();
+        if(comparisonContainer){
+          comparisonContainer.hide();
+          $('#comparisonButtons').show();
+          $('#comparisonPrompt').text('');
+        }
+      } else {
+        if(ratingGroup) ratingGroup.show();
+        if(nextBtn) nextBtn.hide();
+        if(comparisonContainer) comparisonContainer.hide();
+      }
       updateSubmitState();
       if(!$('#leagueSelect option').length){
         fetch('/pastGames/leagues').then(r=>r.json()).then(data=>{

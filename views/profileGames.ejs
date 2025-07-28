@@ -209,6 +209,11 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         window.existingGameIds = <%- JSON.stringify((user.gameEntries || []).map(e => String(e.game))) %>;
+        window.gameEntryCount = <%- (user.gameEntries || []).length %>;
+        window.gameEntryNames = <%- JSON.stringify((gameEntries || []).map(e => {
+            const g = e.game || {};
+            return `${g.awayTeamName || ''} vs ${g.homeTeamName || ''}`;
+        })) %>;
         window.gameEntriesData = <%- JSON.stringify(gameEntries || []) %>;
     </script>
     <script src="/js/addGameModal.js"></script>
