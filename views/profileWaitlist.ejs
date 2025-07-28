@@ -88,6 +88,7 @@
     <script>
         window.existingGameIds = <%- JSON.stringify((user.gameEntries || []).map(e => String(e.game))) %>;
         window.gameEntryCount = <%- (user.gameEntries || []).length %>;
+        window.eloGamesData = <%- JSON.stringify(eloGames || []) %>;
     </script>
     <script src="/js/addGameModal.js"></script>
     <script>

@@ -215,6 +215,7 @@
             return `${g.awayTeamName || ''} vs ${g.homeTeamName || ''}`;
         })) %>;
         window.gameEntriesData = <%- JSON.stringify(gameEntries || []) %>;
+        window.eloGamesData = <%- JSON.stringify(eloGames || []) %>;
     </script>
     <script src="/js/addGameModal.js"></script>
     <script src="/js/editGameModal.js"></script>

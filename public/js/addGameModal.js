@@ -14,9 +14,15 @@
     const ratingValue = document.getElementById('ratingValue');
     const ratingGroup = $('#ratingGroup');
     const nextBtn = $('#nextBtn');
-    const comparisonContainer = $('#comparisonContainer');
+    const infoStep = $('#gameInfoStep');
+    const eloStep = $('#eloStep');
+    const backBtn = $('#backBtn');
+    const newCard = $('#newGameCard');
+    const existingCard = $('#existingGameCard');
     const betterBtn = $('#betterBtn');
     const worseBtn = $('#worseBtn');
+    const eloGames = window.eloGamesData || [];
+    let selectedGameData = null;
     const existingGameIds = window.existingGameIds || [];
     const gameEntryCount = window.gameEntryCount || 0;
     const gameEntryNames = window.gameEntryNames || [];
@@ -26,11 +32,13 @@
     if(gameEntryCount >= 5){
       if(ratingGroup) ratingGroup.hide();
       if(nextBtn) nextBtn.show();
-      if(comparisonContainer) comparisonContainer.hide();
+      if(eloStep) eloStep.hide();
+      if(infoStep) infoStep.show();
       submitBtn.prop('disabled', true);
     } else {
       if(nextBtn) nextBtn.hide();
-      if(comparisonContainer) comparisonContainer.hide();
+      if(eloStep) eloStep.hide();
+      if(infoStep) infoStep.show();
     }
 
     function updateRating(){
@@ -41,23 +49,70 @@
       ratingRange.addEventListener('input', updateRating);
     }
 
+    function renderCard(el,data){
+      if(!el) return;
+      if(!data){ el.empty(); return; }
+      const dateStr = data.gameDate ? new Date(data.gameDate).toLocaleDateString() : '';
+      const awayLogo = data.awayLogo || '/images/placeholder.jpg';
+      const homeLogo = data.homeLogo || '/images/placeholder.jpg';
+      const awayScore = data.awayPoints ?? '';
+      const homeScore = data.homePoints ?? '';
+      el.html(
+        `<div class="elo-game-grid">`+
+        `<div></div><div>${dateStr}</div><div></div>`+
+        `<div><img src="${awayLogo}"></div><div>@</div><div><img src="${homeLogo}"></div>`+
+        `<div>${awayScore}</div><div></div><div>${homeScore}</div>`+
+        `</div>`
+      );
+    }
+
     function showComparison(){
-      if(!comparisonContainer) return;
-      if(compareIdx >= gameEntryNames.length){
+      if(compareIdx >= eloGames.length){
         rankingDone = true;
         $('#comparisonButtons').hide();
         $('#comparisonPrompt').text('Placement recorded');
         updateSubmitState();
         return;
       }
-      $('#comparisonPrompt').text(`Was this game better than ${gameEntryNames[compareIdx]}?`);
+      const comp = eloGames[compareIdx].game || {};
+      const compData = {
+        awayLogo: comp.awayTeam && comp.awayTeam.logos && comp.awayTeam.logos[0],
+        homeLogo: comp.homeTeam && comp.homeTeam.logos && comp.homeTeam.logos[0],
+        awayPoints: comp.AwayPoints ?? comp.awayPoints,
+        homePoints: comp.HomePoints ?? comp.homePoints,
+        gameDate: comp.StartDate || comp.startDate
+      };
+      $('#comparisonPrompt').text('Which game was better?');
+      renderCard(newCard, selectedGameData);
+      renderCard(existingCard, compData);
     }
 
     if(nextBtn){
       nextBtn.on('click', function(){
         nextBtn.hide();
-        if(comparisonContainer) comparisonContainer.show();
+        if(infoStep) infoStep.hide();
+        if(eloStep) eloStep.show();
+        if(backBtn) backBtn.removeClass('d-none');
+        const data = gameSelect.select2('data')[0];
+        selectedGameData = {
+          awayLogo: data?.awayLogo,
+          homeLogo: data?.homeLogo,
+          awayPoints: data?.awayPoints,
+          homePoints: data?.homePoints,
+          gameDate: data?.gameDate
+        };
         showComparison();
+        updateSubmitState();
+      });
+    }
+
+    if(backBtn){
+      backBtn.on('click', function(){
+        if(infoStep) infoStep.show();
+        if(eloStep) eloStep.hide();
+        nextBtn.show();
+        backBtn.addClass('d-none');
+        updateSubmitState();
       });
     }
 
@@ -159,6 +214,9 @@
               homeLogo:g.homeLogo,
               awayLogo:g.awayLogo,
               score:g.score,
+              homePoints:g.homePoints,
+              awayPoints:g.awayPoints,
+              gameDate:g.gameDate,
               scoreDisplay:`${away}-${home}`,
               text:`${g.awayTeamName} vs ${g.homeTeamName}`
             };
@@ -216,23 +274,34 @@
       updateSubmitState();
     });
 
-    gameSelect.on('change', updateSubmitState);
+    gameSelect.on('change', function(){
+      const data = gameSelect.select2('data')[0];
+      selectedGameData = data ? {
+        awayLogo:data.awayLogo,
+        homeLogo:data.homeLogo,
+        awayPoints:data.awayPoints,
+        homePoints:data.homePoints,
+        gameDate:data.gameDate
+      } : null;
+      updateSubmitState();
+    });
 
     modal.on('shown.bs.modal', function(){
       if(gameEntryCount >= 5){
         rankingDone = false;
         compareIdx = 0;
         if(ratingGroup) ratingGroup.hide();
-        if(nextBtn) nextBtn.show();
-        if(comparisonContainer){
-          comparisonContainer.hide();
-          $('#comparisonButtons').show();
-          $('#comparisonPrompt').text('');
-        }
+        nextBtn.show();
+        eloStep.hide();
+        infoStep.show();
+        backBtn.addClass('d-none');
+        $('#comparisonButtons').show();
+        $('#comparisonPrompt').text('');
       } else {
         if(ratingGroup) ratingGroup.show();
-        if(nextBtn) nextBtn.hide();
-        if(comparisonContainer) comparisonContainer.hide();
+        nextBtn.hide();
+        eloStep.hide();
+        infoStep.show();
       }
       updateSubmitState();
       if(!$('#leagueSelect option').length){
