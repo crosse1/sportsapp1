@@ -41,9 +41,9 @@
                 <div class="wishlist-btn"><i class="bi <%= game.isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i></div>
                 <% if(game.followedWishers && game.followedWishers.length){ const extra = game.followedWishers.length - 4; %>
                 <div class="followers-col">
-                  <% game.followedWishers.slice(0,4).forEach(function(u){ const img = u.profilePic && u.profilePic.data ? ('data:'+u.profilePic.contentType+';base64,'+u.profilePic.data.toString('base64')) : 'https://via.placeholder.com/30'; %>
+                  <% game.followedWishers.slice(0,4).forEach(function(u){ %>
                     <div class="follower-avatar" title="<%= u.username %>" data-href="/users/<%= u._id %>">
-                      <img src="<%= img %>" class="avatar avatar-sm">
+                      <img src="/users/<%= u._id %>/profile-image" class="avatar avatar-sm">
                     </div>
                   <% }); if(extra>0){ %>
                     <div class="more-followers">+<%= extra %></div>
