@@ -61,5 +61,22 @@
         window.openEditEntryModal(id);
       });
     });
+
+    document.querySelectorAll('.delete-entry-icon').forEach(icon => {
+      icon.addEventListener('click', async () => {
+        const id = icon.getAttribute('data-entry-id');
+        if(!confirm('Delete this entry?')) return;
+        try {
+          const res = await fetch(`/gameEntry/${id}`, { method: 'DELETE' });
+          if(!res.ok) throw new Error('Failed');
+          const col = icon.closest('.col');
+          if(col) col.remove();
+          const idx = (window.gameEntriesData || []).findIndex(e => e._id === id);
+          if(idx > -1){ window.gameEntriesData.splice(idx,1); }
+        } catch(err){
+          alert('Delete failed');
+        }
+      });
+    });
   });
 })();

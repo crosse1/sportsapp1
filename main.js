@@ -121,6 +121,7 @@ app.post('/profile/photo', requireAuth, profileController.uploadProfilePhoto);
 app.post('/profile/location', requireAuth, profileController.setLocation);
 app.post('/profile/games', requireAuth, profileController.addGame);
 app.put('/gameEntry/:id', requireAuth, profileController.updateGameEntry);
+app.delete('/gameEntry/:id', requireAuth, profileController.deleteGameEntry);
 app.get('/welcome', requireAuth, (req, res) => {
     res.redirect('/');
 });
