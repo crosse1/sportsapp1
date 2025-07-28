@@ -326,7 +326,8 @@ exports.profileBadges = async (req, res, next) => {
             isFollowing,
             canMessage,
             viewer: req.user,
-            activeTab: 'badges'
+            activeTab: 'badges',
+            eloGames: profileUser.gameElo || []
         });
     } catch (err) {
         next(err);
@@ -418,7 +419,8 @@ exports.profileStats = async (req, res, next) => {
             venuesList: profileUser.venuesList || [],
             teamsCount,
             venuesCount,
-            statesCount
+            statesCount,
+            eloGames: profileUser.gameElo || []
         });
     } catch (err) {
         console.error('[profileStats] Error occurred:', err);
@@ -458,7 +460,8 @@ exports.profileGames = async (req, res, next) => {
             viewer: req.user,
             activeTab: 'games',
             gameEntries: enrichedEntries,
-            usePastGameLinks: true
+            usePastGameLinks: true,
+            eloGames: profileUser.gameElo || []
         });
     } catch (err) {
         next(err);
@@ -629,9 +632,13 @@ exports.unfollowUser = async (req, res, next) => {
 // View followers list
 exports.viewFollowers = async (req, res, next) => {
     try {
-        const user = await User.findById(req.params.id).populate('followers');
-        if (!user) return res.redirect('/profile');
-        res.render('followList', { title: 'Followers', users: user.followers });
+        const profileUser = await User.findById(req.params.id).populate('followers');
+        if (!profileUser) return res.redirect('/profile');
+        res.render('followList', {
+            title: 'Followers',
+            users: profileUser.followers,
+            eloGames: profileUser.gameElo || []
+        });
     } catch (err) {
         next(err);
     }
@@ -640,9 +647,13 @@ exports.viewFollowers = async (req, res, next) => {
 // View following list
 exports.viewFollowing = async (req, res, next) => {
     try {
-        const user = await User.findById(req.params.id).populate('following');
-        if (!user) return res.redirect('/profile');
-        res.render('followList', { title: 'Following', users: user.following });
+        const profileUser = await User.findById(req.params.id).populate('following');
+        if (!profileUser) return res.redirect('/profile');
+        res.render('followList', {
+            title: 'Following',
+            users: profileUser.following,
+            eloGames: profileUser.gameElo || []
+        });
     } catch (err) {
         next(err);
     }
@@ -700,7 +711,8 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
                 viewer: req.user,
                 activeTab: 'games',
                 gameEntries: enrichedEntries,
-                error: 'You’ve already entered a rating for this game.'
+                error: 'You’ve already entered a rating for this game.',
+                eloGames: user.gameElo || []
             });
         }
         
