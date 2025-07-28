@@ -115,6 +115,11 @@
     padding: 0.25rem 0.75rem;
 }
 
+.message-btn {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.75rem;
+}
+
 .add-game-btn {
     padding: 0.5rem 2rem;
     font-size: 1.1rem;
