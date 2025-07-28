@@ -657,6 +657,7 @@ document.addEventListener('DOMContentLoaded', renderStats);
             const g = e.game || {};
             return `${g.awayTeamName || ''} vs ${g.homeTeamName || ''}`;
         })) %>;
+        window.eloGamesData = <%- JSON.stringify(eloGames || []) %>;
     </script>
     <script src="/js/addGameModal.js"></script>
     <script>

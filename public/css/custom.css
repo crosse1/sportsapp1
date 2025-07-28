@@ -959,3 +959,27 @@
   opacity: 0.8;
 }
 .username-status{position:absolute;top:50%;right:1rem;transform:translateY(-50%);font-size:1.25rem;}
+
+/* ELO matchup cards */
+.elo-game-card{
+  border:1px solid #fff;
+  border-radius:.5rem;
+  padding:.5rem;
+  background:rgba(255,255,255,0.15);
+  backdrop-filter:blur(8px);
+  color:#fff;
+}
+.elo-game-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  grid-template-rows:repeat(3,auto);
+  align-items:center;
+  text-align:center;
+}
+.elo-game-grid img{
+  width:40px;
+  height:40px;
+  object-fit:cover;
+  border-radius:50%;
+  margin:0 auto;
+}

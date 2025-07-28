@@ -392,7 +392,10 @@ exports.searchPastGames = async (req, res, next) => {
       awayTeamName: g.AwayTeam,
       homeLogo: teamMap[g.HomeId] && teamMap[g.HomeId].logos && teamMap[g.HomeId].logos[0],
       awayLogo: teamMap[g.AwayId] && teamMap[g.AwayId].logos && teamMap[g.AwayId].logos[0],
-      score: `${g.HomePoints ?? ''}-${g.AwayPoints ?? ''}`
+      score: `${g.HomePoints ?? ''}-${g.AwayPoints ?? ''}`,
+      homePoints: g.HomePoints,
+      awayPoints: g.AwayPoints,
+      gameDate: g.StartDate
     }));
     res.json(results);
   } catch(err){

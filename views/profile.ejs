@@ -354,10 +354,12 @@
             <div class="modal-content p-3">
                 <form action="/profile/games" method="post" enctype="multipart/form-data">
                     <div class="modal-header border-0">
-                        <h5 class="modal-title">Add Game</h5>
+                        <button type="button" id="backBtn" class="btn btn-link text-white p-0 me-2 d-none"><i class="bi bi-arrow-left"></i></button>
+                        <h5 class="modal-title flex-grow-1">Add Game</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
+                        <div id="gameInfoStep">
                         <div class="mb-3">
                             <label class="form-label">Season</label>
                             <select id="seasonSelect" class="form-select glass-control"></select>
@@ -380,13 +382,6 @@
                                 <input type="range" id="ratingRange" name="rating" class="form-range glass-control" min="1" max="10" step="0.5" value="5" required>
                             </div>
                         </div>
-                        <div id="comparisonContainer" class="mb-3" style="display:none;">
-                            <p id="comparisonPrompt" class="mb-2 fw-bold"></p>
-                            <div id="comparisonButtons" class="d-flex justify-content-around">
-                                <button type="button" id="betterBtn" class="btn btn-primary btn-sm">New Game</button>
-                                <button type="button" id="worseBtn" class="btn btn-secondary btn-sm">Existing Game</button>
-                            </div>
-                        </div>
                         <div class="mb-3">
                             <label class="form-label">Photo</label>
                             <input type="file" name="photo" class="form-control glass-control">
@@ -397,6 +392,20 @@
                         </div>
                         <input type="hidden" name="teamsList" id="teamsListInput">
                         <input type="hidden" name="venuesList" id="venuesListInput">
+                        </div>
+                        <div id="eloStep" style="display:none;">
+                            <div id="eloMatchup" class="mb-3">
+                                <div class="d-flex justify-content-between mb-3">
+                                    <div id="newGameCard" class="elo-game-card flex-fill me-2"></div>
+                                    <div id="existingGameCard" class="elo-game-card flex-fill ms-2"></div>
+                                </div>
+                                <p id="comparisonPrompt" class="mb-2 fw-bold text-center"></p>
+                                <div id="comparisonButtons" class="d-flex justify-content-around">
+                                    <button type="button" id="betterBtn" class="btn btn-primary btn-sm">New Game</button>
+                                    <button type="button" id="worseBtn" class="btn btn-secondary btn-sm">Existing Game</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer border-0">
                         <button type="button" id="nextBtn" class="btn btn-primary">Next</button>
@@ -417,6 +426,7 @@
         window.existingGameIds = <%- JSON.stringify((user.gameEntries || []).map(e => String(e.game))) %>;
         window.gameEntryCount = <%- (user.gameEntries || []).length %>;
         window.gameEntryNames = <%- JSON.stringify((gameEntries || []).map(function(e){ var g=e.game||{}; return (g.awayTeamName || '') + ' vs ' + (g.homeTeamName || ''); })) %>;
+        window.eloGamesData = <%- JSON.stringify(eloGames || []) %>;
     </script>
     <script src="/js/addGameModal.js"></script>
     <script>
