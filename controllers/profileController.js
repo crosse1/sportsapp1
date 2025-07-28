@@ -770,3 +770,59 @@ exports.updateGameEntry = [uploadDisk.single('photo'), async (req, res, next) =>
     }
 }];
 
+exports.deleteGameEntry = async (req, res, next) => {
+    try {
+        const entryId = req.params.id;
+
+        const user = await User.findById(req.user.id);
+        if(!user) return res.status(401).json({ error:'Unauthorized' });
+
+        const entry = user.gameEntries.id(entryId);
+        if(!entry) return res.status(404).json({ error:'Entry not found' });
+
+        const pastGameDoc = await PastGame.findById(entry.game);
+
+        const teamsToRemove = [];
+        const venuesToRemove = [];
+
+        if(pastGameDoc){
+            if(pastGameDoc.HomeId){
+                const homeTeam = await Team.findOne({ teamId: pastGameDoc.HomeId }).select('_id');
+                if(homeTeam) teamsToRemove.push(String(homeTeam._id));
+            }
+            if(pastGameDoc.AwayId){
+                const awayTeam = await Team.findOne({ teamId: pastGameDoc.AwayId }).select('_id');
+                if(awayTeam) teamsToRemove.push(String(awayTeam._id));
+            }
+            if(pastGameDoc.VenueId){
+                const venue = await Venue.findOne({ venueId: pastGameDoc.VenueId }).select('_id');
+                if(venue) venuesToRemove.push(String(venue._id));
+            }
+
+            const ratingIdx = pastGameDoc.ratings.findIndex(r => String(r.userId) === String(user._id));
+            if(ratingIdx >= 0) pastGameDoc.ratings.splice(ratingIdx,1);
+            const commentIdx = pastGameDoc.comments.findIndex(c => String(c.userId) === String(user._id));
+            if(commentIdx >= 0) pastGameDoc.comments.splice(commentIdx,1);
+            await pastGameDoc.save();
+        }
+
+        entry.deleteOne();
+
+        teamsToRemove.forEach(tid => {
+            const idx = user.teamsList.findIndex(t => String(t) === tid);
+            if(idx >= 0) user.teamsList.splice(idx,1);
+        });
+
+        venuesToRemove.forEach(vid => {
+            const idx = user.venuesList.findIndex(v => String(v) === vid);
+            if(idx >= 0) user.venuesList.splice(idx,1);
+        });
+
+        await user.save();
+
+        res.json({ success:true });
+    } catch(err){
+        next(err);
+    }
+};
+
