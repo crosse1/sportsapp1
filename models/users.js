@@ -42,7 +42,11 @@ const userSchema = new mongoose.Schema({
         longitude: Number,
         updatedAt: Date
     },
-    messageThreads: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Message' }]
+    messageThreads: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Message' }],
+    gameElo: [{
+        game: { type: mongoose.Schema.Types.ObjectId, ref: 'Game' },
+        elo: { type: Number, default: 1500 }
+      }], default: []
 });
 
 // Automatically hash a password before saving

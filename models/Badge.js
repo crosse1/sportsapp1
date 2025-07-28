@@ -15,6 +15,7 @@ const badgeSchema = new mongoose.Schema({
   },
   reqGames: Number,
   homeTeamOnly: { type: Boolean, default: false },
+  oneTeamEach: { type: Boolean, default: false },
   timeConstraints: { type: Number, min: 1 },
   description: String,
   pointValue: Number
