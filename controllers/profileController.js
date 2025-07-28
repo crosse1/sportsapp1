@@ -153,6 +153,16 @@ exports.loginUser = async (req, res, next) => {
     }
 };
 
+exports.checkUsername = async (req, res, next) => {
+    try {
+        const username = req.params.username;
+        const exists = await User.exists({ username: new RegExp("^" + username + "$", "i") });
+        res.json({ available: !exists });
+    } catch (err) {
+        next(err);
+    }
+};
+
 
 
 exports.getProfile = async (req, res, next) => {
