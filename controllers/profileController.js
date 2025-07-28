@@ -92,6 +92,38 @@ async function enrichGameEntries(entries){
     });
 }
 
+function calculateElo(entries){
+    if(!entries || !entries.length) return [];
+    const K = 32;
+    const eloMap = {};
+    entries.forEach(e => {
+        eloMap[String(e.game)] = 1500;
+        console.log(`Original rating for game ${e.game}: ${e.rating}`);
+    });
+    for(let i=0;i<entries.length;i++){
+        for(let j=i+1;j<entries.length;j++){
+            const a = entries[i];
+            const b = entries[j];
+            const eloA = eloMap[String(a.game)];
+            const eloB = eloMap[String(b.game)];
+            let scoreA = 0.5;
+            let scoreB = 0.5;
+            if(a.rating > b.rating){ scoreA = 1; scoreB = 0; }
+            else if(a.rating < b.rating){ scoreA = 0; scoreB = 1; }
+            const expA = 1 / (1 + Math.pow(10, (eloB - eloA)/400));
+            const expB = 1 / (1 + Math.pow(10, (eloA - eloB)/400));
+            eloMap[String(a.game)] = eloA + K * (scoreA - expA);
+            eloMap[String(b.game)] = eloB + K * (scoreB - expB);
+        }
+    }
+    const results = entries.map(e => ({ game: e.game, elo: eloMap[String(e.game)] }));
+    results.forEach(r => {
+        console.log(`ELO for game ${r.game}: ${r.elo}`);
+    });
+    console.log('Saving ELO array:', JSON.stringify(results));
+    return results;
+}
+
 exports.getSignUp = async (req, res, next) => {
     try {
         const teams = await Team.find();
@@ -725,6 +757,10 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
             ...venuesToAdd.map(toObjectId)
         ];
 
+        if(user.gameEntries.length <= 5){
+            user.gameElo = calculateElo(user.gameEntries);
+        }
+
         await user.save();
         res.redirect('/profileGames/' + user._id);
     } catch (err) {
@@ -769,6 +805,9 @@ exports.updateGameEntry = [uploadDisk.single('photo'), async (req, res, next) =>
             if(updated){
                 await pastGameDoc.save();
             }
+        }
+        if(user.gameEntries.length <= 5){
+            user.gameElo = calculateElo(user.gameEntries);
         }
 
         await user.save();
@@ -827,6 +866,10 @@ exports.deleteGameEntry = async (req, res, next) => {
             const idx = user.venuesList.findIndex(v => String(v) === vid);
             if(idx >= 0) user.venuesList.splice(idx,1);
         });
+
+        if(user.gameEntries.length <= 5){
+            user.gameElo = calculateElo(user.gameEntries);
+        }
 
         await user.save();
 
