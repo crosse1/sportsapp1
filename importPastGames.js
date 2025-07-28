@@ -80,7 +80,7 @@ function importPastGames(filePath) {
   });
 }
 
-const file = process.argv[2] || 'public/files/2020.csv';
+const file = process.argv[2] || 'public/files/2019.csv';
 
 importPastGames(file)
   .then(() => console.log('Past games import completed'))
