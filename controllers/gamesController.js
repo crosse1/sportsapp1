@@ -379,7 +379,6 @@ exports.searchPastGames = async (req, res, next) => {
     }
     const games = await PastGame.find(match)
       .sort({ StartDate: 1 })
-      .limit(10)
       .lean();
     const teamIds = [...new Set(games.flatMap(g => [g.HomeId, g.AwayId]))];
     const teams = await Team.find({ teamId: { $in: teamIds } })

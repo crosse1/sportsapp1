@@ -6,6 +6,7 @@
     const seasonSelect = $('#seasonSelect');
     const teamSelect = $('#teamSelect');
     const gameSelect = $('#gameSelect');
+    const gameSpinner = $('#gameSpinner');
     const commentInput = $('#commentInput');
     const commentCounter = $('#commentCounter');
     const submitBtn = $('#submitGameBtn');
@@ -81,6 +82,9 @@
         url:'/pastGames/search',
         dataType:'json',
         delay:250,
+        beforeSend:function(){
+          if(gameSpinner){ gameSpinner.show(); }
+        },
         data:function(params){
           return {
             leagueId: leagueSelect.val(),
@@ -105,6 +109,9 @@
               text:`${g.awayTeamName} vs ${g.homeTeamName}`
             };
           }) };
+        },
+        complete:function(){
+          if(gameSpinner){ gameSpinner.hide(); }
         }
       }
     });
