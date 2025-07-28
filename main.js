@@ -120,6 +120,7 @@ app.post('/profile/edit', requireAuth, profileController.updateProfile);
 app.post('/profile/photo', requireAuth, profileController.uploadProfilePhoto);
 app.post('/profile/location', requireAuth, profileController.setLocation);
 app.post('/profile/games', requireAuth, profileController.addGame);
+app.put('/gameEntry/:id', requireAuth, profileController.updateGameEntry);
 app.get('/welcome', requireAuth, (req, res) => {
     res.redirect('/');
 });

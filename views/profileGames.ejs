@@ -114,9 +114,12 @@
                  const awayColor = game.awayTeam && game.awayTeam.color ? game.awayTeam.color : '#ffffff';
                  const homeColor = game.homeTeam && game.homeTeam.color ? game.homeTeam.color : '#ffffff'; %>
             <div class="col">
-                <div class="game-date-banner mb-1">
+                <div class="game-date-banner mb-1 d-flex align-items-center">
                     <% const dateObj = new Date(game.startDate || game.StartDate); %>
-                    <%= (dateObj.getMonth() + 1).toString().padStart(2, '0') %>/<%= dateObj.getDate().toString().padStart(2, '0') %>/<%= dateObj.getFullYear() %>
+                    <span><%= (dateObj.getMonth() + 1).toString().padStart(2, '0') %>/<%= dateObj.getDate().toString().padStart(2, '0') %>/<%= dateObj.getFullYear() %></span>
+                    <% if(isCurrentUser){ %>
+                        <i class="bi bi-pencil-square ms-2 text-black edit-entry-icon" role="button" data-entry-id="<%= entry._id %>"></i>
+                    <% } %>
                 </div>
                 <div class="d-flex align-items-center">
                     <div class="position-relative flex-grow-1">
@@ -142,7 +145,7 @@
                         </a>
                     </div>
                     <% if(entry.rating){ %>
-                        <div class="rating-wrapper gradient-overlay">
+                        <div class="rating-wrapper gradient-overlay" data-entry-id="<%= entry._id %>">
                             <img class="bw-img" src="<%= game.venue && game.venue.imgUrl ? game.venue.imgUrl : '/images/placeholder.jpg' %>" alt="<%= game.Venue || game.venue %>">
                             <span class="rating-number"><%= entry.rating %>/10</span>
                             <% if(entry.comment){ %><span class="rating-comment"><%= entry.comment %></span><% } %>
@@ -157,13 +160,56 @@
         <% } %>
     </div>
 
+    <% if(isCurrentUser){ %>
+    <div class="modal fade user-search-modal" id="editGameModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-3">
+                <form id="editGameForm" enctype="multipart/form-data">
+                    <input type="hidden" name="entryId" id="editEntryId">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title">Edit Game Entry</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label d-flex justify-content-between">
+                                <span>Rating:</span>
+                                <span id="editRatingValue" class="fw-bold text-white">5</span>
+                            </label>
+                            <div class="glass-range-wrapper">
+                                <input type="range" id="editRatingRange" name="rating" class="form-range glass-control" min="1" max="10" step="0.5" value="5" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Photo</label>
+                            <input type="file" name="photo" class="form-control glass-control" id="editPhotoInput">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label d-flex justify-content-between">
+                                <span>Comment</span>
+                                <small id="editCommentCounter">0/100</small>
+                            </label>
+                            <textarea id="editCommentInput" class="form-control glass-control" name="comment" rows="3" maxlength="100"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="submit" id="saveGameBtn" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <% } %>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         window.existingGameIds = <%- JSON.stringify((user.gameEntries || []).map(e => String(e.game))) %>;
+        window.gameEntriesData = <%- JSON.stringify(gameEntries || []) %>;
     </script>
     <script src="/js/addGameModal.js"></script>
+    <script src="/js/editGameModal.js"></script>
     <script>
         const searchInput = document.getElementById('searchInput');
         const resultsEl = document.getElementById('searchResults');

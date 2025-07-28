@@ -722,3 +722,51 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
     }
 }];
 
+exports.updateGameEntry = [uploadDisk.single('photo'), async (req, res, next) => {
+    try {
+        const entryId = req.params.id;
+        const { rating, comment } = req.body;
+        const sanitizedComment = sanitizeComment(comment || '');
+
+        const user = await User.findById(req.user.id);
+        if(!user) return res.status(401).json({ error:'Unauthorized' });
+
+        const entry = user.gameEntries.id(entryId);
+        if(!entry) return res.status(404).json({ error:'Entry not found' });
+
+        entry.rating = parseFloat(rating);
+        entry.comment = sanitizedComment || null;
+        if(req.file){
+            entry.image = '/uploads/' + req.file.filename;
+        }
+
+        const pastGameDoc = await PastGame.findById(entry.game);
+        if(pastGameDoc){
+            let updated = false;
+            const ratingObj = pastGameDoc.ratings.find(r => String(r.userId) === String(user._id));
+            if(ratingObj){
+                ratingObj.rating = parseFloat(rating);
+                updated = true;
+            }
+            const commentObj = pastGameDoc.comments.find(c => String(c.userId) === String(user._id));
+            if(commentObj){
+                commentObj.comment = sanitizedComment;
+                updated = true;
+            } else if(sanitizedComment){
+                pastGameDoc.comments.push({ userId:user._id, comment:sanitizedComment });
+                updated = true;
+            }
+            if(updated){
+                await pastGameDoc.save();
+            }
+        }
+
+        await user.save();
+
+        const enriched = await enrichGameEntries([entry]);
+        res.json({ success:true, entry: enriched[0] });
+    } catch(err){
+        next(err);
+    }
+}];
+
