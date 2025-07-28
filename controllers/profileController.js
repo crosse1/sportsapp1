@@ -216,9 +216,6 @@ exports.getProfile = async (req, res, next) => {
             enrichedEntries = await enrichGameEntries(gameEntriesRaw);
         }
 
-        const eloGames = await enrichGameEntries(user.gameElo || []);
-        eloGames.sort((a,b)=> (b.elo||0) - (a.elo||0));
-
         const ratingMap = {};
         if(user.gameEntries){
             user.gameEntries.forEach(e=>{ ratingMap[String(e.game)] = e.rating; });
@@ -234,8 +231,7 @@ exports.getProfile = async (req, res, next) => {
             viewer: req.user,
             wishlistGames,
             gamesList: user.gamesList,
-            gameEntries: enrichedEntries,
-            eloGames
+            gameEntries: enrichedEntries
         });
     } catch (err) {
         next(err);
@@ -324,16 +320,13 @@ exports.profileBadges = async (req, res, next) => {
             const followsBack = profileUser.following.some(f => String(f) === String(viewer._id));
             canMessage = isFollowing && followsBack;
         }
-        const eloGames = await enrichGameEntries(profileUser.gameElo || []);
-        eloGames.sort((a,b)=> (b.elo||0) - (a.elo||0));
         res.render('profileBadges', {
             user: profileUser,
             isCurrentUser,
             isFollowing,
             canMessage,
             viewer: req.user,
-            activeTab: 'badges',
-            eloGames
+            activeTab: 'badges'
         });
     } catch (err) {
         next(err);
@@ -370,8 +363,6 @@ exports.profileStats = async (req, res, next) => {
         }
 
         const enrichedEntries = await enrichGameEntries(profileUser.gameEntries || []);
-        const eloGames = await enrichGameEntries(profileUser.gameElo || []);
-        eloGames.sort((a,b)=> (b.elo||0)-(a.elo||0));
 
         const topRatedGames = enrichedEntries
             .filter(e => e.game && e.game._id)
@@ -423,7 +414,6 @@ exports.profileStats = async (req, res, next) => {
             activeTab: 'stats',
             gameEntries: enrichedEntries,
             topRatedGames,
-            eloGames,
             teamsList: profileUser.teamsList || [],
             venuesList: profileUser.venuesList || [],
             teamsCount,
@@ -452,8 +442,6 @@ exports.profileGames = async (req, res, next) => {
                 return new Date(db) - new Date(da);
             });
         }
-        const eloGames = await enrichGameEntries(profileUser.gameElo || []);
-        eloGames.sort((a,b)=> (b.elo||0)-(a.elo||0));
         const isCurrentUser = req.user && req.user.id.toString() === profileUser._id.toString();
         let isFollowing = false, canMessage = false;
         if (req.user && !isCurrentUser) {
@@ -470,8 +458,7 @@ exports.profileGames = async (req, res, next) => {
             viewer: req.user,
             activeTab: 'games',
             gameEntries: enrichedEntries,
-            usePastGameLinks: true,
-            eloGames
+            usePastGameLinks: true
         });
     } catch (err) {
         next(err);
@@ -493,8 +480,6 @@ exports.profileWaitlist = async (req, res, next) => {
             const followsBack = profileUser.following.some(f => String(f) === String(viewer._id));
             canMessage = isFollowing && followsBack;
         }
-        const eloGames = await enrichGameEntries(profileUser.gameElo || []);
-        eloGames.sort((a,b)=> (b.elo||0)-(a.elo||0));
         res.render('profileWaitlist', {
             user: profileUser,
             isCurrentUser,
@@ -503,8 +488,8 @@ exports.profileWaitlist = async (req, res, next) => {
             viewer: req.user,
             activeTab: 'waitlist',
             wishlistGames: profileUser.wishlist || [],
-            usePastGameLinks: false,
-            eloGames
+            
+            usePastGameLinks: false
         });
     } catch (err) {
         next(err);
@@ -707,8 +692,6 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
         const alreadyExists = user.gameEntries.some(e => String(e.game) === String(gameId));
         if (alreadyExists) {
             const enrichedEntries = await enrichGameEntries(user.gameEntries);
-            const eloGames = await enrichGameEntries(user.gameElo || []);
-            eloGames.sort((a,b)=> (b.elo||0)-(a.elo||0));
             return res.status(400).render('profileGames', {
                 user,
                 isCurrentUser: true,
@@ -717,7 +700,6 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
                 viewer: req.user,
                 activeTab: 'games',
                 gameEntries: enrichedEntries,
-                eloGames,
                 error: 'You’ve already entered a rating for this game.'
             });
         }
