@@ -85,6 +85,31 @@ exports.startThread = async (req, res, next) => {
     }
 };
 
+exports.getOrCreateThread = async (req, res, next) => {
+    try {
+        const otherId = req.params.userId;
+        if (otherId === req.user.id) {
+            return res.status(400).json({ error: 'Cannot message yourself.' });
+        }
+        const allowed = await isMutualFollow(req.user.id, otherId);
+        if (!allowed) {
+            return res.status(403).json({ error: 'You can only message users who follow you back.' });
+        }
+        let thread = await Message.findOne({
+            participants: { $all: [req.user.id, otherId] },
+            'participants.2': { $exists: false }
+        });
+        if (!thread) {
+            thread = new Message({ participants: [req.user.id, otherId], messages: [], unreadBy: [] });
+            await thread.save();
+            await User.updateMany({ _id: { $in: [req.user.id, otherId] } }, { $push: { messageThreads: thread._id } });
+        }
+        res.json({ threadId: thread._id });
+    } catch (err) {
+        next(err);
+    }
+};
+
 exports.sendMessage = async (req, res, next) => {
     try {
         const thread = await Message.findById(req.params.id);

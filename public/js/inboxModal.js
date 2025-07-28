@@ -88,5 +88,23 @@
       }catch(err){console.error(err);}
     }
   });
+
+  document.addEventListener('click', async function(e){
+    const btn = e.target.closest('.message-btn');
+    if(btn){
+      e.preventDefault();
+      const userId = btn.dataset.user;
+      try{
+        const res = await fetch(`/messages/thread/${userId}`, {method:'POST', headers:{'Accept':'application/json'}});
+        if(!res.ok){
+          const data = await res.json().catch(()=>({}));
+          alert(data.error || 'You can only message users who follow you back.');
+          return;
+        }
+        const data = await res.json();
+        loadModal(data.threadId);
+      }catch(err){ console.error(err); }
+    }
+  });
   });
 })();

@@ -144,6 +144,7 @@ app.get('/messages/modal', requireAuth, messagesController.renderModal);
 app.get('/inbox/modal', requireAuth, messagesController.renderInboxModal);
 app.get('/messages/:id', requireAuth, messagesController.viewThread);
 app.post('/messages/start/:id', requireAuth, messagesController.startThread);
+app.post('/messages/thread/:userId', requireAuth, messagesController.getOrCreateThread);
 app.post('/messages/:id/send', requireAuth, messagesController.sendMessage);
 
 app.get('/tutorial', requireAuth, homeController.showTutorial);

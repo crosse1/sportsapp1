@@ -19,6 +19,8 @@
                         <h2 class="fw-bold mb-0 me-3">@<%= user.username %></h2>
                         <% if(isCurrentUser){ %>
                             <a href="/profile/edit" class="btn glassy-btn btn-sm edit-profile-btn ms-2">Edit Profile</a>
+                        <% } else if(canMessage){ %>
+                            <button class="btn glassy-btn btn-sm message-btn ms-2" data-user="<%= user._id %>">Message</button>
                         <% } %>
                     </div>
                     <% if(isCurrentUser){ %>
