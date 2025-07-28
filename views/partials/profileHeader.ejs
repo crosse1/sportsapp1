@@ -118,13 +118,20 @@
                             </div>
                         </div>
                     </div>
-                    <div class="mb-3 position-relative">
+                    <div class="mb-3 position-relative" id="ratingGroup">
                         <label class="form-label d-flex justify-content-between">
                             <span>Rating:</span>
                             <span id="ratingValue" class="fw-bold text-white">5</span>
                         </label>
                         <div class="glass-range-wrapper">
                             <input type="range" id="ratingRange" name="rating" class="form-range glass-control" min="1" max="10" step="0.5" value="5" required>
+                        </div>
+                    </div>
+                    <div id="comparisonContainer" class="mb-3" style="display:none;">
+                        <p id="comparisonPrompt" class="mb-2 fw-bold"></p>
+                        <div id="comparisonButtons" class="d-flex justify-content-around">
+                            <button type="button" id="betterBtn" class="btn btn-primary btn-sm">New Game</button>
+                            <button type="button" id="worseBtn" class="btn btn-secondary btn-sm">Existing Game</button>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -140,6 +147,7 @@
                     </div>
                 </div>
                 <div class="modal-footer border-0">
+                    <button type="button" id="nextBtn" class="btn btn-primary">Next</button>
                     <button type="submit" id="submitGameBtn" class="btn btn-primary" disabled>Submit</button>
                 </div>
             </form>
