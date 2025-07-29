@@ -1,0 +1,43 @@
+<%- include('partials/header') %>
+<div class="container mt-5" id="comparison-container">
+  <div id="games" class="d-flex justify-content-around"></div>
+  <div class="text-center mt-3" id="actions" style="display:none;">
+    <button id="leftBtn" class="btn btn-primary me-2">Left is better</button>
+    <button id="rightBtn" class="btn btn-primary">Right is better</button>
+  </div>
+</div>
+<script>
+async function loadComparison(){
+  const res = await fetch('/nextComparison');
+  const data = await res.json();
+  const gamesDiv = document.getElementById('games');
+  const actions = document.getElementById('actions');
+  gamesDiv.innerHTML = '';
+  if(!data){
+    gamesDiv.innerHTML = '<p>No comparisons pending</p>';
+    actions.style.display='none';
+    return;
+  }
+  window.currentComparisonId = data.comparisonId;
+  const left = data.newGame;
+  const right = data.existingGame;
+  gamesDiv.innerHTML = `
+    <div class="text-center">
+      <h5>New Game</h5>
+      <p>${left.HomeTeam} vs ${left.AwayTeam}</p>
+    </div>
+    <div class="text-center">
+      <h5>Existing Game</h5>
+      <p>${right.HomeTeam} vs ${right.AwayTeam}</p>
+    </div>
+  `;
+  actions.style.display='block';
+}
+async function sendResult(winner){
+  await fetch('/submitComparison',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({comparisonId:window.currentComparisonId,winner})});
+  loadComparison();
+}
+ document.getElementById('leftBtn').onclick=()=>sendResult('new');
+ document.getElementById('rightBtn').onclick=()=>sendResult('existing');
+ loadComparison();
+</script>
