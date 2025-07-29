@@ -154,8 +154,7 @@
     return entryId === gameId;
   });
 
-  console.log('🟦 Checking ELO for Game ID:', gameId);
-  console.log('🔍 Matching ELO Entry:', eloEntry);
+  
 
   if (eloEntry && typeof eloEntry.elo === 'number') {
     const elo = eloEntry.elo;

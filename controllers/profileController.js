@@ -64,8 +64,7 @@ async function enrichGameEntries(entries){
     if(!entries || !entries.length) return [];
     const ids = entries.map(e => e.game).filter(Boolean);
     const pastGames = await PastGame.find({ _id: { $in: ids } }).lean();
-    console.log('Entry Game IDs:', ids);
-    console.log('Found PastGame IDs:', pastGames.map(g => String(g._id)));
+    
 
     const teamIds = [...new Set(pastGames.flatMap(g => [g.HomeId, g.AwayId]))];
     const teams = await Team.find({ teamId: { $in: teamIds } })
@@ -96,9 +95,9 @@ async function enrichGameEntries(entries){
 // Enriches an array of {game, elo} objects with full PastGame info
 async function enrichEloGames(entries){
     if(!entries || !entries.length) return [];
-    console.log('[enrichEloGames] Input IDs:', entries.map(e => String(e.game)));
+    
     const enriched = await enrichGameEntries(entries);
-    console.log('[enrichEloGames] Enriched IDs:', enriched.map(e => e.game ? String(e.game._id) : null));
+    
     return enriched;
 }
 
