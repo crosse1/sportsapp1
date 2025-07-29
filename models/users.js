@@ -45,7 +45,7 @@ const userSchema = new mongoose.Schema({
     messageThreads: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Message' }],
     gameElo: {
         type: [{
-            game: { type: mongoose.Schema.Types.ObjectId, ref: 'Game' },
+            game: { type: mongoose.Schema.Types.ObjectId, ref: 'PastGame' },
             elo: { type: Number, default: 1500 }
         }],
         default: []

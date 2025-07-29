@@ -26,7 +26,7 @@
     const existingGameIds = window.existingGameIds || [];
     const gameEntryCount = window.gameEntryCount || 0;
     const gameEntryNames = window.gameEntryNames || [];
-    let rankingDone = gameEntryCount < 5;
+    let rankingDone = gameEntryCount < 5 || eloGames.length === 0;
     let compareIdx = 0;
 
     if(gameEntryCount >= 5){
@@ -297,7 +297,7 @@
     });
 
     modal.on('shown.bs.modal', function(){
-      if(gameEntryCount >= 5){
+      if(gameEntryCount >= 5 && eloGames.length){
         rankingDone = false;
         compareIdx = 0;
         if(ratingGroup) ratingGroup.hide();
