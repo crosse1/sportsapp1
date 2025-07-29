@@ -2,6 +2,7 @@ const path = require("path");
 const multer = require("multer");
 const mongoose = require('mongoose');
 const toObjectId = id => new mongoose.Types.ObjectId(id);
+const { findEloPlacement } = require('../lib/elo');
 
 const memoryStorage = multer.memoryStorage();
 const diskStorage = multer.diskStorage({
@@ -732,8 +733,16 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
                 eloGames
             });
         }
-        
+
         user.gameEntries.push(entry);
+        if (user.gameEntries.length > 5) {
+            const enrichedEloGames = await enrichEloGames(user.gameElo || []);
+            const newGame = { gameId: gameId, elo: 1500 };
+            console.log('[ELO] Calling findEloPlacement() for game:', gameId);
+            await findEloPlacement(newGame, enrichedEloGames, user);
+            console.log('[ELO] findEloPlacement complete');
+          }
+        console.log(`Added game entry:`, entry);
 
         // Look up the past game to infer teams and venue
         const pastGameDoc = await PastGame.findById(gameId);
@@ -780,22 +789,26 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
             ...(user.teamsList || []),
             ...teamsToAdd.map(toObjectId)
         ];
-        
+
         user.venuesList = [
             ...(user.venuesList || []),
             ...venuesToAdd.map(toObjectId)
         ];
 
         if(user.gameEntries.length <= 5){
+            console.log(`Calculating ELO for first ${user.gameEntries.length} entries...`);
             user.gameElo = calculateElo(user.gameEntries);
+            console.log('ELO results:', user.gameElo);
         }
 
         await user.save();
+        console.log('[SAVE] Saving user with gameElo:', user.gameElo);
         res.redirect('/profileGames/' + user._id);
     } catch (err) {
         next(err);
     }
 }];
+
 
 exports.updateGameEntry = [uploadDisk.single('photo'), async (req, res, next) => {
     try {
