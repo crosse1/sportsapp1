@@ -14,12 +14,13 @@ async function clearLists() {
       $set: {
         venuesList: [],
         teamsList: [],
-        gameEntries: []
+        gameEntries: [],
+        gameElo: []
       }
     });
-    console.log(`Updated ${result.modifiedCount || 0} users`);
+    console.log(`✅ Cleared venuesList, teamsList, gameEntries, and gameElo for ${result.modifiedCount || 0} users`);
   } catch (err) {
-    console.error('Failed to clear user lists:', err);
+    console.error('❌ Failed to clear user fields:', err);
   } finally {
     mongoose.disconnect();
   }

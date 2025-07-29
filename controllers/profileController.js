@@ -699,6 +699,8 @@ exports.setLocation = async (req, res, next) => {
     }
 };
 
+const { initializeEloFromRatings } = require('../lib/elo'); // or wherever it's defined
+
 exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
     try {
         const { gameId, rating, comment } = req.body;
@@ -735,16 +737,37 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
         }
 
         user.gameEntries.push(entry);
-        if (user.gameEntries.length > 5) {
+        console.log(`Added game entry:`, entry);
+
+        if ((user.gameEntries?.length || 0) <= 5) {
+            const newEntry = user.gameEntries[user.gameEntries.length - 1];
+            const rating = parseFloat(newEntry.rating);
+          
+            const baseElo = !isNaN(rating)
+              ? Math.round(1000 + ((rating - 1) / 9) * 1000)
+              : 1500;
+          
+            const newElo = {
+              game: new mongoose.Types.ObjectId(newEntry.game),
+              elo: baseElo,
+              finalized: true,
+              comparisonHistory: []
+            };
+          
+            user.gameElo = [...(user.gameElo || []), newElo];
+            console.log('[ELO INIT] Scaled entry added:', newElo);
+          } else {
             const enrichedEloGames = await enrichEloGames(user.gameElo || []);
             const newGame = { gameId: gameId, elo: 1500 };
             console.log('[ELO] Calling findEloPlacement() for game:', gameId);
+
+            const existing = user.gameElo.find(g => String(g.game) === String(gameId));
+            if (existing?.finalized) return;
+
             await findEloPlacement(newGame, enrichedEloGames, user);
             console.log('[ELO] findEloPlacement complete');
-          }
-        console.log(`Added game entry:`, entry);
+        }
 
-        // Look up the past game to infer teams and venue
         const pastGameDoc = await PastGame.findById(gameId);
 
         if (pastGameDoc) {
@@ -765,7 +788,6 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
         }
 
         const pastGame = pastGameDoc ? pastGameDoc.toObject() : null;
-
         const teamsToAdd = [];
         const venuesToAdd = [];
 
@@ -784,7 +806,6 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
             }
         }
 
-        // Dedupe and cast to ObjectId
         user.teamsList = [
             ...(user.teamsList || []),
             ...teamsToAdd.map(toObjectId)
@@ -794,12 +815,6 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
             ...(user.venuesList || []),
             ...venuesToAdd.map(toObjectId)
         ];
-
-        if(user.gameEntries.length <= 5){
-            console.log(`Calculating ELO for first ${user.gameEntries.length} entries...`);
-            user.gameElo = calculateElo(user.gameEntries);
-            console.log('ELO results:', user.gameElo);
-        }
 
         await user.save();
         console.log('[SAVE] Saving user with gameElo:', user.gameElo);

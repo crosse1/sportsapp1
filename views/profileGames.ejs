@@ -147,11 +147,21 @@
                             </div>
                         </a>
                     </div>
-                    <% const eloEntry = (eloGames || []).find(e => String(e.game && e.game._id) === String(game._id));
-                       if(eloEntry){
-                           const elo = eloEntry.elo || 1500;
-                           const rawScore = ((elo - 1000) / 800) * 9 + 1;
-                           const normalizedRating = Math.max(1.0, Math.min(10.0, Math.round(rawScore * 10) / 10)); %>
+                    <%
+  const gameId = String(game._id);
+  const eloEntry = (eloGames || []).find(e => {
+    const entryId = String(e.game && (e.game._id || e.game)); // Handle ObjectId vs populated object
+    return entryId === gameId;
+  });
+
+  console.log('🟦 Checking ELO for Game ID:', gameId);
+  console.log('🔍 Matching ELO Entry:', eloEntry);
+
+  if (eloEntry && typeof eloEntry.elo === 'number') {
+    const elo = eloEntry.elo;
+    const rawScore = ((elo - 1000) / 1000) * 9 + 1;
+    const normalizedRating = Math.max(1.0, Math.min(10.0, Math.round(rawScore * 10) / 10));
+%>
                         <div class="rating-wrapper gradient-overlay" data-entry-id="<%= entry._id %>">
                             <img class="bw-img" src="<%= game.venue && game.venue.imgUrl ? game.venue.imgUrl : '/images/placeholder.jpg' %>" alt="<%= game.Venue || game.venue %>">
                             <span class="rating-number"><%= normalizedRating %>/10</span>
