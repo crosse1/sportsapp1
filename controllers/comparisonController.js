@@ -38,8 +38,8 @@ module.exports.submit = async function(req, res, next){
 
     let newEntry = user.gameElo.find(e => String(extractGameId(e.game)) === String(cmp.newGameId));
     if (!newEntry) {
-      newEntry = { game: cmp.newGameId, elo: 1500, finalized: false, comparisonHistory: [] };
-      user.gameElo.push(newEntry);
+      user.gameElo.push({ game: cmp.newGameId, elo: 1500, finalized: false, comparisonHistory: [] });
+      newEntry = user.gameElo[user.gameElo.length - 1];
     }
 
     const updatedEntry = await findEloPlacement(newEntry, user.gameElo, user, {

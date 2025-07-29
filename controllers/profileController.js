@@ -757,13 +757,17 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
             user.gameElo = [...(user.gameElo || []), newElo];
             console.log('[ELO INIT] Scaled entry added:', newElo);
           } else {
-            const newGame = { gameId: gameId, elo: 1500 };
             console.log('[ELO] Calling findEloPlacement() for game:', gameId);
 
-            const existing = user.gameElo.find(g => String(g.game) === String(gameId));
-            if (existing?.finalized) return;
+            let eloEntry = user.gameElo.find(g => String(g.game) === String(gameId));
+            if (eloEntry?.finalized) return;
 
-            await findEloPlacement(newGame, user.gameElo || [], user);
+            if (!eloEntry) {
+              user.gameElo.push({ game: new mongoose.Types.ObjectId(gameId), elo: 1500, finalized: false, comparisonHistory: [] });
+              eloEntry = user.gameElo[user.gameElo.length - 1];
+            }
+
+            await findEloPlacement(eloEntry, user.gameElo || [], user);
             console.log('[ELO] findEloPlacement complete');
         }
 
