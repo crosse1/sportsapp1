@@ -757,14 +757,13 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
             user.gameElo = [...(user.gameElo || []), newElo];
             console.log('[ELO INIT] Scaled entry added:', newElo);
           } else {
-            const enrichedEloGames = await enrichEloGames(user.gameElo || []);
             const newGame = { gameId: gameId, elo: 1500 };
             console.log('[ELO] Calling findEloPlacement() for game:', gameId);
 
             const existing = user.gameElo.find(g => String(g.game) === String(gameId));
             if (existing?.finalized) return;
 
-            await findEloPlacement(newGame, enrichedEloGames, user);
+            await findEloPlacement(newGame, user.gameElo || [], user);
             console.log('[ELO] findEloPlacement complete');
         }
 

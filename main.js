@@ -9,6 +9,7 @@ const express = require("express"),
     gamesController = require("./controllers/gamesController"),
     venuesController = require('./controllers/venuesController'),
     messagesController = require('./controllers/messagesController'),
+    comparisonController = require('./controllers/comparisonController'),
     Message = require('./models/Message'),
     User = require('./models/users'),
     layouts = require('express-ejs-layouts'),
@@ -171,6 +172,10 @@ app.post('/teams/:id/list', requireAuth, gamesController.toggleTeamList);
 app.post('/venues/:id/list', requireAuth, gamesController.toggleVenueList);
 
 app.get('/venues', venuesController.listVenues);
+
+app.get('/compare', requireAuth, (req,res)=>{ res.render('compare'); });
+app.get('/nextComparison', requireAuth, comparisonController.getNext);
+app.post('/submitComparison', requireAuth, comparisonController.submit);
 
 
 app.use(homeController.logRequestPaths);

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Game Comparison</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="p-4">
+  <div id="comparison" class="text-center"></div>
+  <script>
+    async function load(){
+      const res = await fetch('/nextComparison');
+      const data = await res.json();
+      const container = document.getElementById('comparison');
+      if(!data){
+        container.innerHTML = '<p>No comparisons pending</p>';
+        return;
+      }
+      container.innerHTML = `
+        <div class="row">
+          <div class="col-6">
+            <h3>${data.newGame.homeTeamName || ''} vs ${data.newGame.awayTeamName || ''}</h3>
+            <img src="${data.newGame.thumbnail || ''}" class="img-fluid"/>
+            <button class="btn btn-primary mt-2" onclick="vote('${data._id}','new')">Left is better</button>
+          </div>
+          <div class="col-6">
+            <h3>${data.existingGame.homeTeamName || ''} vs ${data.existingGame.awayTeamName || ''}</h3>
+            <img src="${data.existingGame.thumbnail || ''}" class="img-fluid"/>
+            <button class="btn btn-primary mt-2" onclick="vote('${data._id}','existing')">Right is better</button>
+          </div>
+        </div>
+      `;
+    }
+    async function vote(id,winner){
+      await fetch('/submitComparison',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({comparisonId:id,winner})});
+      load();
+    }
+    load();
+  </script>
+</body>
+</html>
