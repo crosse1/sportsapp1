@@ -7,6 +7,7 @@ const express = require("express"),
     profileController = require("./controllers/profileController"),
     projectsController = require("./controllers/projectsController"),
     gamesController = require("./controllers/gamesController"),
+    comparisonsController = require('./controllers/comparisonsController'),
     venuesController = require('./controllers/venuesController'),
     messagesController = require('./controllers/messagesController'),
     Message = require('./models/Message'),
@@ -169,6 +170,10 @@ app.post('/games/:id/wishlist', requireAuth, gamesController.toggleWishlist);
 app.post('/games/:id/list', requireAuth, gamesController.toggleGameList);
 app.post('/teams/:id/list', requireAuth, gamesController.toggleTeamList);
 app.post('/venues/:id/list', requireAuth, gamesController.toggleVenueList);
+
+app.get('/nextComparison', requireAuth, comparisonsController.nextComparison);
+app.post('/submitComparison', requireAuth, comparisonsController.submitComparison);
+app.get('/compare', requireAuth, (req, res) => res.render('compare'));
 
 app.get('/venues', venuesController.listVenues);
 
