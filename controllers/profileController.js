@@ -92,6 +92,15 @@ async function enrichGameEntries(entries){
     });
 }
 
+// Enriches an array of {game, elo} objects with full PastGame info
+async function enrichEloGames(entries){
+    if(!entries || !entries.length) return [];
+    console.log('[enrichEloGames] Input IDs:', entries.map(e => String(e.game)));
+    const enriched = await enrichGameEntries(entries);
+    console.log('[enrichEloGames] Enriched IDs:', enriched.map(e => e.game ? String(e.game._id) : null));
+    return enriched;
+}
+
 function calculateElo(entries){
     if(!entries || !entries.length) return [];
     const K = 32;
@@ -320,6 +329,7 @@ exports.profileBadges = async (req, res, next) => {
             const followsBack = profileUser.following.some(f => String(f) === String(viewer._id));
             canMessage = isFollowing && followsBack;
         }
+        const eloGames = await enrichEloGames(profileUser.gameElo || []);
         res.render('profileBadges', {
             user: profileUser,
             isCurrentUser,
@@ -327,7 +337,7 @@ exports.profileBadges = async (req, res, next) => {
             canMessage,
             viewer: req.user,
             activeTab: 'badges',
-            eloGames: profileUser.gameElo || []
+            eloGames
         });
     } catch (err) {
         next(err);
@@ -405,6 +415,7 @@ exports.profileStats = async (req, res, next) => {
         const statesCount = statesVisited.size;
         console.log('[profileStats] States visited:', [...statesVisited]);
         console.log('[profileStats] Count of unique states:', statesCount);
+        const eloGames = await enrichEloGames(profileUser.gameElo || []);
 
         res.render('profileStats', {
             user: profileUser,
@@ -420,7 +431,7 @@ exports.profileStats = async (req, res, next) => {
             teamsCount,
             venuesCount,
             statesCount,
-            eloGames: profileUser.gameElo || []
+            eloGames
         });
     } catch (err) {
         console.error('[profileStats] Error occurred:', err);
@@ -452,6 +463,7 @@ exports.profileGames = async (req, res, next) => {
             const followsBack = profileUser.following.some(f => String(f) === String(viewer._id));
             canMessage = isFollowing && followsBack;
         }
+        const eloGames = await enrichEloGames(profileUser.gameElo || []);
         res.render('profileGames', {
             user: profileUser,
             isCurrentUser,
@@ -461,7 +473,7 @@ exports.profileGames = async (req, res, next) => {
             activeTab: 'games',
             gameEntries: enrichedEntries,
             usePastGameLinks: true,
-            eloGames: profileUser.gameElo || []
+            eloGames
         });
     } catch (err) {
         next(err);
@@ -483,6 +495,7 @@ exports.profileWaitlist = async (req, res, next) => {
             const followsBack = profileUser.following.some(f => String(f) === String(viewer._id));
             canMessage = isFollowing && followsBack;
         }
+        const eloGames = await enrichEloGames(profileUser.gameElo || []);
         res.render('profileWaitlist', {
             user: profileUser,
             isCurrentUser,
@@ -491,8 +504,9 @@ exports.profileWaitlist = async (req, res, next) => {
             viewer: req.user,
             activeTab: 'waitlist',
             wishlistGames: profileUser.wishlist || [],
-            
-            usePastGameLinks: false
+
+            usePastGameLinks: false,
+            eloGames
         });
     } catch (err) {
         next(err);
@@ -634,10 +648,11 @@ exports.viewFollowers = async (req, res, next) => {
     try {
         const profileUser = await User.findById(req.params.id).populate('followers');
         if (!profileUser) return res.redirect('/profile');
+        const eloGames = await enrichEloGames(profileUser.gameElo || []);
         res.render('followList', {
             title: 'Followers',
             users: profileUser.followers,
-            eloGames: profileUser.gameElo || []
+            eloGames
         });
     } catch (err) {
         next(err);
@@ -649,10 +664,11 @@ exports.viewFollowing = async (req, res, next) => {
     try {
         const profileUser = await User.findById(req.params.id).populate('following');
         if (!profileUser) return res.redirect('/profile');
+        const eloGames = await enrichEloGames(profileUser.gameElo || []);
         res.render('followList', {
             title: 'Following',
             users: profileUser.following,
-            eloGames: profileUser.gameElo || []
+            eloGames
         });
     } catch (err) {
         next(err);
@@ -703,6 +719,7 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
         const alreadyExists = user.gameEntries.some(e => String(e.game) === String(gameId));
         if (alreadyExists) {
             const enrichedEntries = await enrichGameEntries(user.gameEntries);
+            const eloGames = await enrichEloGames(user.gameElo || []);
             return res.status(400).render('profileGames', {
                 user,
                 isCurrentUser: true,
@@ -712,7 +729,7 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
                 activeTab: 'games',
                 gameEntries: enrichedEntries,
                 error: 'You’ve already entered a rating for this game.',
-                eloGames: user.gameElo || []
+                eloGames
             });
         }
         
