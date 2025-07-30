@@ -25,10 +25,13 @@
     const winnerInput1 = $('#winnerInput1');
     const compareGameInput2 = $('#compareGameId2');
     const winnerInput2 = $('#winnerInput2');
+    const compareGameInput3 = $('#compareGameId3');
+    const winnerInput3 = $('#winnerInput3');
     const eloGames = window.eloGamesData || [];
     const finalizedGames = eloGames.filter(g => g.finalized);
     let randomGame1 = null;
     let randomGame2 = null;
+    let randomGame3 = null;
     let comparisonStep = 0;
     let minRange = 1000;
     let maxRange = 2000;
@@ -135,6 +138,35 @@
       comparisonStep = 2;
     }
 
+    function showComparison3(){
+      const exclude = [
+        String(randomGame1 && (randomGame1.game && randomGame1.game._id ? randomGame1.game._id : randomGame1.game)),
+        String(randomGame2 && (randomGame2.game && randomGame2.game._id ? randomGame2.game._id : randomGame2.game))
+      ];
+      randomGame3 = pickRandomGame(minRange, maxRange, exclude);
+      if(!randomGame3){
+        rankingDone = true;
+        $('#comparisonPrompt').text('No third comparison available');
+        $('#comparisonButtons').hide();
+        updateSubmitState();
+        return;
+      }
+      const comp = randomGame3.game || {};
+      compareGameInput3.val(comp._id ? comp._id : randomGame3.game);
+      const compData = {
+        awayLogo: comp.awayTeam && comp.awayTeam.logos && comp.awayTeam.logos[0],
+        homeLogo: comp.homeTeam && comp.homeTeam.logos && comp.homeTeam.logos[0],
+        awayPoints: comp.AwayPoints ?? comp.awayPoints,
+        homePoints: comp.HomePoints ?? comp.homePoints,
+        gameDate: comp.StartDate || comp.startDate
+      };
+      $('#comparisonPrompt').text('Which game is better?');
+      renderCard(newCard, selectedGameData);
+      renderCard(existingCard, compData);
+      $('#comparisonButtons').show();
+      comparisonStep = 3;
+    }
+
     if(nextBtn){
       nextBtn.on('click', function(){
         nextBtn.hide();
@@ -174,10 +206,13 @@
         comparisonStep = 0;
         randomGame1 = null;
         randomGame2 = null;
+        randomGame3 = null;
         winnerInput1.val('');
         winnerInput2.val('');
+        winnerInput3.val('');
         compareGameInput1.val('');
         compareGameInput2.val('');
+        compareGameInput3.val('');
         rankingDone = gameEntryCount < 5 ? true : finalizedGames.length === 0;
         $('#comparisonButtons').hide();
         $('#comparisonPrompt').text('');
@@ -200,6 +235,10 @@
       } else if(comparisonStep === 2){
         winnerInput2.val('new');
         minRange = randomGame2.elo;
+        showComparison3();
+      } else if(comparisonStep === 3){
+        winnerInput3.val('new');
+        minRange = randomGame3.elo;
         finalize();
       }
     });
@@ -212,6 +251,10 @@
       } else if(comparisonStep === 2){
         winnerInput2.val('existing');
         maxRange = randomGame2.elo;
+        showComparison3();
+      } else if(comparisonStep === 3){
+        winnerInput3.val('existing');
+        maxRange = randomGame3.elo;
         finalize();
       }
     });
@@ -387,11 +430,14 @@
       rankingDone = gameEntryCount < 5 ? true : finalizedGames.length === 0;
       randomGame1 = null;
       randomGame2 = null;
+      randomGame3 = null;
       comparisonStep = 0;
       winnerInput1.val('');
       winnerInput2.val('');
+      winnerInput3.val('');
       compareGameInput1.val('');
       compareGameInput2.val('');
+      compareGameInput3.val('');
       if(ratingGroup){
         if(gameEntryCount < 5){
           ratingGroup.show();

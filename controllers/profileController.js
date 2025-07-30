@@ -663,7 +663,7 @@ const { initializeEloFromRatings } = require('../lib/elo'); // or wherever it's 
 
 exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
     try {
-        const { gameId, rating, comment, compareGameId1, winner1, compareGameId2, winner2 } = req.body;
+        const { gameId, rating, comment, compareGameId1, winner1, compareGameId2, winner2, compareGameId3, winner3 } = req.body;
 
         const sanitizedComment = sanitizeComment(comment || '');
 
@@ -740,6 +740,21 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
                     minElo = comp2.elo;
                 } else {
                     maxElo = comp2.elo;
+                }
+            }
+
+            const comp3 = finalizedGames.find(g => String(g.game) === String(compareGameId3));
+            if (comp3 && (winner3 === 'new' || winner3 === 'existing')) {
+                await GameComparison.create({
+                    userId: user._id,
+                    gameA: newGameObjectId,
+                    gameB: comp3.game,
+                    winner: winner3 === 'new' ? newGameObjectId : comp3.game
+                });
+                if (winner3 === 'new') {
+                    minElo = comp3.elo;
+                } else {
+                    maxElo = comp3.elo;
                 }
             }
 
