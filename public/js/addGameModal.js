@@ -27,7 +27,6 @@
     const winnerInput2 = $('#winnerInput2');
     const eloGames = window.eloGamesData || [];
     const finalizedGames = eloGames.filter(g => g.finalized);
-    const eloCount = eloGames.length;
     let randomGame1 = null;
     let randomGame2 = null;
     let comparisonStep = 0;
@@ -37,19 +36,13 @@
     const existingGameIds = window.existingGameIds || [];
     const gameEntryCount = window.gameEntryCount || 0;
     const gameEntryNames = window.gameEntryNames || [];
-    let rankingDone = finalizedGames.length === 0;
+    let rankingDone = gameEntryCount < 5 ? false : finalizedGames.length === 0;
 
-    if(finalizedGames.length){
-      if(nextBtn) nextBtn.show();
-      if(eloStep) eloStep.hide();
-      if(infoStep) infoStep.show();
-      backBtn.addClass('d-none');
-      submitBtn.prop('disabled', true);
-    } else {
-      if(nextBtn) nextBtn.hide();
-      if(eloStep) eloStep.hide();
-      if(infoStep) infoStep.show();
-    }
+    if(nextBtn) nextBtn.show();
+    if(eloStep) eloStep.hide();
+    if(infoStep) infoStep.show();
+    backBtn.addClass('d-none');
+    submitBtn.prop('disabled', true);
 
     function updateRating(){
       if(ratingRange && ratingValue){ ratingValue.textContent = ratingRange.value; }
@@ -153,7 +146,11 @@
         minRange = 1000;
         maxRange = 2000;
         comparisonStep = 0;
-        showComparison1();
+        if(gameEntryCount < 5){
+          finalize();
+        } else {
+          showComparison1();
+        }
         updateSubmitState();
       });
     }
@@ -171,7 +168,7 @@
         winnerInput2.val('');
         compareGameInput1.val('');
         compareGameInput2.val('');
-        rankingDone = finalizedGames.length === 0;
+        rankingDone = gameEntryCount < 5 ? false : finalizedGames.length === 0;
         $('#comparisonButtons').hide();
         $('#comparisonPrompt').text('');
         updateSubmitState();
@@ -326,7 +323,7 @@
       const commentValid = commentInput.val().length <= 100;
       const duplicate = game && existingGameIds.includes(game);
       let enable = league && season && team && game && commentValid && !duplicate;
-      if(finalizedGames.length && !rankingDone) enable = false;
+      if(!rankingDone) enable = false;
       submitBtn.prop('disabled', !enable);
     }
 
@@ -377,7 +374,7 @@
     });
 
     modal.on('shown.bs.modal', function(){
-      rankingDone = finalizedGames.length === 0;
+      rankingDone = gameEntryCount < 5 ? false : finalizedGames.length === 0;
       randomGame1 = null;
       randomGame2 = null;
       comparisonStep = 0;
@@ -386,7 +383,7 @@
       compareGameInput1.val('');
       compareGameInput2.val('');
       if(ratingGroup){
-        if(eloCount < 5){
+        if(gameEntryCount < 5){
           ratingGroup.show();
           ratingRange && ratingRange.setAttribute('required','');
         } else {
@@ -394,18 +391,18 @@
           ratingRange && ratingRange.removeAttribute('required');
         }
       }
-      if(finalizedGames.length){
-        nextBtn.show();
-        eloStep.hide();
-        infoStep.show();
-        backBtn.addClass('d-none');
-        $('#comparisonButtons').hide();
-        $('#comparisonPrompt').text('');
-      } else {
-        nextBtn.hide();
-        eloStep.hide();
-        infoStep.show();
+      if(nextBtn){
+        if(gameEntryCount < 5 || finalizedGames.length){
+          nextBtn.show();
+        } else {
+          nextBtn.hide();
+        }
       }
+      if(eloStep) eloStep.hide();
+      if(infoStep) infoStep.show();
+      backBtn.addClass('d-none');
+      $('#comparisonButtons').hide();
+      $('#comparisonPrompt').text('');
       updateSubmitState();
       if(!$('#leagueSelect option').length){
         fetch('/pastGames/leagues').then(r=>r.json()).then(data=>{
