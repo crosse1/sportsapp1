@@ -21,19 +21,22 @@
     const existingCard = $('#existingGameCard');
     const betterBtn = $('#betterBtn');
     const worseBtn = $('#worseBtn');
+    const compareGameInput = $('#compareGameId');
+    const winnerInput = $('#winnerInput');
     const eloGames = window.eloGamesData || [];
+    const finalizedGames = eloGames.filter(g => g.finalized);
+    let randomGame = null;
     let selectedGameData = null;
     const existingGameIds = window.existingGameIds || [];
     const gameEntryCount = window.gameEntryCount || 0;
     const gameEntryNames = window.gameEntryNames || [];
-    let rankingDone = gameEntryCount < 5 || eloGames.length === 0;
-    let compareIdx = 0;
+    let rankingDone = finalizedGames.length === 0;
 
-    if(gameEntryCount >= 5){
-      if(ratingGroup) ratingGroup.hide();
+    if(finalizedGames.length){
       if(nextBtn) nextBtn.show();
       if(eloStep) eloStep.hide();
       if(infoStep) infoStep.show();
+      backBtn.addClass('d-none');
       submitBtn.prop('disabled', true);
     } else {
       if(nextBtn) nextBtn.hide();
@@ -67,14 +70,18 @@
     }
 
     function showComparison(){
-      console.log('compareIdx:', compareIdx, 'eloGames.length:', eloGames.length);
-      if(compareIdx >= eloGames.length){
-        rankingDone = true;
-        $('#comparisonPrompt').text('Placement recorded');
-        updateSubmitState();
-        return;
+      if(!randomGame){
+        if(!finalizedGames.length){
+          rankingDone = true;
+          $('#comparisonPrompt').text('No comparison available');
+          updateSubmitState();
+          return;
+        }
+        const idx = Math.floor(Math.random() * finalizedGames.length);
+        randomGame = finalizedGames[idx];
+        compareGameInput.val(randomGame.game && randomGame.game._id ? randomGame.game._id : randomGame.game);
       }
-      const comp = eloGames[compareIdx].game || {};
+      const comp = randomGame.game || {};
       const compData = {
         awayLogo: comp.awayTeam && comp.awayTeam.logos && comp.awayTeam.logos[0],
         homeLogo: comp.homeTeam && comp.homeTeam.logos && comp.homeTeam.logos[0],
@@ -82,33 +89,10 @@
         homePoints: comp.HomePoints ?? comp.homePoints,
         gameDate: comp.StartDate || comp.startDate
       };
-      $('#comparisonPrompt').text('Which game was better?');
+      $('#comparisonPrompt').text(`Which game is better? (elo: ${randomGame.elo})`);
       renderCard(newCard, selectedGameData);
       renderCard(existingCard, compData);
-    }
-
-    async function submitComparison(winner) {
-      const cmp = eloGames[compareIdx];
-      if (!cmp || !cmp._id) return;
-    
-      try {
-        const res = await fetch('/submitComparison', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            comparisonId: cmp._id,
-            winner
-          })
-        });
-    
-        if (!res.ok) {
-          console.error('[ELO] Failed to submit comparison', await res.json());
-        } else {
-          console.log('[ELO] Submitted comparison successfully');
-        }
-      } catch (err) {
-        console.error('[ELO] Error submitting comparison', err);
-      }
+      $('#comparisonButtons').show();
     }
 
     if(nextBtn){
@@ -140,18 +124,20 @@
       });
     }
 
-    betterBtn.off('click').on('click', async function(){
-      await submitComparison('new'); // ✅ new game was preferred
-      compareIdx++;                  // ✅ move to next comparison
-      console.log('compareIdx:', compareIdx, 'eloGames.length:', eloGames.length);
-      showComparison();              // ✅ trigger next round or finalize
+    betterBtn.off('click').on('click', function(){
+      winnerInput.val('new');
+      rankingDone = true;
+      $('#comparisonPrompt').text('Placement recorded');
+      $('#comparisonButtons').hide();
+      updateSubmitState();
     });
-    
-    worseBtn.off('click').on('click', async function(){
-      await submitComparison('existing'); // ✅ existing game was preferred
-      compareIdx++;
-      console.log('compareIdx:', compareIdx, 'eloGames.length:', eloGames.length);
-      showComparison();
+
+    worseBtn.off('click').on('click', function(){
+      winnerInput.val('existing');
+      rankingDone = true;
+      $('#comparisonPrompt').text('Placement recorded');
+      $('#comparisonButtons').hide();
+      updateSubmitState();
     });
 
     if(newCard){
@@ -271,7 +257,7 @@
       const commentValid = commentInput.val().length <= 100;
       const duplicate = game && existingGameIds.includes(game);
       let enable = league && season && team && game && commentValid && !duplicate;
-      if(gameEntryCount >= 5 && !rankingDone) enable = false;
+      if(finalizedGames.length && !rankingDone) enable = false;
       submitBtn.prop('disabled', !enable);
     }
 
@@ -322,17 +308,18 @@
     });
 
     modal.on('shown.bs.modal', function(){
-      if(gameEntryCount >= 5 && eloGames.length){
-        rankingDone = false;
-        compareIdx = 0;
-        if(ratingGroup) ratingGroup.hide();
+      rankingDone = finalizedGames.length === 0;
+      randomGame = null;
+      winnerInput.val('');
+      compareGameInput.val('');
+      if(finalizedGames.length){
         nextBtn.show();
         eloStep.hide();
         infoStep.show();
         backBtn.addClass('d-none');
+        $('#comparisonButtons').hide();
         $('#comparisonPrompt').text('');
       } else {
-        if(ratingGroup) ratingGroup.show();
         nextBtn.hide();
         eloStep.hide();
         infoStep.show();
