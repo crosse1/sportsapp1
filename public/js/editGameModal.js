@@ -26,7 +26,11 @@
       const data = (window.gameEntriesData || []).find(e => e._id === id);
       if(!data) return;
       entryIdInput.value = id;
-      if(ratingRange){ ratingRange.value = data.rating || 5; updateRating(); }
+      if(ratingRange){
+        const r = data.elo ? ((data.elo - 1000) / 1000) * 9 + 1 : 5;
+        ratingRange.value = r;
+        updateRating();
+      }
       if(commentInput){ commentInput.value = data.comment || ''; commentCounter.textContent = `${(data.comment||'').length}/100`; }
       modal.show();
     };
@@ -42,7 +46,8 @@
         if(json && json.entry){
           const wrapper = document.querySelector(`.rating-wrapper[data-entry-id="${id}"]`);
           if(wrapper){
-            wrapper.querySelector('.rating-number').textContent = `${json.entry.rating}/10`;
+            const r = json.entry.elo ? ((json.entry.elo - 1000) / 1000) * 9 + 1 : 5;
+            wrapper.querySelector('.rating-number').textContent = `${r.toFixed(1)}/10`;
             const commentEl = wrapper.querySelector('.rating-comment');
             if(commentEl){ commentEl.textContent = json.entry.comment || ''; }
           }
