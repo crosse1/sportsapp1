@@ -154,7 +154,12 @@
       ];
       randomGame3 = pickRandomGame(minRange, maxRange, exclude);
       if(!randomGame3){
-        finalize();
+
+        rankingDone = true;
+        $('#comparisonPrompt').text('No third comparison available');
+        $('#comparisonButtons').hide();
+        updateSubmitState();
+        main
         return;
       }
       const comp = randomGame3.game || {};
