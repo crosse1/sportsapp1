@@ -672,8 +672,12 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
 
         if (!user.gameEntries) user.gameEntries = [];
 
-        const isInitial = (user.gameElo || []).length < 5;
+        const isInitial = (user.gameEntries || []).length < 5;
         let finalElo = isInitial ? ratingToElo(rating) : null;
+
+        if (isInitial && (rating === undefined || rating === '')) {
+            return res.status(400).json({ error: 'Rating required for initial games' });
+        }
 
         const entry = {
             game: gameId,
