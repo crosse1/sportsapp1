@@ -36,9 +36,15 @@
     const existingGameIds = window.existingGameIds || [];
     const gameEntryCount = window.gameEntryCount || 0;
     const gameEntryNames = window.gameEntryNames || [];
-    let rankingDone = gameEntryCount < 5 ? false : finalizedGames.length === 0;
+    let rankingDone = gameEntryCount < 5 ? true : finalizedGames.length === 0;
 
-    if(nextBtn) nextBtn.show();
+    if(nextBtn){
+      if(gameEntryCount < 5){
+        nextBtn.hide();
+      } else {
+        nextBtn.show();
+      }
+    }
     if(eloStep) eloStep.hide();
     if(infoStep) infoStep.show();
     backBtn.addClass('d-none');
@@ -159,7 +165,11 @@
       backBtn.on('click', function(){
         if(infoStep) infoStep.show();
         if(eloStep) eloStep.hide();
-        nextBtn.show();
+        if(gameEntryCount < 5){
+          nextBtn.hide();
+        } else {
+          nextBtn.show();
+        }
         backBtn.addClass('d-none');
         comparisonStep = 0;
         randomGame1 = null;
@@ -168,7 +178,7 @@
         winnerInput2.val('');
         compareGameInput1.val('');
         compareGameInput2.val('');
-        rankingDone = gameEntryCount < 5 ? false : finalizedGames.length === 0;
+        rankingDone = gameEntryCount < 5 ? true : finalizedGames.length === 0;
         $('#comparisonButtons').hide();
         $('#comparisonPrompt').text('');
         updateSubmitState();
@@ -374,7 +384,7 @@
     });
 
     modal.on('shown.bs.modal', function(){
-      rankingDone = gameEntryCount < 5 ? false : finalizedGames.length === 0;
+      rankingDone = gameEntryCount < 5 ? true : finalizedGames.length === 0;
       randomGame1 = null;
       randomGame2 = null;
       comparisonStep = 0;
@@ -392,10 +402,10 @@
         }
       }
       if(nextBtn){
-        if(gameEntryCount < 5 || finalizedGames.length){
-          nextBtn.show();
-        } else {
+        if(gameEntryCount < 5){
           nextBtn.hide();
+        } else {
+          nextBtn.show();
         }
       }
       if(eloStep) eloStep.hide();
