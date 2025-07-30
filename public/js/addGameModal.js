@@ -78,15 +78,24 @@
       );
     }
 
-    function pickRandomGame(min,max,exclude){
+    function pickRandomGame(min, max, exclude) {
       exclude = exclude || [];
-      const eligible = finalizedGames.filter(g=>{
+      const eligible = finalizedGames.filter(g => {
         const id = String(g.game && g.game._id ? g.game._id : g.game);
         return g.elo >= min && g.elo <= max && !exclude.includes(id);
       });
-      if(!eligible.length) return null;
-      const idx = Math.floor(Math.random()*eligible.length);
-      return eligible[idx];
+      if (!eligible.length) return null;
+      const midpoint = Math.floor((min + max) / 2);
+      let closest = eligible[0];
+      let bestDist = Math.abs(closest.elo - midpoint);
+      for (let i = 1; i < eligible.length; i++) {
+        const dist = Math.abs(eligible[i].elo - midpoint);
+        if (dist < bestDist) {
+          closest = eligible[i];
+          bestDist = dist;
+        }
+      }
+      return closest;
     }
 
     function showComparison1(){
@@ -145,10 +154,12 @@
       ];
       randomGame3 = pickRandomGame(minRange, maxRange, exclude);
       if(!randomGame3){
+
         rankingDone = true;
         $('#comparisonPrompt').text('No third comparison available');
         $('#comparisonButtons').hide();
         updateSubmitState();
+        main
         return;
       }
       const comp = randomGame3.game || {};
