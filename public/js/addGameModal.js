@@ -67,6 +67,7 @@
     }
 
     function showComparison(){
+      console.log('compareIdx:', compareIdx, 'eloGames.length:', eloGames.length);
       if(compareIdx >= eloGames.length){
         rankingDone = true;
         $('#comparisonPrompt').text('Placement recorded');
@@ -84,6 +85,30 @@
       $('#comparisonPrompt').text('Which game was better?');
       renderCard(newCard, selectedGameData);
       renderCard(existingCard, compData);
+    }
+
+    async function submitComparison(winner) {
+      const cmp = eloGames[compareIdx];
+      if (!cmp || !cmp._id) return;
+    
+      try {
+        const res = await fetch('/submitComparison', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            comparisonId: cmp._id,
+            winner
+          })
+        });
+    
+        if (!res.ok) {
+          console.error('[ELO] Failed to submit comparison', await res.json());
+        } else {
+          console.log('[ELO] Submitted comparison successfully');
+        }
+      } catch (err) {
+        console.error('[ELO] Error submitting comparison', err);
+      }
     }
 
     if(nextBtn){
@@ -115,19 +140,19 @@
       });
     }
 
-    if(betterBtn){
-      betterBtn.on('click', function(){
-        rankingDone = true;
-        $('#comparisonPrompt').text('Placement recorded');
-        updateSubmitState();
-      });
-    }
-    if(worseBtn){
-      worseBtn.on('click', function(){
-        compareIdx++;
-        showComparison();
-      });
-    }
+    betterBtn.off('click').on('click', async function(){
+      await submitComparison('new'); // ✅ new game was preferred
+      compareIdx++;                  // ✅ move to next comparison
+      console.log('compareIdx:', compareIdx, 'eloGames.length:', eloGames.length);
+      showComparison();              // ✅ trigger next round or finalize
+    });
+    
+    worseBtn.off('click').on('click', async function(){
+      await submitComparison('existing'); // ✅ existing game was preferred
+      compareIdx++;
+      console.log('compareIdx:', compareIdx, 'eloGames.length:', eloGames.length);
+      showComparison();
+    });
 
     if(newCard){
       newCard.on('click', function(){

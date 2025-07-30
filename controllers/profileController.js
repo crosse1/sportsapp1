@@ -766,8 +766,17 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
               eloEntry = user.gameElo[user.gameElo.length - 1];
             }
 
-            await findEloPlacement(eloEntry, user.gameElo || [], user);
-            console.log('[ELO] findEloPlacement complete');
+            const updatedEntry = await findEloPlacement(eloEntry, user.gameElo || [], user);
+if (updatedEntry) {
+  const idx = user.gameElo.findIndex(e => String(e.game) === String(gameId));
+  if (idx !== -1) {
+    user.gameElo[idx].elo = updatedEntry.elo;
+    user.gameElo[idx].finalized = updatedEntry.finalized || false;
+    user.gameElo[idx].comparisonHistory = updatedEntry.comparisonHistory || [];
+    user.gameElo[idx].updatedAt = new Date();
+    console.log('[ELO] Updated eloEntry to', updatedEntry.elo);
+  }
+}
         }
 
         const pastGameDoc = await PastGame.findById(gameId);

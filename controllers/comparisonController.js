@@ -25,6 +25,8 @@ module.exports.getNext = async function(req, res, next){
 };
 
 module.exports.submit = async function(req, res, next) {
+  console.log('[DEBUG] submit() triggered');
+  
   try {
     const { comparisonId, winner } = req.body;
 
@@ -33,6 +35,7 @@ module.exports.submit = async function(req, res, next) {
     if (String(cmp.userId) !== String(req.user.id)) return res.status(403).json({ error: 'Forbidden' });
 
     cmp.winner = winner;
+    console.log(`[DEBUG] Comparison submitted — winner: ${winner}`);
     cmp.resolved = true;
     await cmp.save();
 
@@ -46,21 +49,29 @@ module.exports.submit = async function(req, res, next) {
       await user.save(); // Save immediately so we can safely mutate it in Elo logic
     }
 
-    // Re-fetch to ensure we're passing a fresh reference
-    const newEntry = user.gameElo.find(e => String(extractGameId(e.game)) === String(cmp.newGameId));
+    let newEntry = user.gameElo.find(e => String(extractGameId(e.game)) === String(cmp.newGameId));
+    const newGameId = extractGameId(newEntry.game);
 
-    console.log(`[ELO] Submitting comparison. winner=${winner}, newGame=${cmp.newGameId}, opponent=${cmp.existingGameId}`);
+    // Get all other games for comparison
+    const otherGames = user.gameElo.filter(e => String(extractGameId(e.game)) !== String(newGameId));
 
-    const result = await findEloPlacement(newEntry, user.gameElo, user, {
+    // Preserve and pass current comparison state
+    let result = await findEloPlacement(newEntry, otherGames, user, {
       indexLeft: cmp.indexLeft,
       indexRight: cmp.indexRight,
       indexMid: cmp.indexMid,
       winner
     });
 
-    // If the ELO process finalized the rating, update the entry again
-    if (result && result.finalized) {
-      const entry = user.gameElo.find(e => String(extractGameId(e.game)) === String(cmp.newGameId));
+    // Keep looping if it's not finalized
+    while (result === null) {
+      const freshEntry = user.gameElo.find(e => String(extractGameId(e.game)) === String(newGameId));
+      const opponents = user.gameElo.filter(e => String(extractGameId(e.game)) !== String(newGameId));
+      result = await findEloPlacement(freshEntry, opponents, user); // no need to pass state anymore
+    }
+
+    if (result.finalized) {
+      const entry = user.gameElo.find(e => String(extractGameId(e.game)) === String(newGameId));
       if (entry) {
         entry.elo = result.elo;
         entry.finalized = true;
@@ -70,7 +81,7 @@ module.exports.submit = async function(req, res, next) {
         user.gameElo.push(result);
       }
 
-      console.log(`[ELO] Finalized game ${cmp.newGameId} with ELO ${result.elo}`);
+      console.log(`[ELO] Finalized game ${newGameId} with ELO ${result.elo}`);
       await user.save();
     }
 
@@ -79,3 +90,4 @@ module.exports.submit = async function(req, res, next) {
     next(err);
   }
 };
+
