@@ -158,8 +158,7 @@
 
   if (eloEntry && typeof eloEntry.elo === 'number') {
     const elo = eloEntry.elo;
-    const rawScore = ((elo - 1000) / 1000) * 9 + 1;
-    const normalizedRating = Math.max(1.0, Math.min(10.0, Math.round(rawScore * 10) / 10));
+    const normalizedRating = Math.round(((elo - 1000) * 9 / 100) + 1);
 %>
                         <div class="rating-wrapper gradient-overlay" data-entry-id="<%= entry._id %>">
                             <img class="bw-img" src="<%= game.venue && game.venue.imgUrl ? game.venue.imgUrl : '/images/placeholder.jpg' %>" alt="<%= game.Venue || game.venue %>">

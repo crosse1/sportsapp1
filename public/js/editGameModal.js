@@ -27,7 +27,7 @@
       if(!data) return;
       entryIdInput.value = id;
       if(ratingRange){
-        const r = data.elo ? ((data.elo - 1000) / 1000) * 9 + 1 : 5;
+        const r = data.elo ? ((data.elo - 1000) * 9 / 100) + 1 : 5;
         ratingRange.value = r;
         updateRating();
       }
@@ -46,7 +46,7 @@
         if(json && json.entry){
           const wrapper = document.querySelector(`.rating-wrapper[data-entry-id="${id}"]`);
           if(wrapper){
-            const r = json.entry.elo ? ((json.entry.elo - 1000) / 1000) * 9 + 1 : 5;
+            const r = json.entry.elo ? ((json.entry.elo - 1000) * 9 / 100) + 1 : 5;
             wrapper.querySelector('.rating-number').textContent = `${r.toFixed(1)}/10`;
             const commentEl = wrapper.querySelector('.rating-comment');
             if(commentEl){ commentEl.textContent = json.entry.comment || ''; }
