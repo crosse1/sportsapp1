@@ -820,6 +820,10 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
 
         await user.save();
         console.log('[SAVE] Saving user with gameElo:', user.gameElo);
+        const enriched = await enrichGameEntries([entry]);
+        if(req.headers.accept && req.headers.accept.includes('application/json')){
+            return res.json({ success:true, entry: enriched[0] });
+        }
         res.redirect('/profileGames/' + user._id);
     } catch (err) {
         next(err);
