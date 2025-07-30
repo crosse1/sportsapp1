@@ -93,12 +93,46 @@ app.use((req, res, next) => {
     next();
 });
 
-const requireAuth = (req, res, next) => {
-    if (!req.user) {
-        return res.redirect('/login');
+const decodeToken = async (req, res, next) => {
+    const token = req.cookies.token;
+    if (!token) {
+      req.user = null;
+      return next();
     }
+  
+    try {
+      const decoded = jwt.verify(token, 'secret');
+      const user = await User.findById(decoded.id);
+      req.user = user || null;
+    } catch (err) {
+      console.error('[decodeToken ERROR]', err);
+      req.user = null;
+    }
+  
     next();
-};
+  };
+  
+  module.exports = decodeToken;
+
+const requireAuth = async (req, res, next) => {
+    const token = req.cookies.token;
+  
+    if (!token) {
+      return res.redirect('/login');
+    }
+  
+    try {
+      const decoded = jwt.verify(token, 'secret'); // Use env variable in production
+      const user = await User.findById(decoded.id);
+      if (!user) return res.redirect('/login');
+  
+      req.user = user; // 🔥 THIS is the critical fix
+      next();
+    } catch (err) {
+      console.error('[AUTH ERROR]', err);
+      return res.redirect('/login');
+    }
+  };
 
 // Public landing page
 app.get('/', homeController.index);
@@ -174,7 +208,7 @@ app.post('/venues/:id/list', requireAuth, gamesController.toggleVenueList);
 app.get('/venues', venuesController.listVenues);
 
 app.get('/compare', requireAuth, (req,res)=>{ res.render('compare'); });
-app.get('/nextComparison', requireAuth, comparisonController.getNext);
+app.get('/nextComparison', requireAuth, comparisonController.getNextComparisonCandidate);
 app.post('/submitComparison', requireAuth, comparisonController.submit);
 
 

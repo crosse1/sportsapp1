@@ -738,31 +738,58 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
         user.gameEntries.push(entry);
         console.log(`Added game entry:`, entry);
 
+        const newGameObjectId = new mongoose.Types.ObjectId(gameId);
+
         if ((user.gameEntries?.length || 0) <= 5) {
             const newEntry = user.gameEntries[user.gameEntries.length - 1];
             const rating = parseFloat(newEntry.rating);
-          
+
             const baseElo = !isNaN(rating)
               ? Math.round(1000 + ((rating - 1) / 9) * 1000)
               : 1500;
-          
+
             const newElo = {
-              game: new mongoose.Types.ObjectId(newEntry.game),
+              game: newGameObjectId,
               elo: baseElo,
               finalized: true,
               comparisonHistory: []
             };
-          
+
             user.gameElo = [...(user.gameElo || []), newElo];
             console.log('[ELO INIT] Scaled entry added:', newElo);
-          } else {
+        } else {
             console.log('[ELO] Starting placement for game:', gameId);
 
             let eloEntry = user.gameElo.find(g => String(g.game) === String(gameId));
             if (!eloEntry) {
-              user.gameElo.push({ game: new mongoose.Types.ObjectId(gameId), elo: 1500, finalized: false, comparisonHistory: [] });
+                user.gameElo.push({
+                  game: newGameObjectId,
+                  elo: 1500,
+                  finalized: false,
+                  comparisonHistory: [],
+                  minElo: 1000,
+                  maxElo: 2000
+                });
+              }
+        }
+
+        // Filter eloGamesData to only include best candidate
+        const newGame = user.gameElo.find(e => !e.finalized && String(e.game) === String(gameId));
+        let eloGamesData = [];
+
+        if (newGame) {
+            const minElo = newGame.minElo ?? 1000;
+            const maxElo = newGame.maxElo ?? 2000;
+            const midpoint = Math.floor((minElo + maxElo) / 2);
+
+            const eligible = user.gameElo
+                .filter(e => e.finalized && e.elo >= minElo && e.elo <= maxElo)
+                .sort((a, b) => Math.abs(a.elo - midpoint) - Math.abs(b.elo - midpoint));
+
+            if (eligible.length) {
+                eloGamesData.push({ game: eligible[0].game });
             }
-          }
+        }
 
         const pastGameDoc = await PastGame.findById(gameId);
 
@@ -819,6 +846,7 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
         next(err);
     }
 }];
+
 
 
 exports.updateGameEntry = [uploadDisk.single('photo'), async (req, res, next) => {

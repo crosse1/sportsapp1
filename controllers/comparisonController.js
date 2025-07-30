@@ -1,200 +1,90 @@
-const Comparison = require('../models/Comparison');
-const GameComparison = require('../models/gameComparison');
-const Game = require('../models/PastGame');
-const User = require('../models/users');
+// controllers/comparisonController.js
 const {
-  findEloPlacement,
-  extractGameId,
-  getNextComparisonCandidate,
-  ratingToElo
-} = require('../lib/elo');
+  getEloBounds,
+  sortGameEloByElo,
+  getComparisonCandidate,
+  updateEloBounds,
+  calculateFinalElo
+} = require('../lib/eloHelpers');
+const User = require('../models/users');
+const GameComparison = require('../models/Comparison');
 
-module.exports.getNext = async function(req, res, next){
+exports.submit = async (req, res) => {
   try {
-    const cmp = await Comparison.findOne({ userId: req.user.id, resolved: false }).sort({ _id: 1 });
-    if (!cmp) return res.json(null);
+    const user = await User.findById(req.user._id);
+    const { gameA, gameB, winner } = req.body;
 
-    const newGame = await Game.findById(cmp.newGameId);
-    const existingGame = await Game.findById(cmp.existingGameId);
+    const newGameId = [gameA, gameB].find(id => !user.gameElo.some(e => e.game.equals(id)));
+    const existingGameId = [gameA, gameB].find(id => id !== newGameId);
 
-    res.json({
-      _id: cmp._id,
-      indexLeft: cmp.indexLeft,
-      indexRight: cmp.indexRight,
-      indexMid: cmp.indexMid,
-      newGame,
-      existingGame
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-
-module.exports.submit = async function(req, res, next) {
-  console.log('[DEBUG] submit() triggered');
-  
-  try {
-    const { comparisonId, winner } = req.body;
-
-    const cmp = await Comparison.findById(comparisonId);
-    if (!cmp) return res.status(404).json({ error: 'Comparison not found' });
-    if (String(cmp.userId) !== String(req.user.id)) return res.status(403).json({ error: 'Forbidden' });
-
-    cmp.winner = winner;
-    console.log(`[DEBUG] Comparison submitted — winner: ${winner}`);
-    cmp.resolved = true;
-    await cmp.save();
-
-    const user = await User.findById(req.user.id);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    // Ensure gameElo entry exists for this new game
-    let existingEntry = user.gameElo.find(e => String(extractGameId(e.game)) === String(cmp.newGameId));
-    if (!existingEntry) {
-      user.gameElo.push({ game: cmp.newGameId, elo: 1500, finalized: false, comparisonHistory: [] });
-      await user.save(); // Save immediately so we can safely mutate it in Elo logic
+    if (!newGameId || !existingGameId) {
+      return res.status(400).json({ error: 'Both a new and existing game must be provided' });
     }
 
-    let newEntry = user.gameElo.find(e => String(extractGameId(e.game)) === String(cmp.newGameId));
-    const newGameId = extractGameId(newEntry.game);
+    const newGameEntry = user.gameElo.find(e => e.game.equals(newGameId));
+    const existingGameEntry = user.gameElo.find(e => e.game.equals(existingGameId));
 
-    // Get all other games for comparison
-    const otherGames = user.gameElo.filter(e => String(extractGameId(e.game)) !== String(newGameId));
-
-    // Preserve and pass current comparison state
-    let result = await findEloPlacement(newEntry, otherGames, user, {
-      indexLeft: cmp.indexLeft,
-      indexRight: cmp.indexRight,
-      indexMid: cmp.indexMid,
-      winner
-    });
-
-    // Keep looping if it's not finalized
-    while (result === null) {
-      const freshEntry = user.gameElo.find(e => String(extractGameId(e.game)) === String(newGameId));
-      const opponents = user.gameElo.filter(e => String(extractGameId(e.game)) !== String(newGameId));
-      result = await findEloPlacement(freshEntry, opponents, user); // no need to pass state anymore
+    if (!existingGameEntry || !existingGameEntry.finalized) {
+      return res.status(400).json({ error: 'Existing game must have finalized Elo' });
     }
 
-    if (result.finalized) {
-      const entry = user.gameElo.find(e => String(extractGameId(e.game)) === String(newGameId));
-      if (entry) {
-        entry.elo = result.elo;
-        entry.finalized = true;
-        entry.comparisonHistory = result.comparisonHistory || [];
-        entry.updatedAt = new Date();
-      } else {
-        user.gameElo.push(result);
-      }
+    const result = winner === newGameId ? 'new' : 'existing';
+    const min = newGameEntry.minElo ?? getEloBounds().minElo;
+    const max = newGameEntry.maxElo ?? getEloBounds().maxElo;
 
-      console.log(`[ELO] Finalized game ${newGameId} with ELO ${result.elo}`);
-      await user.save();
-    }
+    const { minElo, maxElo } = updateEloBounds(result, existingGameEntry, min, max);
+    console.log(`[ELO] Bounds updated — min: ${minElo}, max: ${maxElo}`);
 
-    res.json({ success: true });
-  } catch (err) {
-    next(err);
-  }
-};
+    // Save comparison result
+    await GameComparison.create({ userId: user._id, gameA, gameB, winner });
 
-// New Elo placement logic for games beyond the first 5
-module.exports.submitComparison = async function(req, res, next) {
-  try {
-    const { userId, newGameId, existingGameId, winner } = req.body;
-
-    if (String(req.user.id) !== String(userId)) {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
-
-    if (String(newGameId) === String(existingGameId)) {
-      return res.status(400).json({ error: 'Cannot compare a game to itself' });
-    }
-
-    // Avoid duplicate comparison records
-    const existing = await GameComparison.findOne({
-      userId,
-      $or: [
-        { gameA: newGameId, gameB: existingGameId },
-        { gameA: existingGameId, gameB: newGameId }
-      ]
-    });
-
-    if (existing) {
-      if (!existing.winner) {
-        existing.winner = winner;
-        await existing.save();
-      }
-    } else {
-      await GameComparison.create({ userId, gameA: newGameId, gameB: existingGameId, winner });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    let newEntry = user.gameElo.find(e => String(extractGameId(e.game)) === String(newGameId));
-    if (!newEntry) {
-      newEntry = { game: newGameId, elo: 1500, finalized: false, comparisonHistory: [] };
-      user.gameElo.push(newEntry);
-    }
-
-    if (!Array.isArray(newEntry.comparisonHistory)) newEntry.comparisonHistory = [];
-    newEntry.comparisonHistory.push({
+    // Update new game entry
+    newGameEntry.minElo = minElo;
+    newGameEntry.maxElo = maxElo;
+    newGameEntry.comparisonHistory = newGameEntry.comparisonHistory || [];
+    newGameEntry.comparisonHistory.push({
       againstGame: existingGameId,
-      preferred: String(winner) === String(newGameId),
+      preferred: result === 'new',
       timestamp: new Date()
     });
 
-    // Determine current bounds based on all recorded comparisons for this game
-    let minElo = ratingToElo(1);
-    let maxElo = ratingToElo(10);
-
-    const comps = await GameComparison.find({
-      userId,
-      $or: [{ gameA: newGameId }, { gameB: newGameId }]
-    });
-
-    for (const cmp of comps) {
-      if (!cmp.winner) continue;
-      const opponentId = String(cmp.gameA) === String(newGameId) ? cmp.gameB : cmp.gameA;
-      const opp = user.gameElo.find(e => String(extractGameId(e.game)) === String(opponentId));
-      if (!opp) continue;
-      if (String(cmp.winner) === String(newGameId)) {
-        if (opp.elo + 1 > minElo) minElo = opp.elo + 1;
-      } else if (String(cmp.winner) === String(opponentId)) {
-        if (opp.elo - 1 < maxElo) maxElo = opp.elo - 1;
-      }
+    if (minElo >= maxElo || maxElo - minElo <= 1) {
+      newGameEntry.elo = calculateFinalElo(minElo, maxElo);
+      newGameEntry.finalized = true;
+      console.log(`[ELO] Finalized newGame ${newGameId} at ${newGameEntry.elo}`);
     }
 
-    if (minElo > maxElo) {
-      const finalElo = Math.floor((minElo + maxElo) / 2);
-      newEntry.elo = finalElo;
-      newEntry.finalized = true;
-      newEntry.updatedAt = new Date();
-      await user.save();
-      return res.json({ finalized: true, elo: finalElo });
-    }
-
-    const candidate = getNextComparisonCandidate(user, newEntry, minElo, maxElo);
-    if (!candidate) {
-      const finalElo = Math.floor((minElo + maxElo) / 2);
-      newEntry.elo = finalElo;
-      newEntry.finalized = true;
-      newEntry.updatedAt = new Date();
-      await user.save();
-      return res.json({ finalized: true, elo: finalElo });
-    }
-
+    newGameEntry.updatedAt = new Date();
     await user.save();
-    return res.json({
-      nextComparison: {
-        newGameId,
-        existingGameId: extractGameId(candidate.game),
-        minElo,
-        maxElo
-      }
-    });
+
+    res.status(200).json({ message: 'Comparison recorded' });
   } catch (err) {
-    next(err);
+    console.error('[submitComparison ERROR]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
+
+
+// controllers/comparisonController.js
+exports.getNextComparisonCandidate = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const newGame = user.gameElo.find(e => !e.finalized);
+
+    if (!newGame) return res.status(204).json({ message: 'No comparisons needed' });
+
+    const { minElo, maxElo } = newGame;
+    const candidate = getComparisonCandidate(user.gameElo, minElo, maxElo);
+
+    if (!candidate) return res.status(204).json({ message: 'No eligible comparisons left' });
+
+    res.status(200).json({
+      gameA: newGame.game,
+      gameB: candidate.game
+    });
+  } catch (err) {
+    console.error('[getNextComparisonCandidate ERROR]', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
