@@ -11,7 +11,16 @@ const GameComparison = require('../models/Comparison');
 
 exports.submit = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const userId = req.user && (req.user._id || req.user.id);
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     const { gameA, gameB, winner } = req.body;
 
     const newGameId = [gameA, gameB].find(id => !user.gameElo.some(e => e.game.equals(id)));
@@ -69,7 +78,15 @@ exports.submit = async (req, res) => {
 // controllers/comparisonController.js
 exports.getNextComparisonCandidate = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const userId = req.user && (req.user._id || req.user.id);
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
     const newGame = user.gameElo.find(e => !e.finalized);
 
     if (!newGame) return res.status(204).json({ message: 'No comparisons needed' });
