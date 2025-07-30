@@ -27,6 +27,10 @@
     const winnerInput2 = $('#winnerInput2');
     const compareGameInput3 = $('#compareGameId3');
     const winnerInput3 = $('#winnerInput3');
+    const confirmModal = $('#gameAddedModal');
+    const addedCard = $('#addedGameCard');
+    const addedRating = $('#addedGameRating');
+    const form = modal.find('form');
     const eloGames = window.eloGamesData || [];
     const finalizedGames = eloGames.filter(g => g.finalized);
     let randomGame1 = null;
@@ -236,6 +240,9 @@
       $('#comparisonPrompt').text('Placement recorded');
       $('#comparisonButtons').hide();
       updateSubmitState();
+      if(gameEntryCount >= 5){
+        autoSubmit();
+      }
     }
 
     betterBtn.off('click').on('click', function(){
@@ -280,6 +287,43 @@
       existingCard.on('click', function(){
         if(worseBtn) worseBtn.trigger('click');
       });
+    }
+
+    function showConfirmation(entry){
+      if(!confirmModal.length) return;
+      const game = entry.game || {};
+      const data = {
+        awayLogo: game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0],
+        homeLogo: game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0],
+        awayPoints: game.AwayPoints ?? game.awayPoints,
+        homePoints: game.HomePoints ?? game.homePoints,
+        gameDate: game.StartDate || game.startDate
+      };
+      renderCard(addedCard, data);
+      const rating = ((entry.elo - 1000) * 9 / 100) + 1;
+      addedRating.text(rating.toFixed(1));
+      bootstrap.Modal.getOrCreateInstance(confirmModal[0]).show();
+    }
+
+    async function autoSubmit(){
+      if(!form.length) return;
+      submitBtn.prop('disabled', true);
+      try{
+        const res = await fetch(form.attr('action'), { method:'POST', body:new FormData(form[0]), headers:{ 'Accept':'application/json' } });
+        if(res.ok){
+          const json = await res.json();
+          if(json && json.entry){
+            showConfirmation(json.entry);
+          }
+        }else{
+          alert('Save failed');
+        }
+      }catch(err){
+        alert('Save failed');
+      }finally{
+        submitBtn.prop('disabled', false);
+        bootstrap.Modal.getInstance(modal[0]).hide();
+      }
     }
 
     function formatTeam(option){
@@ -463,6 +507,13 @@
           nextBtn.hide();
         } else {
           nextBtn.show();
+        }
+      }
+      if(submitBtn){
+        if(gameEntryCount < 5){
+          submitBtn.removeClass('d-none');
+        } else {
+          submitBtn.addClass('d-none');
         }
       }
       if(eloStep) eloStep.hide();
