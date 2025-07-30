@@ -720,7 +720,6 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
             if (!eloEntry) {
                 user.gameElo.push({
                   game: newGameObjectId,
-                  elo: 1500,
                   finalized: false,
                   comparisonHistory: [],
                   minElo: 1000,

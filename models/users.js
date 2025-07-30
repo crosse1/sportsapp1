@@ -46,13 +46,15 @@ const userSchema = new mongoose.Schema({
     gameElo: {
         type: [{
           game: { type: mongoose.Schema.Types.ObjectId, ref: 'PastGame' },
-          elo: { type: Number, default: 1500 },
+          elo: Number,
           comparisonHistory: [{
             againstGame: { type: mongoose.Schema.Types.ObjectId, ref: 'PastGame' },
             preferred: Boolean,
             timestamp: Date
           }],
           finalized: { type: Boolean, default: false },
+          minElo: { type: Number, default: 1000 },
+          maxElo: { type: Number, default: 2000 },
           updatedAt: { type: Date }
         }],
         default: []
