@@ -391,6 +391,8 @@
                             <label class="form-label">Comment</label>
                             <textarea class="form-control glass-control" name="comment" rows="3"></textarea>
                         </div>
+                        <input type="hidden" name="compareGameId" id="compareGameId">
+                        <input type="hidden" name="winner" id="winnerInput">
                         <input type="hidden" name="teamsList" id="teamsListInput">
                         <input type="hidden" name="venuesList" id="venuesListInput">
                         </div>
@@ -400,6 +402,10 @@
                                 <div class="d-flex justify-content-between mb-3">
                                     <div id="newGameCard" class="elo-game-card flex-fill me-2"></div>
                                     <div id="existingGameCard" class="elo-game-card flex-fill ms-2"></div>
+                                </div>
+                                <div id="comparisonButtons" class="d-flex justify-content-around" style="display:none;">
+                                    <button type="button" id="betterBtn" class="btn btn-primary btn-sm">New Game</button>
+                                    <button type="button" id="worseBtn" class="btn btn-secondary btn-sm">Existing Game</button>
                                 </div>
                                 
                                 

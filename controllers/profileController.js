@@ -44,6 +44,7 @@ const Team = require('../models/Team');
 const Game = require('../models/Game');
 const PastGame = require('../models/PastGame');
 const Venue = require('../models/Venue');
+const GameComparison = require('../models/gameComparison');
 const getStateFromCoordinates = require('../lib/stateLookup');
 
 function sanitizeComment(text) {
@@ -662,7 +663,7 @@ const { initializeEloFromRatings } = require('../lib/elo'); // or wherever it's 
 
 exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
     try {
-        const { gameId, rating, comment } = req.body;
+        const { gameId, rating, comment, compareGameId, winner } = req.body;
 
         const sanitizedComment = sanitizeComment(comment || '');
 
@@ -700,50 +701,32 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
 
         const newGameObjectId = new mongoose.Types.ObjectId(gameId);
 
-        if ((user.gameEntries?.length || 0) <= 5) {
-            const newEntry = user.gameEntries[user.gameEntries.length - 1];
-            const baseElo = newEntry.elo;
-
-            const newElo = {
-              game: newGameObjectId,
-              elo: baseElo,
-              finalized: true,
-              comparisonHistory: []
-            };
-
-            user.gameElo = [...(user.gameElo || []), newElo];
-            console.log('[ELO INIT] Scaled entry added:', newElo);
-        } else {
-            console.log('[ELO] Starting placement for game:', gameId);
-
-            let eloEntry = user.gameElo.find(g => String(g.game) === String(gameId));
-            if (!eloEntry) {
-                user.gameElo.push({
-                  game: newGameObjectId,
-                  finalized: false,
-                  comparisonHistory: [],
-                  minElo: 1000,
-                  maxElo: 2000
-                });
-              }
+        const finalizedGames = (user.gameElo || []).filter(g => g.finalized);
+        let selectedComparison = finalizedGames.find(g => String(g.game) === String(compareGameId));
+        if (!selectedComparison && finalizedGames.length) {
+            const rand = Math.floor(Math.random() * finalizedGames.length);
+            selectedComparison = finalizedGames[rand];
         }
 
-        // Filter eloGamesData to only include best candidate
-        const newGame = user.gameElo.find(e => !e.finalized && String(e.game) === String(gameId));
-        let eloGamesData = [];
+        if (selectedComparison && (winner === 'new' || winner === 'existing')) {
+            const baseElo = selectedComparison.elo;
+            const computedElo = winner === 'existing'
+              ? Math.floor((1000 + baseElo) / 2)
+              : Math.floor((baseElo + 2000) / 2);
 
-        if (newGame) {
-            const minElo = newGame.minElo ?? 1000;
-            const maxElo = newGame.maxElo ?? 2000;
-            const midpoint = Math.floor((minElo + maxElo) / 2);
+            user.gameElo.push({
+                game: newGameObjectId,
+                elo: computedElo,
+                finalized: true,
+                comparisonHistory: []
+            });
 
-            const eligible = user.gameElo
-                .filter(e => e.finalized && e.elo >= minElo && e.elo <= maxElo)
-                .sort((a, b) => Math.abs(a.elo - midpoint) - Math.abs(b.elo - midpoint));
-
-            if (eligible.length) {
-                eloGamesData.push({ game: eligible[0].game });
-            }
+            await GameComparison.create({
+                userId: user._id,
+                gameA: newGameObjectId,
+                gameB: selectedComparison.game,
+                winner: winner === 'new' ? newGameObjectId : selectedComparison.game
+            });
         }
 
         const pastGameDoc = await PastGame.findById(gameId);
