@@ -106,6 +106,10 @@ module.exports.submitComparison = async function(req, res, next) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
+    if (String(newGameId) === String(existingGameId)) {
+      return res.status(400).json({ error: 'Cannot compare a game to itself' });
+    }
+
     // Avoid duplicate comparison records
     const existing = await GameComparison.findOne({
       userId,
@@ -121,12 +125,7 @@ module.exports.submitComparison = async function(req, res, next) {
         await existing.save();
       }
     } else {
-      await GameComparison.create({
-        userId,
-        gameA: newGameId,
-        gameB: existingGameId,
-        winner
-      });
+      await GameComparison.create({ userId, gameA: newGameId, gameB: existingGameId, winner });
     }
 
     const user = await User.findById(userId);
@@ -137,6 +136,13 @@ module.exports.submitComparison = async function(req, res, next) {
       newEntry = { game: newGameId, elo: 1500, finalized: false, comparisonHistory: [] };
       user.gameElo.push(newEntry);
     }
+
+    if (!Array.isArray(newEntry.comparisonHistory)) newEntry.comparisonHistory = [];
+    newEntry.comparisonHistory.push({
+      againstGame: existingGameId,
+      preferred: String(winner) === String(newGameId),
+      timestamp: new Date()
+    });
 
     // Determine current bounds based on all recorded comparisons for this game
     let minElo = ratingToElo(1);
