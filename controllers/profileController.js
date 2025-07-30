@@ -105,7 +105,7 @@ async function enrichEloGames(entries){
 function ratingToElo(rating){
     const val = parseFloat(rating);
     if(isNaN(val)) return 1500;
-    return Math.round(1000 + ((val - 1) * 100 / 9));
+    return Math.round(1000 + ((val - 1) / 9) * 1000);
 }
 
 exports.getSignUp = async (req, res, next) => {
