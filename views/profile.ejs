@@ -261,7 +261,7 @@
                                 </a>
                             </div>
                             <% const eloEntry = (eloGames || []).find(e => String(e.game && (e.game._id || e.game)) === String(game._id));
-                               if(eloEntry && typeof eloEntry.elo === 'number'){ const elo = eloEntry.elo; const raw = ((elo - 1000)/1000)*9 + 1; const rating = Math.max(1.0, Math.min(10.0, Math.round(raw*10)/10)); %>
+                               if(eloEntry && typeof eloEntry.elo === 'number'){ const elo = eloEntry.elo; const rating = Math.round(((elo - 1000) * 9 / 100) + 1); %>
                             <div class="rating-wrapper ms-md-4">
                                 <span class="rating-number"><%= rating %>/10</span>
                                 <% if(entry.comment){ %><span class="rating-comment"><%= entry.comment %></span><% } %>

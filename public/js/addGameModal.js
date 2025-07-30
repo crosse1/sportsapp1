@@ -27,6 +27,7 @@
     const winnerInput2 = $('#winnerInput2');
     const eloGames = window.eloGamesData || [];
     const finalizedGames = eloGames.filter(g => g.finalized);
+    const eloCount = eloGames.length;
     let randomGame1 = null;
     let randomGame2 = null;
     let comparisonStep = 0;
@@ -384,6 +385,15 @@
       winnerInput2.val('');
       compareGameInput1.val('');
       compareGameInput2.val('');
+      if(ratingGroup){
+        if(eloCount < 5){
+          ratingGroup.show();
+          ratingRange && ratingRange.setAttribute('required','');
+        } else {
+          ratingGroup.hide();
+          ratingRange && ratingRange.removeAttribute('required');
+        }
+      }
       if(finalizedGames.length){
         nextBtn.show();
         eloStep.hide();

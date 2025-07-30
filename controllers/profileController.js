@@ -105,7 +105,7 @@ async function enrichEloGames(entries){
 function ratingToElo(rating){
     const val = parseFloat(rating);
     if(isNaN(val)) return 1500;
-    return Math.round(1000 + ((val - 1) / 9) * 1000);
+    return Math.round(1000 + ((val - 1) * 100 / 9));
 }
 
 exports.getSignUp = async (req, res, next) => {
@@ -670,14 +670,17 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
         const user = await User.findById(req.user.id);
         if (!user) return res.redirect('/login');
 
+        if (!user.gameEntries) user.gameEntries = [];
+
+        const isInitial = (user.gameElo || []).length < 5;
+        let finalElo = isInitial ? ratingToElo(rating) : null;
+
         const entry = {
             game: gameId,
-            elo: ratingToElo(rating),
+            elo: finalElo,
             comment: sanitizedComment || null,
             image: req.file ? '/uploads/' + req.file.filename : null
         };
-
-        if (!user.gameEntries) user.gameEntries = [];
 
         const alreadyExists = user.gameEntries.some(e => String(e.game) === String(gameId));
         if (alreadyExists) {
@@ -705,41 +708,50 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
         let minElo = 1000;
         let maxElo = 2000;
 
-        const comp1 = finalizedGames.find(g => String(g.game) === String(compareGameId1));
-        if (comp1 && (winner1 === 'new' || winner1 === 'existing')) {
-            await GameComparison.create({
-                userId: user._id,
-                gameA: newGameObjectId,
-                gameB: comp1.game,
-                winner: winner1 === 'new' ? newGameObjectId : comp1.game
-            });
-            if (winner1 === 'new') {
-                minElo = comp1.elo;
-            } else {
-                maxElo = comp1.elo;
+        if(!isInitial){
+            const comp1 = finalizedGames.find(g => String(g.game) === String(compareGameId1));
+            if (comp1 && (winner1 === 'new' || winner1 === 'existing')) {
+                await GameComparison.create({
+                    userId: user._id,
+                    gameA: newGameObjectId,
+                    gameB: comp1.game,
+                    winner: winner1 === 'new' ? newGameObjectId : comp1.game
+                });
+                if (winner1 === 'new') {
+                    minElo = comp1.elo;
+                } else {
+                    maxElo = comp1.elo;
+                }
             }
+
+            const comp2 = finalizedGames.find(g => String(g.game) === String(compareGameId2));
+            if (comp2 && (winner2 === 'new' || winner2 === 'existing')) {
+                await GameComparison.create({
+                    userId: user._id,
+                    gameA: newGameObjectId,
+                    gameB: comp2.game,
+                    winner: winner2 === 'new' ? newGameObjectId : comp2.game
+                });
+                if (winner2 === 'new') {
+                    minElo = comp2.elo;
+                } else {
+                    maxElo = comp2.elo;
+                }
+            }
+
+            const computedElo = Math.floor((minElo + maxElo) / 2);
+            finalElo = computedElo;
         }
 
-        const comp2 = finalizedGames.find(g => String(g.game) === String(compareGameId2));
-        if (comp2 && (winner2 === 'new' || winner2 === 'existing')) {
-            await GameComparison.create({
-                userId: user._id,
-                gameA: newGameObjectId,
-                gameB: comp2.game,
-                winner: winner2 === 'new' ? newGameObjectId : comp2.game
-            });
-            if (winner2 === 'new') {
-                minElo = comp2.elo;
-            } else {
-                maxElo = comp2.elo;
-            }
+        if(finalElo === null) {
+            finalElo = Math.floor((minElo + maxElo) / 2);
         }
 
-        const computedElo = Math.floor((minElo + maxElo) / 2);
+        entry.elo = finalElo;
 
         user.gameElo.push({
             game: newGameObjectId,
-            elo: computedElo,
+            elo: finalElo,
             finalized: true,
             comparisonHistory: []
         });
