@@ -663,7 +663,7 @@ const { initializeEloFromRatings } = require('../lib/elo'); // or wherever it's 
 
 exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
     try {
-        const { gameId, rating, comment, compareGameId, winner } = req.body;
+        const { gameId, rating, comment, compareGameId1, winner1, compareGameId2, winner2 } = req.body;
 
         const sanitizedComment = sanitizeComment(comment || '');
 
@@ -702,32 +702,47 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
         const newGameObjectId = new mongoose.Types.ObjectId(gameId);
 
         const finalizedGames = (user.gameElo || []).filter(g => g.finalized);
-        let selectedComparison = finalizedGames.find(g => String(g.game) === String(compareGameId));
-        if (!selectedComparison && finalizedGames.length) {
-            const rand = Math.floor(Math.random() * finalizedGames.length);
-            selectedComparison = finalizedGames[rand];
-        }
+        let minElo = 1000;
+        let maxElo = 2000;
 
-        if (selectedComparison && (winner === 'new' || winner === 'existing')) {
-            const baseElo = selectedComparison.elo;
-            const computedElo = winner === 'existing'
-              ? Math.floor((1000 + baseElo) / 2)
-              : Math.floor((baseElo + 2000) / 2);
-
-            user.gameElo.push({
-                game: newGameObjectId,
-                elo: computedElo,
-                finalized: true,
-                comparisonHistory: []
-            });
-
+        const comp1 = finalizedGames.find(g => String(g.game) === String(compareGameId1));
+        if (comp1 && (winner1 === 'new' || winner1 === 'existing')) {
             await GameComparison.create({
                 userId: user._id,
                 gameA: newGameObjectId,
-                gameB: selectedComparison.game,
-                winner: winner === 'new' ? newGameObjectId : selectedComparison.game
+                gameB: comp1.game,
+                winner: winner1 === 'new' ? newGameObjectId : comp1.game
             });
+            if (winner1 === 'new') {
+                minElo = comp1.elo;
+            } else {
+                maxElo = comp1.elo;
+            }
         }
+
+        const comp2 = finalizedGames.find(g => String(g.game) === String(compareGameId2));
+        if (comp2 && (winner2 === 'new' || winner2 === 'existing')) {
+            await GameComparison.create({
+                userId: user._id,
+                gameA: newGameObjectId,
+                gameB: comp2.game,
+                winner: winner2 === 'new' ? newGameObjectId : comp2.game
+            });
+            if (winner2 === 'new') {
+                minElo = comp2.elo;
+            } else {
+                maxElo = comp2.elo;
+            }
+        }
+
+        const computedElo = Math.floor((minElo + maxElo) / 2);
+
+        user.gameElo.push({
+            game: newGameObjectId,
+            elo: computedElo,
+            finalized: true,
+            comparisonHistory: []
+        });
 
         const pastGameDoc = await PastGame.findById(gameId);
 

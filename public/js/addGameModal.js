@@ -21,11 +21,17 @@
     const existingCard = $('#existingGameCard');
     const betterBtn = $('#betterBtn');
     const worseBtn = $('#worseBtn');
-    const compareGameInput = $('#compareGameId');
-    const winnerInput = $('#winnerInput');
+    const compareGameInput1 = $('#compareGameId1');
+    const winnerInput1 = $('#winnerInput1');
+    const compareGameInput2 = $('#compareGameId2');
+    const winnerInput2 = $('#winnerInput2');
     const eloGames = window.eloGamesData || [];
     const finalizedGames = eloGames.filter(g => g.finalized);
-    let randomGame = null;
+    let randomGame1 = null;
+    let randomGame2 = null;
+    let comparisonStep = 0;
+    let minRange = 1000;
+    let maxRange = 2000;
     let selectedGameData = null;
     const existingGameIds = window.existingGameIds || [];
     const gameEntryCount = window.gameEntryCount || 0;
@@ -69,19 +75,27 @@
       );
     }
 
-    function showComparison(){
-      if(!randomGame){
-        if(!finalizedGames.length){
-          rankingDone = true;
-          $('#comparisonPrompt').text('No comparison available');
-          updateSubmitState();
-          return;
-        }
-        const idx = Math.floor(Math.random() * finalizedGames.length);
-        randomGame = finalizedGames[idx];
-        compareGameInput.val(randomGame.game && randomGame.game._id ? randomGame.game._id : randomGame.game);
+    function pickRandomGame(min,max,exclude){
+      exclude = exclude || [];
+      const eligible = finalizedGames.filter(g=>{
+        const id = String(g.game && g.game._id ? g.game._id : g.game);
+        return g.elo >= min && g.elo <= max && !exclude.includes(id);
+      });
+      if(!eligible.length) return null;
+      const idx = Math.floor(Math.random()*eligible.length);
+      return eligible[idx];
+    }
+
+    function showComparison1(){
+      randomGame1 = pickRandomGame(minRange,maxRange);
+      if(!randomGame1){
+        rankingDone = true;
+        $('#comparisonPrompt').text('No comparison available');
+        updateSubmitState();
+        return;
       }
-      const comp = randomGame.game || {};
+      const comp = randomGame1.game || {};
+      compareGameInput1.val(comp._id ? comp._id : randomGame1.game);
       const compData = {
         awayLogo: comp.awayTeam && comp.awayTeam.logos && comp.awayTeam.logos[0],
         homeLogo: comp.homeTeam && comp.homeTeam.logos && comp.homeTeam.logos[0],
@@ -89,10 +103,36 @@
         homePoints: comp.HomePoints ?? comp.homePoints,
         gameDate: comp.StartDate || comp.startDate
       };
-      $('#comparisonPrompt').text(`Which game is better? (elo: ${randomGame.elo})`);
+      $('#comparisonPrompt').text('Which game is better?');
       renderCard(newCard, selectedGameData);
       renderCard(existingCard, compData);
       $('#comparisonButtons').show();
+      comparisonStep = 1;
+    }
+
+    function showComparison2(){
+      randomGame2 = pickRandomGame(minRange,maxRange,[String(randomGame1.game && randomGame1.game._id ? randomGame1.game._id : randomGame1.game)]);
+      if(!randomGame2){
+        rankingDone = true;
+        $('#comparisonPrompt').text('No second comparison available');
+        $('#comparisonButtons').hide();
+        updateSubmitState();
+        return;
+      }
+      const comp = randomGame2.game || {};
+      compareGameInput2.val(comp._id ? comp._id : randomGame2.game);
+      const compData = {
+        awayLogo: comp.awayTeam && comp.awayTeam.logos && comp.awayTeam.logos[0],
+        homeLogo: comp.homeTeam && comp.homeTeam.logos && comp.homeTeam.logos[0],
+        awayPoints: comp.AwayPoints ?? comp.awayPoints,
+        homePoints: comp.HomePoints ?? comp.homePoints,
+        gameDate: comp.StartDate || comp.startDate
+      };
+      $('#comparisonPrompt').text('Which game is better?');
+      renderCard(newCard, selectedGameData);
+      renderCard(existingCard, compData);
+      $('#comparisonButtons').show();
+      comparisonStep = 2;
     }
 
     if(nextBtn){
@@ -109,7 +149,10 @@
           homePoints: data?.homePoints,
           gameDate: data?.gameDate
         };
-        showComparison();
+        minRange = 1000;
+        maxRange = 2000;
+        comparisonStep = 0;
+        showComparison1();
         updateSubmitState();
       });
     }
@@ -120,24 +163,49 @@
         if(eloStep) eloStep.hide();
         nextBtn.show();
         backBtn.addClass('d-none');
+        comparisonStep = 0;
+        randomGame1 = null;
+        randomGame2 = null;
+        winnerInput1.val('');
+        winnerInput2.val('');
+        compareGameInput1.val('');
+        compareGameInput2.val('');
+        rankingDone = finalizedGames.length === 0;
+        $('#comparisonButtons').hide();
+        $('#comparisonPrompt').text('');
         updateSubmitState();
       });
     }
 
-    betterBtn.off('click').on('click', function(){
-      winnerInput.val('new');
+    function finalize(){
       rankingDone = true;
       $('#comparisonPrompt').text('Placement recorded');
       $('#comparisonButtons').hide();
       updateSubmitState();
+    }
+
+    betterBtn.off('click').on('click', function(){
+      if(comparisonStep === 1){
+        winnerInput1.val('new');
+        minRange = randomGame1.elo;
+        showComparison2();
+      } else if(comparisonStep === 2){
+        winnerInput2.val('new');
+        minRange = randomGame2.elo;
+        finalize();
+      }
     });
 
     worseBtn.off('click').on('click', function(){
-      winnerInput.val('existing');
-      rankingDone = true;
-      $('#comparisonPrompt').text('Placement recorded');
-      $('#comparisonButtons').hide();
-      updateSubmitState();
+      if(comparisonStep === 1){
+        winnerInput1.val('existing');
+        maxRange = randomGame1.elo;
+        showComparison2();
+      } else if(comparisonStep === 2){
+        winnerInput2.val('existing');
+        maxRange = randomGame2.elo;
+        finalize();
+      }
     });
 
     if(newCard){
@@ -309,9 +377,13 @@
 
     modal.on('shown.bs.modal', function(){
       rankingDone = finalizedGames.length === 0;
-      randomGame = null;
-      winnerInput.val('');
-      compareGameInput.val('');
+      randomGame1 = null;
+      randomGame2 = null;
+      comparisonStep = 0;
+      winnerInput1.val('');
+      winnerInput2.val('');
+      compareGameInput1.val('');
+      compareGameInput2.val('');
       if(finalizedGames.length){
         nextBtn.show();
         eloStep.hide();
