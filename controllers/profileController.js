@@ -101,36 +101,10 @@ async function enrichEloGames(entries){
     return enriched;
 }
 
-function calculateElo(entries){
-    if(!entries || !entries.length) return [];
-    const K = 32;
-    const eloMap = {};
-    entries.forEach(e => {
-        eloMap[String(e.game)] = 1500;
-        console.log(`Original rating for game ${e.game}: ${e.rating}`);
-    });
-    for(let i=0;i<entries.length;i++){
-        for(let j=i+1;j<entries.length;j++){
-            const a = entries[i];
-            const b = entries[j];
-            const eloA = eloMap[String(a.game)];
-            const eloB = eloMap[String(b.game)];
-            let scoreA = 0.5;
-            let scoreB = 0.5;
-            if(a.rating > b.rating){ scoreA = 1; scoreB = 0; }
-            else if(a.rating < b.rating){ scoreA = 0; scoreB = 1; }
-            const expA = 1 / (1 + Math.pow(10, (eloB - eloA)/400));
-            const expB = 1 / (1 + Math.pow(10, (eloA - eloB)/400));
-            eloMap[String(a.game)] = eloA + K * (scoreA - expA);
-            eloMap[String(b.game)] = eloB + K * (scoreB - expB);
-        }
-    }
-    const results = entries.map(e => ({ game: e.game, elo: eloMap[String(e.game)] }));
-    results.forEach(r => {
-        console.log(`ELO for game ${r.game}: ${r.elo}`);
-    });
-    console.log('Saving ELO array:', JSON.stringify(results));
-    return results;
+function ratingToElo(rating){
+    const val = parseFloat(rating);
+    if(isNaN(val)) return 1500;
+    return Math.round(1000 + ((val - 1) / 9) * 1000);
 }
 
 exports.getSignUp = async (req, res, next) => {
@@ -225,13 +199,6 @@ exports.getProfile = async (req, res, next) => {
             enrichedEntries = await enrichGameEntries(gameEntriesRaw);
         }
 
-        const ratingMap = {};
-        if(user.gameEntries){
-            user.gameEntries.forEach(e=>{ ratingMap[String(e.game)] = e.rating; });
-        }
-        if(user.gamesList){
-            user.gamesList.forEach(g=>{ g.userRating = ratingMap[String(g._id)]; });
-        }
         res.render('profile', {
             user,
             isCurrentUser: true,
@@ -379,7 +346,7 @@ exports.profileStats = async (req, res, next) => {
             .filter(e => e.game && e.game._id)
             .map(e => {
                 const game = e.game;
-                const rating = typeof e.rating === 'number' ? e.rating : 0;
+                const rating = e.elo ? ((e.elo - 1000) / 1000) * 9 + 1 : 0;
                 const gameDate = game.startDate || game.StartDate || null;
                 const awayLogo = (game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0]) ?
                     game.awayTeam.logos[0] : '/images/placeholder.jpg';
@@ -571,13 +538,6 @@ exports.viewUser = async (req, res, next) => {
             const followsBack = user.following.some(f => String(f) === String(viewer._id));
             canMessage = isFollowing && followsBack;
         }
-        const ratingMap = {};
-        if(user.gameEntries){
-            user.gameEntries.forEach(e=>{ ratingMap[String(e.game)] = e.rating; });
-        }
-        if(user.gamesList){
-            user.gamesList.forEach(g=>{ g.userRating = ratingMap[String(g._id)]; });
-        }
         res.render("profile", {
             user,
             isCurrentUser,
@@ -711,7 +671,7 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
 
         const entry = {
             game: gameId,
-            rating: parseFloat(rating),
+            elo: ratingToElo(rating),
             comment: sanitizedComment || null,
             image: req.file ? '/uploads/' + req.file.filename : null
         };
@@ -742,11 +702,7 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
 
         if ((user.gameEntries?.length || 0) <= 5) {
             const newEntry = user.gameEntries[user.gameEntries.length - 1];
-            const rating = parseFloat(newEntry.rating);
-
-            const baseElo = !isNaN(rating)
-              ? Math.round(1000 + ((rating - 1) / 9) * 1000)
-              : 1500;
+            const baseElo = newEntry.elo;
 
             const newElo = {
               game: newGameObjectId,
@@ -795,11 +751,6 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
 
         if (pastGameDoc) {
             let updated = false;
-            const rated = pastGameDoc.ratings.some(r => String(r.userId) === String(user._id));
-            if (!rated) {
-                pastGameDoc.ratings.push({ userId: user._id, rating: parseFloat(rating) });
-                updated = true;
-            }
             const reviewed = pastGameDoc.comments.some(c => String(c.userId) === String(user._id));
             if (!reviewed && sanitizedComment) {
                 pastGameDoc.comments.push({ userId: user._id, comment: sanitizedComment });
@@ -854,6 +805,7 @@ exports.updateGameEntry = [uploadDisk.single('photo'), async (req, res, next) =>
         const entryId = req.params.id;
         const { rating, comment } = req.body;
         const sanitizedComment = sanitizeComment(comment || '');
+        const newElo = ratingToElo(rating);
 
         const user = await User.findById(req.user.id);
         if(!user) return res.status(401).json({ error:'Unauthorized' });
@@ -861,7 +813,7 @@ exports.updateGameEntry = [uploadDisk.single('photo'), async (req, res, next) =>
         const entry = user.gameEntries.id(entryId);
         if(!entry) return res.status(404).json({ error:'Entry not found' });
 
-        entry.rating = parseFloat(rating);
+        entry.elo = newElo;
         entry.comment = sanitizedComment || null;
         if(req.file){
             entry.image = '/uploads/' + req.file.filename;
@@ -870,11 +822,6 @@ exports.updateGameEntry = [uploadDisk.single('photo'), async (req, res, next) =>
         const pastGameDoc = await PastGame.findById(entry.game);
         if(pastGameDoc){
             let updated = false;
-            const ratingObj = pastGameDoc.ratings.find(r => String(r.userId) === String(user._id));
-            if(ratingObj){
-                ratingObj.rating = parseFloat(rating);
-                updated = true;
-            }
             const commentObj = pastGameDoc.comments.find(c => String(c.userId) === String(user._id));
             if(commentObj){
                 commentObj.comment = sanitizedComment;
@@ -887,8 +834,10 @@ exports.updateGameEntry = [uploadDisk.single('photo'), async (req, res, next) =>
                 await pastGameDoc.save();
             }
         }
-        if(user.gameEntries.length <= 5){
-            user.gameElo = calculateElo(user.gameEntries);
+
+        const eloEntry = user.gameElo.find(e => String(e.game) === String(entry.game));
+        if(eloEntry){
+            eloEntry.elo = newElo;
         }
 
         await user.save();
@@ -948,8 +897,9 @@ exports.deleteGameEntry = async (req, res, next) => {
             if(idx >= 0) user.venuesList.splice(idx,1);
         });
 
-        if(user.gameEntries.length <= 5){
-            user.gameElo = calculateElo(user.gameEntries);
+        const idx = user.gameElo.findIndex(e => String(e.game) === String(entry.game));
+        if(idx >= 0){
+            user.gameElo.splice(idx,1);
         }
 
         await user.save();

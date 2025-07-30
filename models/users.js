@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema({
     venuesList: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Venue' }], default: [] },
     gameEntries: [{
         game: { type: mongoose.Schema.Types.ObjectId, ref: 'Game' },
-        rating: Number,
+        elo: Number,
         comment: String,
         image: String
     }],
