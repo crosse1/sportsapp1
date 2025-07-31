@@ -162,7 +162,7 @@
     const normalizedRating = Math.max(1.0, Math.min(10.0, Math.round(rawScore * 10) / 10));
 %>
                         <div class="rating-wrapper gradient-overlay" data-entry-id="<%= entry._id %>">
-                            <img class="bw-img" src="<%= game.venue && game.venue.imgUrl ? game.venue.imgUrl : '/images/placeholder.jpg' %>" alt="<%= game.Venue || game.venue %>">
+                            <img class="bw-img" src="<%= game.venue && game.venue.imgUrl ? game.venue.imgUrl : '/images/stadium.png' %>" alt="<%= game.Venue || game.venue %>">
                             <span class="rating-number"><%= normalizedRating %>/10</span>
                             <% if(entry.comment){ %><span class="rating-comment"><%= entry.comment %></span><% } %>
                         </div>
