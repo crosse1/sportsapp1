@@ -347,7 +347,8 @@ exports.profileStats = async (req, res, next) => {
             .filter(e => e.game && e.game._id)
             .map(e => {
                 const game = e.game;
-                const rating = e.elo ? ((e.elo - 1000) / 1000) * 9 + 1 : 0;
+                const rawScore = e.elo ? ((e.elo - 1000) / 1000) * 9 + 1 : 0;
+                const rating = Math.max(1.0, Math.min(10.0, Math.round(rawScore * 10) / 10));
                 const gameDate = game.startDate || game.StartDate || null;
                 const awayLogo = (game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0]) ?
                     game.awayTeam.logos[0] : '/images/placeholder.jpg';

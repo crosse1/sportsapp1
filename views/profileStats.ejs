@@ -225,7 +225,7 @@
         .top-game-link:hover {
             transform: scale(1.03);
         }
-        .game-rank { text-align: left; font-size: 1.7rem; margin-left: 1rem;}
+        .game-rank { text-align: left; font-size: 1.6rem; margin-left: 1rem;}
         .game-matchup {
             display: flex;
             flex-direction: column;
@@ -535,7 +535,7 @@
             const gameDate = g.startDate || g.StartDate || null;
             const awayLogo = g.awayTeam && g.awayTeam.logos && g.awayTeam.logos[0] ? g.awayTeam.logos[0] : '/images/placeholder.jpg';
             const homeLogo = g.homeTeam && g.homeTeam.logos && g.homeTeam.logos[0] ? g.homeTeam.logos[0] : '/images/placeholder.jpg';
-            const rawScore = e.elo ? Math.round(((e.elo - 1000)/1000) * 9 + 1) : 0;
+            const rawScore = e.elo ? ((e.elo - 1000) / 1000) * 9 + 1 : 0;
             const rating = Math.max(1.0, Math.min(10.0, Math.round(rawScore * 10) / 10));
             return { _id: g._id, gameDate, awayTeamLogoUrl: awayLogo, homeTeamLogoUrl: homeLogo, rating };
         })
