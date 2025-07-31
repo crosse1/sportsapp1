@@ -699,11 +699,11 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
                 activeTab: 'games',
                 gameEntries: enrichedEntries,
                 error: 'You’ve already entered a rating for this game.',
+                usePastGameLinks: true,
                 eloGames
             });
         }
 
-        user.gameEntries.push(entry);
         console.log(`Added game entry:`, entry);
 
         const newGameObjectId = new mongoose.Types.ObjectId(gameId);
@@ -787,12 +787,12 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
 
         entry.elo = finalElo;
 
-        user.gameElo.push({
+        const newEloEntry = {
             game: newGameObjectId,
             elo: finalElo,
             finalized: true,
             comparisonHistory: []
-        });
+        };
 
         const pastGameDoc = await PastGame.findById(gameId);
 
@@ -827,18 +827,19 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
             }
         }
 
-        user.teamsList = [
-            ...(user.teamsList || []),
-            ...teamsToAdd.map(toObjectId)
-        ];
+        const update = {
+            $push: {
+                gameEntries: entry,
+                gameElo: newEloEntry
+            },
+            $addToSet: {
+                teamsList: { $each: teamsToAdd.map(toObjectId) },
+                venuesList: { $each: venuesToAdd.map(toObjectId) }
+            }
+        };
 
-        user.venuesList = [
-            ...(user.venuesList || []),
-            ...venuesToAdd.map(toObjectId)
-        ];
-
-        await user.save();
-        console.log('[SAVE] Saving user with gameElo:', user.gameElo);
+        await User.findByIdAndUpdate(user._id, update);
+        console.log('[SAVE] Added game entry with elo:', finalElo);
         const enriched = await enrichGameEntries([entry]);
         if(req.headers.accept && req.headers.accept.includes('application/json')){
             return res.json({ success:true, entry: enriched[0] });
