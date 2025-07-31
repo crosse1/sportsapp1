@@ -430,13 +430,9 @@ exports.showPastGame = async (req, res, next) => {
       }
     }
 
-    const ratingMap = {};
-    (game.ratings || []).forEach(r => { ratingMap[String(r.userId)] = r.rating; });
-    const userIds = (game.comments || []).map(c => c.userId);
     const User = require('../models/users');
-    console.log('Raw userIds:', userIds);
-console.log('First ID type:', typeof userIds[0]);
-    const users = await User.find({ _id: { $in: userIds } }).select('username');
+    const userIds = (game.comments || []).map(c => c.userId);
+    const users = await User.find({ _id: { $in: userIds } }).select('username gameElo');
 
     const userMap = {};
     users.forEach(u => {
@@ -445,24 +441,13 @@ console.log('First ID type:', typeof userIds[0]);
         gameElo: u.gameElo || []
       };
     });
+
     const reviews = (game.comments || []).map(c => {
-      
       const info = userMap[String(c.userId)] || { username: 'User', gameElo: [] };
-      (info.gameElo || []).forEach(e => {
-        console.log('gameElo.game:', String(e.game), ' vs game._id:', String(game._id));
-      });
-      console.log('User:', info.username);
-console.log('gameElo:', info.gameElo);
-console.log('Looking for gameId:', String(game._id));
       const eloEntry = (info.gameElo || []).find(e =>
         String(e.game) === String(game._id) && typeof e.elo === 'number'
       );
-      let rating = null;
-      console.log(eloEntry);
-      if (eloEntry && eloEntry.elo != null) {
-        rating = (((eloEntry.elo - 1000) / 1000) * 9 + 1).toFixed(1);
-        console.log(rating);
-      }
+      const rating = eloEntry ? (((eloEntry.elo - 1000) / 1000) * 9 + 1).toFixed(1) : null;
       return {
         userId: c.userId,
         username: info.username,
