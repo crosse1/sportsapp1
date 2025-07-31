@@ -50,7 +50,9 @@
                     </div>
                     <%= r.comment %>
                   </div>
-                  <div class="col-3 col-md-2 fw-bold text-end rating-value"><%= r.rating %></div>
+                  <div class="col-3 col-md-2 fw-bold text-end rating-value">
+                    <%= r.rating ? r.rating + '/10' : '--' %>
+                  </div>
                 </div>
               <% }) } else { %>
                 <p class="text-white">No reviews yet.</p>
