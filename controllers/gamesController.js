@@ -434,6 +434,8 @@ exports.showPastGame = async (req, res, next) => {
     (game.ratings || []).forEach(r => { ratingMap[String(r.userId)] = r.rating; });
     const userIds = (game.comments || []).map(c => c.userId);
     const User = require('../models/users');
+    console.log('Raw userIds:', userIds);
+console.log('First ID type:', typeof userIds[0]);
     const users = await User.find({ _id: { $in: userIds } }).select('username');
 
     const userMap = {};
@@ -444,13 +446,22 @@ exports.showPastGame = async (req, res, next) => {
       };
     });
     const reviews = (game.comments || []).map(c => {
+      
       const info = userMap[String(c.userId)] || { username: 'User', gameElo: [] };
+      (info.gameElo || []).forEach(e => {
+        console.log('gameElo.game:', String(e.game), ' vs game._id:', String(game._id));
+      });
+      console.log('User:', info.username);
+console.log('gameElo:', info.gameElo);
+console.log('Looking for gameId:', String(game._id));
       const eloEntry = (info.gameElo || []).find(e =>
         String(e.game) === String(game._id) && typeof e.elo === 'number'
       );
       let rating = null;
+      console.log(eloEntry);
       if (eloEntry && eloEntry.elo != null) {
         rating = (((eloEntry.elo - 1000) / 1000) * 9 + 1).toFixed(1);
+        console.log(rating);
       }
       return {
         userId: c.userId,
@@ -460,17 +471,7 @@ exports.showPastGame = async (req, res, next) => {
       };
     });
 
-    const eloAgg = await User.aggregate([
-      { $unwind: '$gameElo' },
-      { $match: { 'gameElo.game': game._id, 'gameElo.elo': { $ne: null } } },
-      { $group: { _id: null, avgElo: { $avg: '$gameElo.elo' } } }
-    ]);
-    let avgRating = 'N/A';
-    if (eloAgg.length && eloAgg[0].avgElo != null) {
-      const avgElo = eloAgg[0].avgElo;
-      const rating = ((avgElo - 1000) / 1000) * 9 + 1;
-      avgRating = rating.toFixed(1);
-    }
+    
 
     const eloAgg = await User.aggregate([
       { $unwind: '$gameElo' },
