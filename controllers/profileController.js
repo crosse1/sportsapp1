@@ -758,11 +758,30 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
                 }
             }
 
+            if(isNaN(minElo) || isNaN(maxElo)){
+                minElo = 1000;
+                maxElo = 2000;
+            }
+            if(minElo > maxElo){
+                const t = minElo;
+                minElo = maxElo;
+                maxElo = t;
+            }
+
             const computedElo = Math.floor((minElo + maxElo) / 2);
             finalElo = computedElo;
         }
 
         if(finalElo === null) {
+            if(isNaN(minElo) || isNaN(maxElo)){
+                minElo = 1000;
+                maxElo = 2000;
+            }
+            if(minElo > maxElo){
+                const t = minElo;
+                minElo = maxElo;
+                maxElo = t;
+            }
             finalElo = Math.floor((minElo + maxElo) / 2);
         }
 

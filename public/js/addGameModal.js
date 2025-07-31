@@ -33,6 +33,14 @@
     const form = modal.find('form');
     const eloGames = window.eloGamesData || [];
     const finalizedGames = eloGames.filter(g => g.finalized);
+    const autoSubmitOverlay = $(
+      '<div class="position-absolute w-100 h-100 top-0 start-0 d-flex justify-content-center align-items-center" ' +
+      'style="background:rgba(0,0,0,0.5);display:none;z-index:1056;">' +
+      '<div class="spinner-border text-light" role="status"></div></div>'
+    );
+    modal.find('.modal-content').append(autoSubmitOverlay);
+    const highestElo = finalizedGames.reduce((m,g)=> g.elo>m ? g.elo : m, finalizedGames.length ? finalizedGames[0].elo : 0);
+    const lowestElo = finalizedGames.reduce((m,g)=> g.elo<m ? g.elo : m, finalizedGames.length ? finalizedGames[0].elo : 0);
     let randomGame1 = null;
     let randomGame2 = null;
     let randomGame3 = null;
@@ -84,6 +92,7 @@
 
     function pickRandomGame(min, max, exclude) {
       exclude = exclude || [];
+      if(isNaN(min) || isNaN(max) || min > max) return null;
       const eligible = finalizedGames.filter(g => {
         const id = String(g.game && g.game._id ? g.game._id : g.game);
         return g.elo >= min && g.elo <= max && !exclude.includes(id);
@@ -129,10 +138,7 @@
     function showComparison2(){
       randomGame2 = pickRandomGame(minRange,maxRange,[String(randomGame1.game && randomGame1.game._id ? randomGame1.game._id : randomGame1.game)]);
       if(!randomGame2){
-        rankingDone = true;
-        $('#comparisonPrompt').text('No second comparison available');
-        $('#comparisonButtons').hide();
-        updateSubmitState();
+        finalize('No second comparison available');
         return;
       }
       const comp = randomGame2.game || {};
@@ -158,12 +164,7 @@
       ];
       randomGame3 = pickRandomGame(minRange, maxRange, exclude);
       if(!randomGame3){
-
-        rankingDone = true;
-        $('#comparisonPrompt').text('No third comparison available');
-        $('#comparisonButtons').hide();
-        updateSubmitState();
-        main
+        finalize('No third comparison available');
         return;
       }
       const comp = randomGame3.game || {};
@@ -235,9 +236,9 @@
       });
     }
 
-    function finalize(){
+    function finalize(msg){
       rankingDone = true;
-      $('#comparisonPrompt').text('Placement recorded');
+      $('#comparisonPrompt').text(msg || 'Placement recorded');
       $('#comparisonButtons').hide();
       updateSubmitState();
       if(gameEntryCount >= 5){
@@ -249,7 +250,11 @@
       if(comparisonStep === 1){
         winnerInput1.val('new');
         minRange = randomGame1.elo;
-        showComparison2();
+        if(randomGame1 && randomGame1.elo === highestElo){
+          finalize();
+        } else {
+          showComparison2();
+        }
       } else if(comparisonStep === 2){
         winnerInput2.val('new');
         minRange = randomGame2.elo;
@@ -265,7 +270,11 @@
       if(comparisonStep === 1){
         winnerInput1.val('existing');
         maxRange = randomGame1.elo;
-        showComparison2();
+        if(randomGame1 && randomGame1.elo === lowestElo){
+          finalize();
+        } else {
+          showComparison2();
+        }
       } else if(comparisonStep === 2){
         winnerInput2.val('existing');
         maxRange = randomGame2.elo;
@@ -311,6 +320,7 @@
     async function autoSubmit(){
       if(!form.length) return;
       submitBtn.prop('disabled', true);
+      let overlayTimeout = setTimeout(()=>autoSubmitOverlay.show(), 300);
       try{
         const res = await fetch(form.attr('action'), { method:'POST', body:new FormData(form[0]), headers:{ 'Accept':'application/json' } });
         if(res.ok){
@@ -324,6 +334,8 @@
       }catch(err){
         alert('Save failed');
       }finally{
+        clearTimeout(overlayTimeout);
+        autoSubmitOverlay.hide();
         submitBtn.prop('disabled', false);
         bootstrap.Modal.getInstance(modal[0]).hide();
       }
