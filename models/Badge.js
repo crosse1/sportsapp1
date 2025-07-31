@@ -18,7 +18,9 @@ const badgeSchema = new mongoose.Schema({
   oneTeamEach: { type: Boolean, default: false },
   timeConstraints: { type: Number, min: 1 },
   description: String,
-  pointValue: Number
+  pointValue: Number,
+  startDate: { type: Date, default: null },
+  endDate: { type: Date, default: null }
 });
 
 module.exports = mongoose.model('Badge', badgeSchema);
