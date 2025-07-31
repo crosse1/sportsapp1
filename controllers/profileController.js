@@ -387,11 +387,14 @@ exports.profileStats = async (req, res, next) => {
         console.log('[profileStats] Count of unique states:', statesCount);
 
         const conferenceIdSet = new Set();
+        const unlockedTeamIds = new Set();
         for (const entry of enrichedEntries) {
             const g = entry.game;
             if (!g) continue;
             if (g.homeConferenceId) conferenceIdSet.add(g.homeConferenceId);
             if (g.awayConferenceId) conferenceIdSet.add(g.awayConferenceId);
+            if (g.HomeId) unlockedTeamIds.add(g.HomeId);
+            if (g.AwayId) unlockedTeamIds.add(g.AwayId);
         }
 
         const conferencesArr = conferenceIdSet.size
@@ -399,6 +402,61 @@ exports.profileStats = async (req, res, next) => {
             : [];
         const conferenceNames = conferencesArr.map(c => c.confName).sort();
         const conferencesCount = conferenceIdSet.size;
+
+        // Build conference stats for season 2025
+        const seasonYear = 2025;
+        const seasonGames = await PastGame.find({ Season: seasonYear })
+            .select('HomeId AwayId homeConferenceId awayConferenceId')
+            .lean();
+
+        const confTeamMap = {};
+        for (const g of seasonGames) {
+            if (g.homeConferenceId && g.HomeId) {
+                if (!confTeamMap[g.homeConferenceId]) confTeamMap[g.homeConferenceId] = new Set();
+                confTeamMap[g.homeConferenceId].add(g.HomeId);
+            }
+            if (g.awayConferenceId && g.AwayId) {
+                if (!confTeamMap[g.awayConferenceId]) confTeamMap[g.awayConferenceId] = new Set();
+                confTeamMap[g.awayConferenceId].add(g.AwayId);
+            }
+        }
+
+        const allSeasonTeamIds = new Set();
+        Object.values(confTeamMap).forEach(set => set.forEach(id => allSeasonTeamIds.add(id)));
+
+        const teamsInSeason = allSeasonTeamIds.size
+            ? await Team.find({ teamId: { $in: Array.from(allSeasonTeamIds) } })
+                .select('teamId logos conferenceId')
+                .lean()
+            : [];
+
+        const teamMap = {};
+        teamsInSeason.forEach(t => { teamMap[t.teamId] = t; });
+
+        const confIds = Object.keys(confTeamMap).map(id => Number(id));
+        const confDocs = confIds.length
+            ? await Conference.find({ confId: { $in: confIds } }).lean()
+            : [];
+        const confNameMap = {};
+        confDocs.forEach(c => { confNameMap[c.confId] = c.confName; });
+
+        const conferenceStats = confIds.map(id => {
+            const teamIds = Array.from(confTeamMap[id] || []);
+            const unlockedIds = teamIds.filter(tid => unlockedTeamIds.has(tid));
+            const teams = teamIds.map(tid => {
+                const t = teamMap[tid] || {};
+                const logo = t.logos && t.logos[0] ? t.logos[0] : null;
+                return { id: tid, logo };
+            });
+            const pct = teamIds.length ? Math.round((unlockedIds.length / teamIds.length) * 100) : 0;
+            return {
+                id,
+                name: confNameMap[id] || String(id),
+                teams,
+                unlockedTeamIds: unlockedIds,
+                percentage: pct
+            };
+        }).sort((a, b) => a.name.localeCompare(b.name));
 
         const eloGames = await enrichEloGames(profileUser.gameElo || []);
 
@@ -418,6 +476,7 @@ exports.profileStats = async (req, res, next) => {
             statesCount,
             conferencesCount,
             conferenceNames,
+            conferenceStats,
             eloGames
         });
     } catch (err) {
