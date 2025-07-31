@@ -30,12 +30,11 @@
     const confirmModal = $('#gameAddedModal');
     const addedCard = $('#addedGameCard');
     const addedRating = $('#addedGameRating');
+    const addedRatingText = $('#addedGameRatingText');
     const form = modal.find('form');
     const eloGames = window.eloGamesData || [];
     const finalizedGames = eloGames.filter(g => g.finalized);
-    //const autoSubmitOverlay = $(
-    
-    //modal.find('.modal-content').append(autoSubmitOverlay);
+    const autoSubmitOverlay = $('#autoSubmitOverlay');
     const highestElo = finalizedGames.reduce((m,g)=> g.elo>m ? g.elo : m, finalizedGames.length ? finalizedGames[0].elo : 0);
     const lowestElo = finalizedGames.reduce((m,g)=> g.elo<m ? g.elo : m, finalizedGames.length ? finalizedGames[0].elo : 0);
     let randomGame1 = null;
@@ -128,8 +127,7 @@
       randomGame1 = pickRandomGame(minRange,maxRange);
       if(!randomGame1){
         rankingDone = true;
-        $('#comparisonPrompt').text('No comparison available');
-        updateSubmitState();
+        finalize();
         return;
       }
       const comp = randomGame1.game || {};
@@ -141,17 +139,17 @@
         homePoints: comp.HomePoints ?? comp.homePoints,
         gameDate: comp.StartDate || comp.startDate
       };
-      $('#comparisonPrompt').text('Which game is better?');
+      $('#comparisonPrompt').text('');
       renderCard(newCard, selectedGameData);
       renderCard(existingCard, compData);
-      $('#comparisonButtons').show();
+      $('#comparisonButtons').hide();
       comparisonStep = 1;
     }
 
     function showComparison2(){
       randomGame2 = pickRandomGame(minRange,maxRange,[String(randomGame1.game && randomGame1.game._id ? randomGame1.game._id : randomGame1.game)]);
       if(!randomGame2){
-        finalize('No second comparison available');
+        finalize();
         return;
       }
       const comp = randomGame2.game || {};
@@ -163,10 +161,10 @@
         homePoints: comp.HomePoints ?? comp.homePoints,
         gameDate: comp.StartDate || comp.startDate
       };
-      $('#comparisonPrompt').text('Which game is better?');
+      $('#comparisonPrompt').text('');
       renderCard(newCard, selectedGameData);
       renderCard(existingCard, compData);
-      $('#comparisonButtons').show();
+      $('#comparisonButtons').hide();
       comparisonStep = 2;
     }
 
@@ -177,7 +175,7 @@
       ];
       randomGame3 = pickRandomGame(minRange, maxRange, exclude);
       if(!randomGame3){
-        finalize('No third comparison available');
+        finalize();
         return;
       }
       const comp = randomGame3.game || {};
@@ -189,10 +187,10 @@
         homePoints: comp.HomePoints ?? comp.homePoints,
         gameDate: comp.StartDate || comp.startDate
       };
-      $('#comparisonPrompt').text('Which game is better?');
+      $('#comparisonPrompt').text('');
       renderCard(newCard, selectedGameData);
       renderCard(existingCard, compData);
-      $('#comparisonButtons').show();
+      $('#comparisonButtons').hide();
       comparisonStep = 3;
     }
 
@@ -249,9 +247,9 @@
       });
     }
 
-    function finalize(msg){
+    function finalize(){
       rankingDone = true;
-      $('#comparisonPrompt').text(msg || 'Placement recorded');
+      $('#comparisonPrompt').text('');
       $('#comparisonButtons').hide();
       updateSubmitState();
       if(gameEntryCount >= 5){
@@ -324,20 +322,23 @@
       renderCard(addedCard, data);
       
       const elo = entry.elo;
-    const rawScore = ((elo - 1000) / 1000) * 9 + 1;
-    const rating = Math.max(1.0, Math.min(10.0, Math.round(rawScore * 10) / 10));
-      addedRating.text(rating.toFixed(1));
+      const rawScore = ((elo - 1000) / 1000) * 9 + 1;
+      const rating = Math.max(1.0, Math.min(10.0, Math.round(rawScore * 10) / 10));
+      const ratingStr = rating.toFixed(1);
+      addedRating.text(ratingStr);
+      if(addedRatingText){ addedRatingText.text(ratingStr + '/10'); }
       bootstrap.Modal.getOrCreateInstance(confirmModal[0]).show();
     }
 
     async function autoSubmit(){
       if(!form.length) return;
       submitBtn.prop('disabled', true);
-      //let overlayTimeout = setTimeout(()=>autoSubmitOverlay.show(), 300);
+      if(autoSubmitOverlay){ autoSubmitOverlay.show(); }
       try{
         const res = await fetch(form.attr('action'), { method:'POST', body:new FormData(form[0]), headers:{ 'Accept':'application/json' } });
         if(res.ok){
           const json = await res.json();
+          if(autoSubmitOverlay){ autoSubmitOverlay.hide(); }
           if(json && json.entry){
             showConfirmation(json.entry);
             if(window.gameEntriesData){
@@ -345,13 +346,13 @@
             }
           }
         }else{
+          if(autoSubmitOverlay){ autoSubmitOverlay.hide(); }
           alert('Save failed');
         }
       }catch(err){
+        if(autoSubmitOverlay){ autoSubmitOverlay.hide(); }
         alert('Save failed');
       }finally{
-        //clearTimeout(overlayTimeout);
-        //autoSubmitOverlay.hide();
         submitBtn.prop('disabled', false);
         bootstrap.Modal.getInstance(modal[0]).hide();
         resetForm();
