@@ -349,6 +349,19 @@
                     <div id="statesTop" class="stat-right"></div>
                 </div>
             </div>
+            <div class="stat-block">
+                <div class="stat-content">
+                    <div class="stat-left">
+                        <div id="conferencesCount" class="stat-number"><%= conferencesCount %></div>
+                        <h3 class="stat-label">Conferences</h3>
+                    </div>
+                    <div id="conferencesTop" class="stat-right">
+                        <% (conferenceNames || []).forEach(function(name){ %>
+                            <div class="venue-name"><span class="venue-name-text"><%= name %></span></div>
+                        <% }) %>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
