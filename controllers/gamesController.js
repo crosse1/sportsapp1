@@ -429,10 +429,13 @@ exports.showPastGame = async (req, res, next) => {
         homeBgColor = game.homeTeam.color;
       }
     }
+
+    const ratingMap = {};
+    (game.ratings || []).forEach(r => { ratingMap[String(r.userId)] = r.rating; });
     const userIds = (game.comments || []).map(c => c.userId);
     const User = require('../models/users');
-    const users = await User.find({ _id: { $in: userIds } })
-      .select('username gameElo');
+    const users = await User.find({ _id: { $in: userIds } }).select('username');
+
     const userMap = {};
     users.forEach(u => {
       userMap[String(u._id)] = {
@@ -468,6 +471,19 @@ exports.showPastGame = async (req, res, next) => {
       const rating = ((avgElo - 1000) / 1000) * 9 + 1;
       avgRating = rating.toFixed(1);
     }
+
+    const eloAgg = await User.aggregate([
+      { $unwind: '$gameElo' },
+      { $match: { 'gameElo.game': game._id, 'gameElo.elo': { $ne: null } } },
+      { $group: { _id: null, avgElo: { $avg: '$gameElo.elo' } } }
+    ]);
+    let avgRating = 'N/A';
+    if (eloAgg.length && eloAgg[0].avgElo != null) {
+      const avgElo = eloAgg[0].avgElo;
+      const rating = ((avgElo - 1000) / 1000) * 9 + 1;
+      avgRating = rating.toFixed(1);
+    }
+
 
     res.render('pastGame', { game, homeBgColor, awayBgColor, reviews, venue, avgRating });
   } catch(err){
