@@ -10,7 +10,6 @@
 <body class="d-flex flex-column min-vh-100 gradient-bg past-game-page">
   <%- include('partials/header') %>
   <div class="container my-4 flex-grow-1">
-    <% const average = (game.ratings && game.ratings.length ? (game.ratings.reduce((s,r)=>s+(r.rating||r),0)/game.ratings.length).toFixed(1) : 'N/A'); %>
     <% const reviewCount = reviews ? reviews.length : 0; %>
     <% const dateObj = new Date(game.startDate || game.StartDate); %>
     <% const gameDateString = dateObj.toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }); %>
@@ -33,7 +32,7 @@
             <div class="avg-label fw-bold">AVG Rating:</div>
             <div class="text-end">
               <div class="avg-number-wrapper">
-              <div class="avg-number fw-bold"><%= average %></div>
+              <div class="avg-number fw-bold"><%= avgRating %></div>
               <a href="#" id="toggleReviews" class="avg-reviews-link fw-bold text-decoration-none">(<%= reviewCount %> review<%= reviewCount===1?'':'s' %>)</a>
               </div>
             </div>
@@ -51,7 +50,9 @@
                     </div>
                     <%= r.comment %>
                   </div>
-                  <div class="col-3 col-md-2 fw-bold text-end rating-value"><%= r.rating %></div>
+                  <div class="col-3 col-md-2 fw-bold text-end rating-value">
+                    <%= r.rating ? r.rating + '/10' : '--' %>
+                  </div>
                 </div>
               <% }) } else { %>
                 <p class="text-white">No reviews yet.</p>
