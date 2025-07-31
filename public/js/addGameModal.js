@@ -300,7 +300,10 @@
         gameDate: game.StartDate || game.startDate
       };
       renderCard(addedCard, data);
-      const rating = ((entry.elo - 1000) * 9 / 100) + 1;
+      
+      const elo = entry.elo;
+    const rawScore = ((elo - 1000) / 1000) * 9 + 1;
+    const rating = Math.max(1.0, Math.min(10.0, Math.round(rawScore * 10) / 10));
       addedRating.text(rating.toFixed(1));
       bootstrap.Modal.getOrCreateInstance(confirmModal[0]).show();
     }
