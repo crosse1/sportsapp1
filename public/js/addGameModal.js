@@ -63,7 +63,10 @@
     submitBtn.prop('disabled', true);
 
     function updateRating(){
-      if(ratingRange && ratingValue){ ratingValue.textContent = ratingRange.value; }
+      if(ratingRange && ratingValue){
+        const val = parseFloat(ratingRange.value);
+        ratingValue.textContent = isNaN(val) ? '' : val.toFixed(1);
+      }
     }
     if(ratingRange){
       updateRating();
