@@ -50,6 +50,19 @@
     const gameEntryNames = window.gameEntryNames || [];
     let rankingDone = gameEntryCount < 5 ? true : finalizedGames.length === 0;
 
+    function resetForm(){
+      if(!form.length) return;
+      form[0].reset();
+      leagueSelect.val(null).trigger('change');
+      seasonSelect.prop('disabled', true).val(null).trigger('change');
+      teamSelect.prop('disabled', true).val(null).trigger('change');
+      gameSelect.prop('disabled', true).val(null).trigger('change');
+      commentCounter.text('0/100');
+      if(ratingRange){ ratingRange.value = 5; updateRating(); }
+      rankingDone = gameEntryCount < 5 ? true : finalizedGames.length === 0;
+      updateSubmitState && updateSubmitState();
+    }
+
     if(nextBtn){
       if(gameEntryCount < 5){
         nextBtn.hide();
@@ -327,6 +340,9 @@
           const json = await res.json();
           if(json && json.entry){
             showConfirmation(json.entry);
+            if(window.gameEntriesData){
+              window.gameEntriesData.push(json.entry);
+            }
           }
         }else{
           alert('Save failed');
@@ -338,6 +354,7 @@
         //autoSubmitOverlay.hide();
         submitBtn.prop('disabled', false);
         bootstrap.Modal.getInstance(modal[0]).hide();
+        resetForm();
       }
     }
 
@@ -544,5 +561,10 @@
         });
       }
     });
+    if(confirmModal.length){
+      confirmModal.on('hidden.bs.modal', function(){
+        window.location.reload();
+      });
+    }
   });
 })();
