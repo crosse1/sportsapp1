@@ -33,12 +33,9 @@
     const form = modal.find('form');
     const eloGames = window.eloGamesData || [];
     const finalizedGames = eloGames.filter(g => g.finalized);
-    const autoSubmitOverlay = $(
-      '<div class="position-absolute w-100 h-100 top-0 start-0 d-flex justify-content-center align-items-center" ' +
-      'style="background:rgba(0,0,0,0.5);display:none;z-index:1056;">' +
-      '<div class="spinner-border text-light" role="status"></div></div>'
-    );
-    modal.find('.modal-content').append(autoSubmitOverlay);
+    //const autoSubmitOverlay = $(
+    
+    //modal.find('.modal-content').append(autoSubmitOverlay);
     const highestElo = finalizedGames.reduce((m,g)=> g.elo>m ? g.elo : m, finalizedGames.length ? finalizedGames[0].elo : 0);
     const lowestElo = finalizedGames.reduce((m,g)=> g.elo<m ? g.elo : m, finalizedGames.length ? finalizedGames[0].elo : 0);
     let randomGame1 = null;
@@ -320,7 +317,7 @@
     async function autoSubmit(){
       if(!form.length) return;
       submitBtn.prop('disabled', true);
-      let overlayTimeout = setTimeout(()=>autoSubmitOverlay.show(), 300);
+      //let overlayTimeout = setTimeout(()=>autoSubmitOverlay.show(), 300);
       try{
         const res = await fetch(form.attr('action'), { method:'POST', body:new FormData(form[0]), headers:{ 'Accept':'application/json' } });
         if(res.ok){
@@ -334,8 +331,8 @@
       }catch(err){
         alert('Save failed');
       }finally{
-        clearTimeout(overlayTimeout);
-        autoSubmitOverlay.hide();
+        //clearTimeout(overlayTimeout);
+        //autoSubmitOverlay.hide();
         submitBtn.prop('disabled', false);
         bootstrap.Modal.getInstance(modal[0]).hide();
       }
