@@ -44,6 +44,7 @@ const Team = require('../models/Team');
 const Game = require('../models/Game');
 const PastGame = require('../models/PastGame');
 const Venue = require('../models/Venue');
+const Conference = require('../models/Conference');
 const GameComparison = require('../models/gameComparison');
 const getStateFromCoordinates = require('../lib/stateLookup');
 
@@ -384,6 +385,21 @@ exports.profileStats = async (req, res, next) => {
         const statesCount = statesVisited.size;
         console.log('[profileStats] States visited:', [...statesVisited]);
         console.log('[profileStats] Count of unique states:', statesCount);
+
+        const conferenceIdSet = new Set();
+        for (const entry of enrichedEntries) {
+            const g = entry.game;
+            if (!g) continue;
+            if (g.homeConferenceId) conferenceIdSet.add(g.homeConferenceId);
+            if (g.awayConferenceId) conferenceIdSet.add(g.awayConferenceId);
+        }
+
+        const conferencesArr = conferenceIdSet.size
+            ? await Conference.find({ confId: { $in: Array.from(conferenceIdSet) } }).lean()
+            : [];
+        const conferenceNames = conferencesArr.map(c => c.confName).sort();
+        const conferencesCount = conferenceIdSet.size;
+
         const eloGames = await enrichEloGames(profileUser.gameElo || []);
 
         res.render('profileStats', {
@@ -400,6 +416,8 @@ exports.profileStats = async (req, res, next) => {
             teamsCount,
             venuesCount,
             statesCount,
+            conferencesCount,
+            conferenceNames,
             eloGames
         });
     } catch (err) {
