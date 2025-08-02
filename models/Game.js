@@ -34,7 +34,9 @@ const gameSchema = new mongoose.Schema({
   excitementIndex: Number,
   highlights: String,
   notes: String,
-  ratings: { type: [Number], default: [] }
+  ratings: { type: [Number], default: [] },
+  homeConferenceId: Number,
+  awayConferenceId: Number
 });
 
 module.exports = mongoose.model('Game', gameSchema);
