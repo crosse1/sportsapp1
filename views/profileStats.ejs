@@ -374,27 +374,30 @@
                     <div id="statesTop" class="stat-right"></div>
                 </div>
             </div>
-            <div class="stat-block" id="conferenceBlock">
-                <div class="stat-content">
-                    <div class="stat-left">
-                        <div id="conferencesCount" class="stat-number"><%= conferencesCount %></div>
-                        <h3 class="stat-label">Conferences</h3>
-                    </div>
-                    <div id="conferencesTop" class="stat-right">
-                        <% (conferenceStats || []).forEach(function(conf){ %>
-                            <div class="venue-name"><span class="venue-name-text"><%= conf.name %></span></div>
-                            <div class="d-flex flex-wrap gap-1">
-                                <% conf.teams.forEach(function(team){ %>
-                                    <% if(conf.unlockedTeamIds.includes(team.id)){ %>
-                                        <div class="team-circle"><img src="<%= team.logo || '/images/placeholder.jpg' %>" alt=""></div>
-                                    <% } else { %>
-                                        <div class="team-circle"></div>
-                                    <% } %>
-                                <% }) %>
-                            </div>
-                            <div class="venue-count"><%= conf.percentage %>%</div>
-                        <% }) %>
-                    </div>
+            
+        </div>
+        <br>
+        <br>
+        <div class="stat-block" id="conferenceBlock">
+            <div class="stat-content">
+                <div class="stat-left">
+                    <div id="conferencesCount" class="stat-number"><%= conferencesCount %></div>
+                    <h3 class="stat-label">Conferences</h3>
+                </div>
+                <div id="conferencesTop" class="stat-right">
+                    <% (conferenceStats || []).forEach(function(conf){ %>
+                        <div class="venue-name"><span class="venue-name-text"><%= conf.name %></span></div>
+                        <div class="d-flex flex-wrap gap-1">
+                            <% conf.teams.forEach(function(team){ %>
+                                <% if(conf.unlockedTeamIds.includes(team.id)){ %>
+                                    <div class="team-circle"><img src="<%= team.logo || '/images/placeholder.jpg' %>" alt=""></div>
+                                <% } else { %>
+                                    <div class="team-circle"></div>
+                                <% } %>
+                            <% }) %>
+                        </div>
+                        <div class="venue-count"><%= conf.percentage %>%</div>
+                    <% }) %>
                 </div>
             </div>
         </div>
