@@ -393,18 +393,13 @@
         <br>
         <br>
         <div class="stat-block" id="conferenceBlock">
-            <div class="stat-content">
-                <div class="stat-left">
-                    <div id="conferencesCount" class="stat-number"><%= conferenceNames.length %></div>
-                    <h3 class="stat-label">Conferences</h3>
+            <% conferenceStats.forEach(function(conf){ %>
+                <div class="stat-content">
+                    <div class="stat-left"><%= conf.name %></div>
+                    <div class="stat-spacer"></div>
+                    <div class="stat-right"><%= conf.percentage %>%</div>
                 </div>
-                <div class="stat-spacer"></div>
-                <div id="conferencesTop" class="stat-right">
-                    <% conferenceNames.forEach(function(name){ %>
-                        <div class="conference-name"><span class="conference-name-text"><%= name %></span></div>
-                    <% }) %>
-                </div>
-            </div>
+            <% }) %>
         </div>
     </div>
 
