@@ -329,6 +329,21 @@
             justify-content: flex-start;
             gap: 0.25rem;
         }
+
+        .conference-name-text {
+            font-size: 2rem;
+            background: linear-gradient(to right, #14b8a6, #7e22ce);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+            font-weight: 700;background: linear-gradient(to right, #14b8a6, #7e22ce);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+            font-weight: 700;
+        }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -378,22 +393,6 @@
         <br>
         <br>
         <div class="stat-block" id="conferenceBlock">
-            <% 
-                const pastGamesList = pastGames || [];
-                const userEntries = (user && user.gameEntries) ? user.gameEntries : [];
-                const confIdSet = new Set();
-                userEntries.forEach(id => {
-                    const g = pastGamesList.find(pg => String(pg._id) === String(id));
-                    if (!g) return;
-                    if (g.homeConferenceId) confIdSet.add(g.homeConferenceId);
-                    if (g.awayConferenceId) confIdSet.add(g.awayConferenceId);
-                    if (g.conferenceId) confIdSet.add(g.conferenceId);
-                    if (g.conference) confIdSet.add(g.conference);
-                });
-                const conferenceNames = Array.from(confIdSet)
-                    .map(cid => conferenceNameMap[cid] || cid)
-                    .sort();
-            %>
             <div class="stat-content">
                 <div class="stat-left">
                     <div id="conferencesCount" class="stat-number"><%= conferenceNames.length %></div>
@@ -402,7 +401,7 @@
                 <div class="stat-spacer"></div>
                 <div id="conferencesTop" class="stat-right">
                     <% conferenceNames.forEach(function(name){ %>
-                        <div class="conference-name"><span class="venue-name-text"><%= name %></span></div>
+                        <div class="conference-name"><span class="conference-name-text"><%= name %></span></div>
                     <% }) %>
                 </div>
             </div>
