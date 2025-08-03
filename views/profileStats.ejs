@@ -308,26 +308,45 @@
 
         /* Conferences specific styles */
         #conferenceBlock .stat-content {
-  display: grid;
-  grid-template-columns: 24% 1% 75%;
-}
-#conferenceBlock::after {
-  left: 25%; /* Adjust this to match the new spacer's position */
-}
+            display: grid;
+            grid-template-columns: 24% 1% 60% 15%;
+            align-items: center;
+        }
+
+        #conferenceBlock::after {
+            left: 25%; /* Match the end of the first column */
+        }
+
         #conferenceBlock .stat-left {
             grid-column: 1;
         }
+
         #conferenceBlock .stat-spacer {
             grid-column: 2;
         }
-        #conferenceBlock .stat-right {
+
+        #conferenceBlock .stat-middle {
             grid-column: 3;
-            
             display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            justify-content: flex-start;
+            flex-wrap: wrap;
             gap: 0.25rem;
+            align-items: center;
+        }
+
+        #conferenceBlock .stat-right {
+            grid-column: 4;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            text-align: right;
+        }
+
+        .team-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #bbb;
         }
 
         .conference-name-text {
@@ -422,6 +441,7 @@
         <br>
         <br>
         <div class="stat-block" id="conferenceBlock">
+
             <div class="stat-content">
               <div class="stat-left">
                 <div id="conferencesCount" class="stat-number">
@@ -443,6 +463,7 @@
             </div>
           </div>
           
+
     </div>
 
     <div class="modal fade user-search-modal" id="gamesModal" tabindex="-1" aria-hidden="true">
