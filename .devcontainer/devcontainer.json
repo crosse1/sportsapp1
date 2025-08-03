@@ -1,0 +1,22 @@
+{
+    "name": "Node + Mongo Dev",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "app",
+    "workspaceFolder": "/workspace",
+    "settings": {
+      "terminal.integrated.defaultProfile.linux": "bash"
+    },
+    "customizations": {
+      "vscode": {
+        "extensions": [
+          "dbaeumer.vscode-eslint",
+          "esbenp.prettier-vscode",
+          "mongodb.mongodb-vscode",
+          "visualstudioexptteam.vscodeintellicode"
+        ]
+      }
+    },
+    "postCreateCommand": "npm install",
+    "remoteUser": "node"
+  }
+  
