@@ -308,12 +308,12 @@
 
         /* Conferences specific styles */
         #conferenceBlock .stat-content {
-            display: grid;
-            grid-template-columns: 25% 25% 50%;
-        }
-        #conferenceBlock::after {
-            left: 50%;
-        }
+  display: grid;
+  grid-template-columns: 24% 1% 75%;
+}
+#conferenceBlock::after {
+  left: 25%; /* Adjust this to match the new spacer's position */
+}
         #conferenceBlock .stat-left {
             grid-column: 1;
         }
@@ -322,6 +322,7 @@
         }
         #conferenceBlock .stat-right {
             grid-column: 3;
+            
             display: flex;
             flex-direction: column;
             align-items: flex-start;
@@ -385,6 +386,7 @@
                 <div class="stat-spacer"></div>
                 <div id="conferencesTop" class="stat-right">
                     <% (conferenceStats || []).forEach(function(conf){ %>
+                        
                         <div class="venue-name"><span class="venue-name-text"><%= conf.name %></span></div>
                     <% }) %>
                 </div>
