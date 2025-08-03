@@ -307,28 +307,26 @@
         }
 
         /* Conferences specific styles */
-        #conferenceBlock::after { display: none; }
-        #conferenceBlock .stat-content { flex-direction: column; }
-        #conferencesTop {
-            width: 100%;
+        #conferenceBlock .stat-content {
             display: grid;
-            grid-template-columns: 1fr 2fr 1fr;
-            row-gap: 0.5rem;
-            column-gap: 0.5rem;
-            align-items: center;
+            grid-template-columns: 25% 25% 50%;
         }
-        .team-circle {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #ccc;
-            overflow: hidden;
+        #conferenceBlock::after {
+            left: 50%;
         }
-        .team-circle img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            border-radius: 50%;
+        #conferenceBlock .stat-left {
+            grid-column: 1;
+        }
+        #conferenceBlock .stat-spacer {
+            grid-column: 2;
+        }
+        #conferenceBlock .stat-right {
+            grid-column: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
+            gap: 0.25rem;
         }
     </style>
 </head>
@@ -384,19 +382,10 @@
                     <div id="conferencesCount" class="stat-number"><%= conferencesCount %></div>
                     <h3 class="stat-label">Conferences</h3>
                 </div>
+                <div class="stat-spacer"></div>
                 <div id="conferencesTop" class="stat-right">
                     <% (conferenceStats || []).forEach(function(conf){ %>
                         <div class="venue-name"><span class="venue-name-text"><%= conf.name %></span></div>
-                        <div class="d-flex flex-wrap gap-1">
-                            <% conf.teams.forEach(function(team){ %>
-                                <% if(conf.unlockedTeamIds.includes(team.id)){ %>
-                                    <div class="team-circle"><img src="<%= team.logo || '/images/placeholder.jpg' %>" alt=""></div>
-                                <% } else { %>
-                                    <div class="team-circle"></div>
-                                <% } %>
-                            <% }) %>
-                        </div>
-                        <div class="venue-count"><%= conf.percentage %>%</div>
                     <% }) %>
                 </div>
             </div>
