@@ -305,6 +305,15 @@ exports.profileBadges = async (req, res, next) => {
         // Fetch all badges and compute user's progress for each
         const badgesRaw = await Badge.find().lean();
 
+        const teamIdsFromBadges = badgesRaw
+  .map(b => b.teamConstraints || [])
+  .flat()
+  .filter(Boolean)
+  .map(id => id.toString());
+
+  const teamsData = await Team.find({ _id: { $in: teamIdsFromBadges } }, '_id alternateColor').lean();
+
+
         // Convert image buffers to base64 data URLs
         const badges = badgesRaw.map(b => {
             if (b.iconUrl && b.iconUrl.data) {
@@ -366,7 +375,8 @@ exports.profileBadges = async (req, res, next) => {
             activeTab: 'badges',
             eloGames,
             badges,
-            userProgress
+            userProgress,
+            teamsData // 👈 Add this line
         });
     } catch (err) {
         next(err);

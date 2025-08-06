@@ -6,12 +6,18 @@ const badgeSchema = new mongoose.Schema({
   leagueConstraints: { type: [String], default: [] },
   teamConstraints: { type: [String], default: [] },
   conferenceConstraints: { type: [String], default: [] },
-  iconUrl: {
+  iconFile: {
     data: Buffer,
     contentType: {
       type: String,
       enum: ['image/jpeg', 'image/png']
     }
+  },
+
+  // External URL (e.g., from CDN or imgur)
+  iconUrl: {
+    type: String,
+    default: null
   },
   reqGames: Number,
   homeTeamOnly: { type: Boolean, default: false },
