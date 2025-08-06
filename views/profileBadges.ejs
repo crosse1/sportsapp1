@@ -110,38 +110,111 @@
             color: transparent;
         }
 
-        .filters-row .select2-container--default .select2-selection--single {
-            background: rgba(255, 255, 255, 0.15) !important;
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
-            backdrop-filter: blur(8px);
-            border-radius: 0.5rem !important;
-        }
+        /* --- GRADIENT BACKGROUND CONTAINER --- */
+        .filters-row {
+    gap: 0.75rem;
+}
 
-        .filters-row .select2-container--default .select2-selection__rendered {
-            color: #fff !important;
-            font-weight: bold;
-        }
+/* Container for each dropdown */
+.filters-row .select2-container--default .select2-selection--single {
+     /* gradient base */
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 0.5rem !important;
+    backdrop-filter: blur(8px);
+    overflow: hidden;
+}
 
-        .filters-row .select2-container--default .select2-selection__placeholder {
-            color: #fff !important;
-        }
+/* Glassy overlay using inset pseudo-element */
+.filters-row .select2-container--default .select2-selection--single::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.15);
+    z-index: 0;
+}
 
-        .filters-row .select2-container--default .select2-dropdown {
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(8px);
-            border-radius: 0.5rem;
-            color: #fff;
-        }
+/* Text inside the dropdown input */
+.filters-row .select2-container--default .select2-selection__rendered {
+    position: relative;
+    z-index: 1;
+    font-weight: bold;
+    background: linear-gradient(to right, #14b8a6, #7e22ce);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent !important;
+}
 
-        .filters-row .select2-container--default .select2-results__option {
-            color: #fff;
-        }
+/* Placeholder styling */
+.filters-row .select2-container--default .select2-selection__placeholder {
+    color: white !important;
+    opacity: 0.8;
+    position: relative;
+    z-index: 1;
+}
 
-        .filters-row .select2-container--default .select2-results__option--highlighted {
-            background: rgba(255, 255, 255, 0.3) !important;
-            color: #fff !important;
-        }
+/* Dropdown list */
+.filters-row .select2-container--default .select2-dropdown {
+    background: linear-gradient(to right, #14b8a6, #7e22ce);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.5rem;
+    backdrop-filter: blur(8px);
+}
+
+/* Glassy dropdown overlay */
+.filters-row .select2-container--default .select2-dropdown::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255, 255, 255, 0.15);
+    z-index: 0;
+}
+
+/* Text inside dropdown options */
+.filters-row .select2-container--default .select2-results__option {
+    position: relative;
+    z-index: 1;
+    font-weight: bold;
+    background: linear-gradient(to right, #14b8a6, #7e22ce);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent !important;
+}
+
+/* Highlighted dropdown option */
+.filters-row .select2-container--default .select2-results__option--highlighted {
+    background: rgba(255, 255, 255, 0.3) !important;
+}
+
+
+
+
+
+
+/* Gradient text for selected value */
+
+
+/* Gradient text for dropdown options */
+
+
+/* Highlighted option */
+
+
+
+        .gradient-text {
+    background: linear-gradient(to right, #14b8a6, #7e22ce);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+
+
 
     </style>
 </head>
@@ -150,7 +223,9 @@
     <%- include('partials/profileHeader', { user, isCurrentUser, isFollowing, canMessage, viewer, activeTab: 'badges' }) %>
     <div class="container my-4 flex-grow-1">
         <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center justify-content-between gap-3 mb-4">
-            <h2 class="badge-page-title text-center text-lg-start mb-0"><%= user.username %>'s Badges</h2>
+            <h2 class="badge-page-title text-center text-lg-start mb-0">
+                <span class="gradient-text"><%= user.username.charAt(0).toUpperCase() + user.username.slice(1) %>'s Badges</span>
+            </h2>
             <div class="filters-row d-flex flex-column flex-sm-row gap-2 ms-lg-auto">
                 <select id="conferenceFilter" class="form-select">
                     <option></option>
