@@ -396,10 +396,35 @@ exports.profileStats = async (req, res, next) => {
 
         const conferenceStats = Object.entries(conferenceTeamMap).map(([name, teamIds]) => {
             const totalTeams = teamIds.length;
-            const teamsUnlocked = teamIds.filter(id => userTeamIdsSet.has(String(id))).length;
-            const percentage = totalTeams ? Math.round((teamsUnlocked / totalTeams) * 100) : 0;
-            return { name, percentage, teamsUnlocked, totalTeams };
+            const teamsUnlocked = [];
+            const teamDots = [];
+        
+            teamIds.forEach(id => {
+                const team = (profileUser.teamsList || []).find(t => String(t._id || t) === String(id));
+                if (team) {
+                    teamsUnlocked.push(team); // user has seen this team
+                    teamDots.push({
+                        unlocked: true,
+                        logo: team.logos?.[0] || '/images/placeholder.jpg',
+                        altColor: team.alternateColor || '#bbb'
+                    });
+                } else {
+                    teamDots.push({ unlocked: false });
+                }
+            });
+        
+            const percentage = totalTeams ? Math.round((teamsUnlocked.length / totalTeams) * 100) : 0;
+            return { name, percentage, totalTeams, teamDots };
         });
+
+        const teamMap = {};
+for (const team of profileUser.teamsList || []) {
+  const id = String(team._id || team);
+  teamMap[id] = {
+    logos: team.logos || [],
+    alternateColor: team.alternateColor || '#bbb'
+  };
+}
 
         const eloGames = await enrichEloGames(profileUser.gameElo || []);
         res.render('profileStats', {
@@ -407,14 +432,19 @@ exports.profileStats = async (req, res, next) => {
             isCurrentUser,
             isFollowing,
             canMessage,
+            conferenceStats,
+            teamsList: profileUser.teamsList || [],
             viewer: req.user,
             activeTab: 'stats',
             gameEntries: enrichedEntries,
             topRatedGames,
+            userTeamIds: uniqueTeamIds,
             teamsList: profileUser.teamsList || [],
             venuesList: profileUser.venuesList || [],
             teamsCount,
+            teamMap,   
             venuesCount,
+            conferenceTeamMap,
             statesCount,
             conferenceStats,
             eloGames

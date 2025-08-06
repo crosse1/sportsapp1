@@ -306,92 +306,143 @@
             font-weight: 600;
         }
 
+        #conferenceBlock {
+  position: relative;
+}
+
         /* Conferences specific styles */
         #conferenceBlock .stat-content {
-            display: grid;
-            grid-template-columns: 24% 1% 60% 15%;
-            align-items: center;
-        }
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 12rem;
+}
 
-        #conferenceBlock::after {
-            left: 25%; /* Match the end of the first column */
-        }
-
-        #conferenceBlock .stat-left {
-            grid-column: 1;
-        }
-
-        #conferenceBlock .stat-spacer {
-            grid-column: 2;
-        }
-
-        #conferenceBlock .stat-middle {
-            grid-column: 3;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.25rem;
-            align-items: center;
-        }
-
-        #conferenceBlock .stat-right {
-            grid-column: 4;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            text-align: right;
-        }
-
-        .team-dot {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: #bbb;
-        }
-
-        .conference-name-text {
-            font-size: 2.75rem;
-            background: linear-gradient(to right, #14b8a6, #7e22ce);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            color: transparent;
-            font-weight: 700;background: linear-gradient(to right, #14b8a6, #7e22ce);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            color: transparent;
-            font-weight: 700;
-        }
-
-        .conference-percentage-text {
-            font-size: 2.75rem;
-            background: linear-gradient(to right, #14b8a6, #7e22ce);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            color: transparent;
-            font-weight: 700;background: linear-gradient(to right, #14b8a6, #7e22ce);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            color: transparent;
-            font-weight: 700;
-            margin-right: 2rem;
-        }
-
-        #conferenceBlock .stat-right {
+#conferenceBlock .stat-left {
+  width: 25%;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 0.25rem;
+  align-items: center;       /* horizontal centering */
+  justify-content: center;   /* vertical centering */
+  height: 100%;              /* ensure it fills the vertical space of stat-content */
+}
+
+#conferenceBlock .stat-right-column {
+  width: 75%; /* <-- now everything aligns based on the new divider */
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 
 
-.conference-percentage {
-  font-weight: 500;
+#conferenceBlock .stat-rows {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.stat-name-col {
+  flex: 2;
+  text-align: left;
+}
+.stat-middle {
+  flex: 4;
+  display: flex;
+  gap: 4px;
+  justify-content: flex-start;
+  align-items: center;
+}
+.stat-percent-col {
+  flex: 1;
+  text-align: right;
+}
+
+
+.team-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background-color: #bbb;
+  margin-right: 2px;
+  overflow: hidden;
+  padding: 1px;
+}
+
+.team-dot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+.unlocked-team img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.conference-dots-row {
+  display: flex;
+  flex-wrap: nowrap; /* ← forces horizontal line */
+  gap: 4px;
+  margin: 0; /* remove top margin that causes misalignment */
+}
+
+.conference-name-text {
+  font-size: 2.25rem;
+  font-weight: 700;
+  background: linear-gradient(to right, #14b8a6, #7e22ce);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  text-align: left; /* <-- force left alignment */
+}
+
+.conference-percentage-text {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-right: 3rem;
+  text-align: right;
+  background: linear-gradient(to right, #14b8a6, #7e22ce);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  width: 100%;
+}
+
+#conferenceBlock::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 24.5%;
+  width: 2px;
+  transform: translateX(0); /* No need to center it since it's not 50% */
+  background: linear-gradient(to bottom, #14b8a6, #7e22ce);
+  z-index: 1;
+}
+
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -441,27 +492,62 @@
         <br>
         <br>
         <div class="stat-block" id="conferenceBlock">
-
             <div class="stat-content">
+              
+              <!-- Left block with count and label -->
               <div class="stat-left">
                 <div id="conferencesCount" class="stat-number">
                   <%= conferenceStats.filter(c => c.percentage > 0).length %>
                 </div>
                 <h3 class="stat-label">Conferences</h3>
               </div>
-              <div class="stat-spacer"></div>
-              <div class="stat-right" style="width: 100%;">
-                <% conferenceStats.forEach(function(conf) { %>
-                  <% if (conf.percentage > 0) { %>
-                    <div class="d-flex justify-content-between w-100">
-                      <span class="conference-name-text"><%= conf.name %></span>
-                      <span class="conference-percentage-text"><%= conf.percentage %>%</span>
-                    </div>
-                  <% } %>
+              
+              <!-- Right block that holds all rows vertically -->
+              <div class="stat-right-column">
+                <% conferenceStats
+                  .filter(c => c.percentage > 0)
+                  .sort((a, b) => b.percentage - a.percentage)
+                  .forEach(function(conf) { %>
+                  
+                  <div class="stat-row">
+                    <div class="stat-name-col conference-name-text"><%= conf.name %></div>
+                    <div class="stat-middle conference-dots-row">
+                        <% 
+                          const teamIdsInConf = conferenceTeamMap[conf.name] || [];
+                          const unlockedTeams = teamIdsInConf.filter(id => userTeamIds.includes(String(id)));
+                          const lockedCount = conf.totalTeams - unlockedTeams.length;
+                      
+                          // First show unlocked teams
+                          unlockedTeams.forEach(teamId => {
+                            const team = teamMap[teamId];
+                            if (team && team.logos?.[0]) { 
+                        %>
+                              <span class="team-dot unlocked-team" style="background-color: <%= team.alternateColor || '#ccc' %>;">
+                                <img src="<%= team.logos[0] %>" alt="Team Logo" />
+                              </span>
+                        <%   }
+                          });
+                      
+                          // Then pad with gray dots
+                          for (let i = 0; i < lockedCount; i++) { 
+                        %>
+                          <span class="team-dot"></span>
+                        <% } %>
+                      </div>
+                      
+                    <div class="stat-percent-col conference-percentage-text"><%= conf.percentage %>%</div>
+                  </div>
+                  
                 <% }) %>
               </div>
+          
             </div>
           </div>
+          
+           <!-- close stat-block -->
+          
+        
+          
           
 
     </div>
