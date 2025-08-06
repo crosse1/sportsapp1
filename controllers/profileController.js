@@ -47,6 +47,7 @@ const PastGame = require('../models/PastGame');
 const Venue = require('../models/Venue');
 const Conference = require('../models/Conference');
 const GameComparison = require('../models/gameComparison');
+const Badge = require('../models/Badge');
 const getStateFromCoordinates = require('../lib/stateLookup');
 
 function sanitizeComment(text) {
@@ -300,6 +301,62 @@ exports.profileBadges = async (req, res, next) => {
             canMessage = isFollowing && followsBack;
         }
         const eloGames = await enrichEloGames(profileUser.gameElo || []);
+
+        // Fetch all badges and compute user's progress for each
+        const badgesRaw = await Badge.find().lean();
+
+        // Convert image buffers to base64 data URLs
+        const badges = badgesRaw.map(b => {
+            if (b.iconUrl && b.iconUrl.data) {
+                b.iconUrl = `data:${b.iconUrl.contentType};base64,${b.iconUrl.data.toString('base64')}`;
+            }
+            return b;
+        });
+
+        // Gather all games the user has attended
+        const gameIds = (profileUser.gameEntries || []).map(g => g.game).filter(Boolean);
+        const pastGames = await PastGame.find({ _id: { $in: gameIds } }).lean();
+
+        const userProgress = {};
+
+        badges.forEach(badge => {
+            const eligible = pastGames.filter(g => {
+                const leagueMatch = !badge.leagueConstraints?.length ||
+                    badge.leagueConstraints.some(l => [String(g.homeLeagueId), String(g.awayLeagueId)].includes(String(l)));
+                const teamMatch = !badge.teamConstraints?.length ||
+                    badge.teamConstraints.some(t => {
+                        if (badge.homeTeamOnly) return String(g.HomeId) === String(t);
+                        return [String(g.HomeId), String(g.AwayId)].includes(String(t));
+                    });
+                const confMatch = !badge.conferenceConstraints?.length ||
+                    badge.conferenceConstraints.some(c => [String(g.homeConferenceId), String(g.awayConferenceId)].includes(String(c)));
+                const startOk = !badge.startDate || g.StartDate >= badge.startDate;
+                const endOk = !badge.endDate || g.StartDate <= badge.endDate;
+                return leagueMatch && teamMatch && confMatch && startOk && endOk;
+            });
+
+            let progress = eligible.length;
+            if (badge.oneTeamEach) {
+                const teamSet = new Set();
+                eligible.forEach(g => {
+                    if (badge.teamConstraints && badge.teamConstraints.length) {
+                        badge.teamConstraints.forEach(t => {
+                            if (badge.homeTeamOnly) {
+                                if (String(g.HomeId) === String(t)) teamSet.add(String(t));
+                            } else if ([String(g.HomeId), String(g.AwayId)].includes(String(t))) {
+                                teamSet.add(String(t));
+                            }
+                        });
+                    } else {
+                        teamSet.add(String(g.HomeId));
+                        if (!badge.homeTeamOnly) teamSet.add(String(g.AwayId));
+                    }
+                });
+                progress = teamSet.size;
+            }
+            userProgress[badge.badgeID] = progress;
+        });
+
         res.render('profileBadges', {
             user: profileUser,
             isCurrentUser,
@@ -307,7 +364,9 @@ exports.profileBadges = async (req, res, next) => {
             canMessage,
             viewer: req.user,
             activeTab: 'badges',
-            eloGames
+            eloGames,
+            badges,
+            userProgress
         });
     } catch (err) {
         next(err);
