@@ -107,6 +107,38 @@
             color: white;
             font-size: 2rem;
             font-weight: bold;
+            z-index: 4;
+        }
+        /* Special 2025 badge effect for badgeIDs 231-364 */
+        .special-badge-container {
+            background-color: #fff !important;
+            isolation: isolate;
+        }
+        .special-badge-logo {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+            position: relative;
+            z-index: 1;
+        }
+        .special-badge-metal {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #b3b2b2, #ffffff);
+            z-index: 2;
+        }
+        .special-badge-cutout {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: 700;
+            color: #000;
+            mix-blend-mode: destination-out;
+            z-index: 3;
+            pointer-events: none;
         }
         .diamond-text {
             font-weight: bold;
@@ -116,32 +148,34 @@
         }
     
         .more-btn {
-            background: none;
-            border: none;
-            padding: 0;
-            font-size: 2rem;
-            font-weight: bold;
-            text-align: center;
-            display: inline-flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: opacity 0.3s ease;
-        }
-    
-        .more-btn span {
-            background: linear-gradient(to right, #14b8a6, #7e22ce);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            display: block;
-            line-height: 1.2;
-        }
-    
-        .more-btn:hover {
-            opacity: 0.75;
-        }
-    
+
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 2rem;
+    font-weight: bold;
+    text-align: center;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+.more-btn span {
+    background: linear-gradient(to right, #14b8a6, #7e22ce);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: block;
+    line-height: 1.2;
+}
+
+.more-btn:hover {
+    opacity: 0.75;
+}
+
+
         .badge-page-title {
             font-size: 2.5rem;
             font-weight: 700;
@@ -151,11 +185,13 @@
             background-clip: text;
             color: transparent;
         }
-    
+
+
         .filters-row .select2-container {
             width: 50% !important;
         }
-    
+
+
         .filters-row .select2-container--default .select2-selection--single,
         .filters-row .select2-container--default .select2-dropdown,
         .glass-select2.select2-dropdown {
@@ -166,43 +202,42 @@
             overflow: hidden;
             backdrop-filter: blur(8px);
         }
-    
-        .filters-row .select2-container--default .select2-dropdown {
-            position: relative;
-            z-index: 1;
-            background: linear-gradient(to right, #14b8a6, #7e22ce);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 0.5rem;
-            backdrop-filter: blur(8px);
-            overflow: hidden;
-        }
-    
-        .filters-row .select2-container--default .select2-dropdown::before {
+
+
+        .filters-row .select2-container--default .select2-selection--single::before,
+        .filters-row .select2-container--default .select2-dropdown::before,
+        .glass-select2.select2-dropdown::before {
+
             content: '';
             position: absolute;
             inset: 0;
             background: rgba(255, 255, 255, 0.15);
-            z-index: 0;
+
+            backdrop-filter: blur(8px);
+            border-radius: inherit;
             pointer-events: none;
         }
-    
+
+
         .filters-row .select2-container--default .select2-selection--single {
             height: 3.15rem !important;
             display: flex;
             align-items: center;
         }
-    
+
         .filters-row .select2-container--default .select2-selection__rendered {
             position: relative;
             z-index: 1;
             color: #fff !important;
             font-weight: bold;
         }
-    
+
+
         .filters-row .select2-container--default .select2-selection__placeholder {
             color: #fff !important;
         }
-    
+
+
         .filters-row .select2-container--default .select2-selection__clear,
         .filters-row .select2-container--default .select2-selection__clear:hover,
         .filters-row .select2-container--default .select2-selection__clear:focus {
@@ -214,22 +249,23 @@
             -webkit-text-fill-color: transparent;
             cursor: pointer;
         }
-    
+
         .filters-row .select2-container--default .select2-dropdown,
         .glass-select2.select2-dropdown {
             color: #fff;
         }
-    
+
         .filters-row .select2-container--default .select2-results__option,
         .glass-select2.select2-dropdown .select2-results__option {
             color: #fff;
         }
-    
+
         .filters-row .select2-container--default .select2-results__option--highlighted,
         .glass-select2.select2-dropdown .select2-results__option--highlighted {
             background: rgba(255, 255, 255, 0.3) !important;
             color: #fff !important;
         }
+
     </style>
     
     
@@ -242,7 +278,6 @@
 
             <h2 class="badge-page-title text-center text-lg-start mb-0"><%= user.username %>'s Badges</h2>
 
-            
             <div class="filters-row d-flex flex-column flex-sm-row gap-2 ms-lg-auto">
                 <select id="conferenceFilter" class="form-select">
                     <option></option>
@@ -270,20 +305,20 @@
             %>
             <div class="col badge-col" data-conferences="<%= (badge.conferenceConstraints || []).map(String).join(',') %>" data-teams="<%= (badge.teamConstraints || []).map(String).join(',') %>" style="<%= index >= 9 ? 'display: none;' : '' %>">
                 <div class="card h-100 p-3 badge-card">
-                    <% const is2025Homer = badge.badgeID >= 231 && badge.badgeID <= 364; %>
-<% if (is2025Homer) { %>
-  <div class="badge-icon-2025">
-    <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" style="max-width: 3rem; max-height: 3rem;">
-    <div class="badge-2025-text" style="background-image: url('<%= badge.iconUrl %>');"></div>
-  </div>
-<% } else { %>
-  <div class="badge-icon-container" style="background-color: <%= team?.alternateColor || '#ccc' %>">
-    <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" style="<%= inProgress ? 'filter: blur(2px);' : '' %>">
-    <% if (inProgress) { %>
-      <div class="badge-icon-overlay"><%= percent %>%</div>
-    <% } %>
-  </div>
-<% } %>
+
+                    <div class="badge-icon-container <%= (badge.badgeID >= 231 && badge.badgeID <= 364) ? 'special-badge-container' : '' %>" style="<%= (badge.badgeID >= 231 && badge.badgeID <= 364) ? '' : 'background-color: ' + (team?.alternateColor || '#ccc') %>">
+                        <% if (badge.badgeID >= 231 && badge.badgeID <= 364) { %>
+                            <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" class="special-badge-logo">
+                            <div class="special-badge-metal"></div>
+                            <div class="special-badge-cutout">2025</div>
+                        <% } else { %>
+                            <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" style="<%= inProgress ? 'filter: blur(2px);' : '' %>">
+                        <% } %>
+                        <% if (inProgress) { %>
+                        <div class="badge-icon-overlay"><%= percent %>%</div>
+                        <% } %>
+                    </div>
+
                     <div class="diamond-text">💎 <%= badge.pointValue %></div>
                     <div class="card-body d-flex flex-column">
                         <h5 class="card-title badge-title">
@@ -330,6 +365,7 @@
                     btn.style.display = 'none';
                 }
             }
+
         }
 
         if (btn) {
@@ -342,7 +378,6 @@
                     btn.style.display = 'none';
                 }
             });
-
         }
 
         const conferenceFilter = $('#conferenceFilter');
