@@ -17,6 +17,48 @@
             background-clip: padding-box, border-box;
             border-radius: 0.5rem;
         }
+    
+        .badge-icon-2025 {
+            position: relative;
+            width: 7rem;
+            height: 7rem;
+            border-radius: 50%;
+            margin: 0 auto 0.5rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(to bottom, #b3b2b2, #fff);
+            overflow: hidden;
+        }
+    
+        .badge-2025-inner {
+            position: relative;
+            width: 4.5rem;
+            height: 4.5rem;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+    
+        .badge-2025-inner::before {
+            content: '2025';
+            font-size: 2.5rem;
+            font-weight: 900;
+            line-height: 1;
+            background-image: var(--logo-url);
+            background-size: cover;
+            background-position: center;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+            z-index: 2;
+            position: relative;
+        }
+    
         .row-cols-1, .row-cols-sm-2, .row-cols-lg-3 {
             --bs-gutter-x: 3rem;
         }
@@ -104,8 +146,9 @@
             text-align: center;
             font-size: 1.1rem;
         }
-
+    
         .more-btn {
+
     background: none;
     border: none;
     padding: 0;
@@ -132,6 +175,7 @@
     opacity: 0.75;
 }
 
+
         .badge-page-title {
             font-size: 2.5rem;
             font-weight: 700;
@@ -142,9 +186,11 @@
             color: transparent;
         }
 
+
         .filters-row .select2-container {
             width: 50% !important;
         }
+
 
         .filters-row .select2-container--default .select2-selection--single,
         .filters-row .select2-container--default .select2-dropdown,
@@ -157,17 +203,21 @@
             backdrop-filter: blur(8px);
         }
 
+
         .filters-row .select2-container--default .select2-selection--single::before,
         .filters-row .select2-container--default .select2-dropdown::before,
         .glass-select2.select2-dropdown::before {
+
             content: '';
             position: absolute;
             inset: 0;
             background: rgba(255, 255, 255, 0.15);
+
             backdrop-filter: blur(8px);
             border-radius: inherit;
             pointer-events: none;
         }
+
 
         .filters-row .select2-container--default .select2-selection--single {
             height: 3.15rem !important;
@@ -182,9 +232,11 @@
             font-weight: bold;
         }
 
+
         .filters-row .select2-container--default .select2-selection__placeholder {
             color: #fff !important;
         }
+
 
         .filters-row .select2-container--default .select2-selection__clear,
         .filters-row .select2-container--default .select2-selection__clear:hover,
@@ -215,13 +267,17 @@
         }
 
     </style>
+    
+    
 </head>
 <body class="d-flex flex-column min-vh-100">
     <%- include('partials/header') %>
     <%- include('partials/profileHeader', { user, isCurrentUser, isFollowing, canMessage, viewer, activeTab: 'badges' }) %>
     <div class="container my-4 flex-grow-1">
         <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center justify-content-between gap-3 mb-4">
+
             <h2 class="badge-page-title text-center text-lg-start mb-0"><%= user.username %>'s Badges</h2>
+
             <div class="filters-row d-flex flex-column flex-sm-row gap-2 ms-lg-auto">
                 <select id="conferenceFilter" class="form-select">
                     <option></option>
@@ -249,6 +305,7 @@
             %>
             <div class="col badge-col" data-conferences="<%= (badge.conferenceConstraints || []).map(String).join(',') %>" data-teams="<%= (badge.teamConstraints || []).map(String).join(',') %>" style="<%= index >= 9 ? 'display: none;' : '' %>">
                 <div class="card h-100 p-3 badge-card">
+
                     <div class="badge-icon-container <%= (badge.badgeID >= 231 && badge.badgeID <= 364) ? 'special-badge-container' : '' %>" style="<%= (badge.badgeID >= 231 && badge.badgeID <= 364) ? '' : 'background-color: ' + (team?.alternateColor || '#ccc') %>">
                         <% if (badge.badgeID >= 231 && badge.badgeID <= 364) { %>
                             <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" class="special-badge-logo">
@@ -261,6 +318,7 @@
                         <div class="badge-icon-overlay"><%= percent %>%</div>
                         <% } %>
                     </div>
+
                     <div class="diamond-text">💎 <%= badge.pointValue %></div>
                     <div class="card-body d-flex flex-column">
                         <h5 class="card-title badge-title">
@@ -307,6 +365,7 @@
                     btn.style.display = 'none';
                 }
             }
+
         }
 
         if (btn) {
@@ -359,6 +418,7 @@
                 resetGrid();
             }
         }
+
 
         conferenceFilter.on('change', applyFilters);
         teamFilter.on('change', applyFilters);
