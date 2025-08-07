@@ -17,6 +17,48 @@
             background-clip: padding-box, border-box;
             border-radius: 0.5rem;
         }
+    
+        .badge-icon-2025 {
+            position: relative;
+            width: 7rem;
+            height: 7rem;
+            border-radius: 50%;
+            margin: 0 auto 0.5rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(to bottom, #b3b2b2, #fff);
+            overflow: hidden;
+        }
+    
+        .badge-2025-inner {
+            position: relative;
+            width: 4.5rem;
+            height: 4.5rem;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+    
+        .badge-2025-inner::before {
+            content: '2025';
+            font-size: 2.5rem;
+            font-weight: 900;
+            line-height: 1;
+            background-image: var(--logo-url);
+            background-size: cover;
+            background-position: center;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+            z-index: 2;
+            position: relative;
+        }
+    
         .row-cols-1, .row-cols-sm-2, .row-cols-lg-3 {
             --bs-gutter-x: 3rem;
         }
@@ -72,34 +114,34 @@
             text-align: center;
             font-size: 1.1rem;
         }
-
+    
         .more-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    font-size: 2rem;
-    font-weight: bold;
-    text-align: center;
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: opacity 0.3s ease;
-}
-
-.more-btn span {
-    background: linear-gradient(to right, #14b8a6, #7e22ce);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    display: block;
-    line-height: 1.2;
-}
-
-.more-btn:hover {
-    opacity: 0.75;
-}
-
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+    
+        .more-btn span {
+            background: linear-gradient(to right, #14b8a6, #7e22ce);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: block;
+            line-height: 1.2;
+        }
+    
+        .more-btn:hover {
+            opacity: 0.75;
+        }
+    
         .badge-page-title {
             font-size: 2.5rem;
             font-weight: 700;
@@ -109,12 +151,11 @@
             background-clip: text;
             color: transparent;
         }
-
-
+    
         .filters-row .select2-container {
             width: 50% !important;
         }
-
+    
         .filters-row .select2-container--default .select2-selection--single,
         .filters-row .select2-container--default .select2-dropdown,
         .glass-select2.select2-dropdown {
@@ -125,36 +166,43 @@
             overflow: hidden;
             backdrop-filter: blur(8px);
         }
-
-        .filters-row .select2-container--default .select2-selection--single::before,
-        .filters-row .select2-container--default .select2-dropdown::before,
-        .glass-select2.select2-dropdown::before {
+    
+        .filters-row .select2-container--default .select2-dropdown {
+            position: relative;
+            z-index: 1;
+            background: linear-gradient(to right, #14b8a6, #7e22ce);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.5rem;
+            backdrop-filter: blur(8px);
+            overflow: hidden;
+        }
+    
+        .filters-row .select2-container--default .select2-dropdown::before {
             content: '';
             position: absolute;
             inset: 0;
             background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(8px);
-            border-radius: inherit;
+            z-index: 0;
             pointer-events: none;
         }
-
+    
         .filters-row .select2-container--default .select2-selection--single {
             height: 3.15rem !important;
             display: flex;
             align-items: center;
         }
-
+    
         .filters-row .select2-container--default .select2-selection__rendered {
             position: relative;
             z-index: 1;
             color: #fff !important;
             font-weight: bold;
         }
-
+    
         .filters-row .select2-container--default .select2-selection__placeholder {
             color: #fff !important;
         }
-
+    
         .filters-row .select2-container--default .select2-selection__clear,
         .filters-row .select2-container--default .select2-selection__clear:hover,
         .filters-row .select2-container--default .select2-selection__clear:focus {
@@ -166,24 +214,25 @@
             -webkit-text-fill-color: transparent;
             cursor: pointer;
         }
-
+    
         .filters-row .select2-container--default .select2-dropdown,
         .glass-select2.select2-dropdown {
             color: #fff;
         }
-
+    
         .filters-row .select2-container--default .select2-results__option,
         .glass-select2.select2-dropdown .select2-results__option {
             color: #fff;
         }
-
+    
         .filters-row .select2-container--default .select2-results__option--highlighted,
         .glass-select2.select2-dropdown .select2-results__option--highlighted {
             background: rgba(255, 255, 255, 0.3) !important;
             color: #fff !important;
         }
-
     </style>
+    
+    
 </head>
 <body class="d-flex flex-column min-vh-100">
     <%- include('partials/header') %>
@@ -221,12 +270,20 @@
             %>
             <div class="col badge-col" data-conferences="<%= (badge.conferenceConstraints || []).map(String).join(',') %>" data-teams="<%= (badge.teamConstraints || []).map(String).join(',') %>" style="<%= index >= 9 ? 'display: none;' : '' %>">
                 <div class="card h-100 p-3 badge-card">
-                    <div class="badge-icon-container" style="background-color: <%= team?.alternateColor || '#ccc' %>">
-                        <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" style="<%= inProgress ? 'filter: blur(2px);' : '' %>">
-                        <% if (inProgress) { %>
-                        <div class="badge-icon-overlay"><%= percent %>%</div>
-                        <% } %>
-                    </div>
+                    <% const is2025Homer = badge.badgeID >= 231 && badge.badgeID <= 364; %>
+<% if (is2025Homer) { %>
+  <div class="badge-icon-2025">
+    <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" style="max-width: 3rem; max-height: 3rem;">
+    <div class="badge-2025-text" style="background-image: url('<%= badge.iconUrl %>');"></div>
+  </div>
+<% } else { %>
+  <div class="badge-icon-container" style="background-color: <%= team?.alternateColor || '#ccc' %>">
+    <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" style="<%= inProgress ? 'filter: blur(2px);' : '' %>">
+    <% if (inProgress) { %>
+      <div class="badge-icon-overlay"><%= percent %>%</div>
+    <% } %>
+  </div>
+<% } %>
                     <div class="diamond-text">💎 <%= badge.pointValue %></div>
                     <div class="card-body d-flex flex-column">
                         <h5 class="card-title badge-title">
