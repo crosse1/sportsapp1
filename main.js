@@ -20,8 +20,8 @@ const express = require("express"),
     mongoose = require('mongoose'),
     cookieParser = require('cookie-parser'),
     path = require('path'),
-
-    jwt = require('./lib/simpleJWT');
+    jwt = require('./lib/simpleJWT'),
+    { getBadgeStyleClass } = require('./lib/badgeUtils');
 
 
 
@@ -45,6 +45,7 @@ app.use(express.urlencoded({
 );
 
 app.use(express.json());
+app.locals.getBadgeStyleClass = getBadgeStyleClass;
 
 // Middleware to authenticate token
 app.use(async (req, res, next) => {
