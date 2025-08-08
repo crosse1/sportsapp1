@@ -6,13 +6,150 @@
   <title><%= badge.badgeName %></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/css/custom.css">
+  <style>
+    .badge-detail-wrapper .badge-icon-container {
+      width: 20rem;
+      height: 20rem;
+      border-radius: 0.75rem;
+    }
+    .badge-detail-wrapper .badge-icon {
+      pointer-events: none;
+    }
+    .glassy-box {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 0.75rem;
+      color: white;
+      padding: 1rem;
+    }
+    .diamond-text {
+      font-weight: bold;
+      background: linear-gradient(90deg, #ffffff, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-align: center;
+      font-size: 1.2rem;
+    }
+  </style>
 </head>
 <body class="d-flex flex-column min-vh-100 gradient-bg">
   <%- include('partials/header') %>
-  <div class="container my-5 flex-grow-1 text-center">
-    <%- include('partials/badgeIcon', { badge, team }) %>
-    <h2 class="mt-3"><%= badge.badgeName %></h2>
-    <p><%= badge.description %></p>
+  <div class="container my-4 flex-grow-1">
+    <div class="row g-4">
+      <!-- Left column -->
+      <div class="col-md-4 text-white text-center d-flex flex-column align-items-center">
+        <div class="badge-detail-wrapper">
+          <%- include('partials/badgeIcon', { badge, team }) %>
+        </div>
+        <div class="diamond-text mt-3">💎 <%= badge.pointValue %></div>
+        <h2 class="fw-bold text-start w-100"><%= badge.badgeName %></h2>
+        <p class="text-start text-white-50"><%= badge.description %></p>
+      </div>
+
+      <!-- Right column -->
+      <div class="col-md-8 text-white">
+        <!-- Users Section -->
+        <div class="mb-5">
+          <div class="d-flex align-items-center mb-2">
+            <h4 class="fw-bold mb-0 me-2">Users with badge completed</h4>
+            <span>(<%= usersCompleted.length %>)</span>
+          </div>
+          <div class="glassy-box">
+            <% if (usersCompleted.length === 0) { %>
+              <p class="mb-0">No users have completed this badge yet.</p>
+            <% } else { %>
+              <% usersCompleted.forEach(function(u){ %>
+                <div class="d-flex align-items-center mb-2">
+                  <img src="/users/<%= u._id %>/profile-image" class="avatar avatar-sm me-2">
+                  <a href="/users/<%= u._id %>" class="text-white text-decoration-none"><%= u.username %></a>
+                </div>
+              <% }) %>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Upcoming Games Section -->
+        <div>
+          <h4 class="fw-bold text-white mb-2">Upcoming Games Toward Badge</h4>
+          <hr class="border-light opacity-50">
+          <div class="row row-cols-1 g-4">
+            <% upcomingGames.forEach(function(game){
+                 const awayColor = game.awayTeam && game.awayTeam.color ? game.awayTeam.color : '#ffffff';
+                 const homeColor = game.homeTeam && game.homeTeam.color ? game.homeTeam.color : '#ffffff';
+            %>
+            <div class="col" data-id="<%= game._id %>">
+              <a href="/games/<%= game._id %>" class="text-decoration-none">
+                <div class="card shadow-sm h-100 game-card p-3 text-center position-relative" style="background: linear-gradient(to right, <%= awayColor %>, <%= homeColor %>);">
+                  <div class="wishlist-wrapper">
+                    <div class="wishlist-btn"><i class="bi <%= game.isWishlisted ? 'bi-heart-fill' : 'bi-heart' %>"></i></div>
+                  </div>
+                  <div class="game-date mb-2" data-start="<%= game.startDate.toISOString() %>"></div>
+                  <div class="d-flex justify-content-between align-items-center position-relative mb-2 px-3">
+                    <div class="logo-wrapper me-3">
+                      <div class="team-logo-container">
+                        <img src="<%= game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0] ? game.awayTeam.logos[0] : 'https://via.placeholder.com/60' %>" alt="<%= game.awayTeamName %>">
+                      </div>
+                      <span class="team-name"><%= game.awayTeamName %></span>
+                    </div>
+                    <div class="logo-wrapper ms-3">
+                      <div class="team-logo-container">
+                        <img src="<%= game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0] ? game.homeTeam.logos[0] : 'https://via.placeholder.com/60' %>" alt="<%= game.homeTeamName %>">
+                      </div>
+                      <span class="team-name"><%= game.homeTeamName %></span>
+                    </div>
+                    <div class="position-absolute top-50 start-50 translate-middle fw-bold fs-4 at-symbol">@</div>
+                  </div>
+                </div>
+              </a>
+            </div>
+            <% }) %>
+            <% if (upcomingGames.length === 0) { %>
+              <p class="text-center">No upcoming games.</p>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function attachWishlistHandlers(){
+      document.querySelectorAll('.wishlist-btn').forEach(btn=>{
+        const icon = btn.querySelector('i');
+        btn.dataset.saved = icon.classList.contains('bi-heart-fill') ? '1' : '0';
+        btn.addEventListener('mouseenter', ()=>{
+          if(btn.dataset.saved==='0'){
+            icon.classList.remove('bi-heart');
+            icon.classList.add('bi-heart-fill');
+          }
+        });
+        btn.addEventListener('mouseleave', ()=>{
+          if(btn.dataset.saved==='0'){
+            icon.classList.add('bi-heart');
+            icon.classList.remove('bi-heart-fill');
+          }
+        });
+        btn.addEventListener('click',async function(e){
+          e.preventDefault();
+          e.stopPropagation();
+          const col = btn.closest('.col');
+          const gameId = col.dataset.id;
+          const res = await fetch(`/games/${gameId}/wishlist`,{method:'POST'});
+          if(!res.ok) return;
+          const data = await res.json();
+          icon.className = data.action==='added' ? 'bi bi-heart-fill' : 'bi bi-heart';
+          btn.dataset.saved = data.action==='added' ? '1' : '0';
+        });
+      });
+    }
+    attachWishlistHandlers();
+    document.querySelectorAll('.game-date[data-start]').forEach(el => {
+      const date = new Date(el.dataset.start);
+      el.textContent = new Intl.DateTimeFormat(navigator.language, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+    });
+  </script>
 </body>
 </html>
