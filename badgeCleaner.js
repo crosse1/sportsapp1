@@ -1,36 +1,36 @@
 const mongoose = require('mongoose');
 const Badge = require('./models/Badge');
+const Game = require('./models/Game'); // Assuming you have a Game model
 
 // --- MongoDB connection ---
 const mongoURI = 'mongodb+srv://crosse:Zack0018@christiancluster.0ejv5.mongodb.net/appUsers?retryWrites=true&w=majority&appName=ChristianCluster';
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
 
-async function cleanAndAdjustSuperfanBadges() {
+async function removeBadgesWithNoHomeGames() {
   try {
-    const allBadges = await Badge.find({ badgeID: { $gte: 365 } });
+    const badges = await Badge.find({ badgeID: { $gte: 1, $lte: 230 } });
 
-    let removedCount = 0;
-    let updatedCount = 0;
+    let deletedCount = 0;
 
-    for (const badge of allBadges) {
-      if (badge.reqGames < 3) {
+    for (const badge of badges) {
+      const teamId = badge.teamConstraints?.[0];
+      if (!teamId) continue;
+
+      const hasHomeGames = await Game.exists({ homeTeam: teamId });
+
+      if (!hasHomeGames) {
         await Badge.deleteOne({ _id: badge._id });
-        removedCount++;
-        console.log(`🗑 Deleted badge ${badge.badgeID} (${badge.badgeName}) with reqGames = ${badge.reqGames}`);
-      } else {
-        badge.pointValue = 8200;
-        await badge.save();
-        updatedCount++;
-        console.log(`✅ Updated badge ${badge.badgeID} to pointValue = 8200`);
+        console.log(`🗑 Deleted badge ${badge.badgeID} (${badge.badgeName}) - Team ${teamId} never appears as home team`);
+        deletedCount++;
       }
     }
 
-    console.log(`\n🎯 Cleanup complete. Removed: ${removedCount}, Updated: ${updatedCount}`);
+    console.log(`\n✅ Cleanup complete. Total badges deleted: ${deletedCount}`);
   } catch (err) {
-    console.error('❌ Error during badge cleanup:', err.message);
+    console.error('❌ Error during cleanup:', err.message);
   } finally {
     mongoose.connection.close();
   }
 }
 
-cleanAndAdjustSuperfanBadges();
+removeBadgesWithNoHomeGames();

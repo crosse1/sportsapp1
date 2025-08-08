@@ -87,40 +87,45 @@
         <div class="mt-4">
   <h5 class="text-white fw-bold mb-2"><%= team.school %> related Badges</h5>
   <div class="badge-wrapper p-3">
-    <div class="row row-cols-2 row-cols-md-3 g-3">
-      <% relevantBadges.forEach(function(badge){ const badgeClass = getBadgeStyleClass(badge.badgeID); %>
-        <div class="col">
-          <div class="badge-icon-container <%= badgeClass %>" style="<%= badgeClass ? '' : 'background-color: ' + (team.alternateColor || '#ccc') %>">
-            <% if (badgeClass === 'special-badge-container') { %>
-              <div class="special-badge-metal-bg" style="color: var(--team-alt-color, #aaa); --team-alt-color: <%= team.alternateColor || '#aaa' %>">
-                <% for (let i = 0; i < 6; i++) { %>
-                  <span>2025 2025 2025 2025 2025</span>
-                <% } %>
-              </div>
-              <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" class="special-badge-logo">
-            <% } else if (badgeClass === 'gold-badge-container') { %>
-              <div class="gold-badge-metal-bg" style="color: var(--team-alt-color, #aaa); --team-alt-color: <%= team.alternateColor || '#aaa' %>">
-                <% for (let i = 0; i < 6; i++) { %>
-                  <span>2025 2025 2025 2025 2025</span>
-                <% } %>
-              </div>
-              <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" class="special-badge-logo">
-            <% } else if (badgeClass === 'bronze-badge-container') { %>
-              <div class="bronze-badge-metal-bg" style="color: var(--team-alt-color, #aaa); --team-alt-color: <%= team.alternateColor || '#aaa' %>">
-                <% for (let i = 0; i < 6; i++) { %>
-                  <span>2025 2025 2025 2025 2025</span>
-                <% } %>
-              </div>
-              <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" class="special-badge-logo">
-            <% } else { %>
-              <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>">
-            <% } %>
+    <% if (relevantBadges.length === 0) { %>
+      <p class="text-white mb-0 text-center">No current badges for <%= team.school %></p>
+    <% } else { %>
+      <div class="row row-cols-2 row-cols-md-3 g-3">
+        <% relevantBadges.forEach(function(badge){ const badgeClass = getBadgeStyleClass(badge.badgeID); %>
+          <div class="col">
+            <div class="badge-icon-container <%= badgeClass %>" style="<%= badgeClass ? '' : 'background-color: ' + (team.alternateColor || '#ccc') %>">
+              <% if (badgeClass === 'special-badge-container') { %>
+                <div class="special-badge-metal-bg" style="color: var(--team-alt-color, #aaa); --team-alt-color: <%= team.alternateColor || '#aaa' %>">
+                  <% for (let i = 0; i < 6; i++) { %>
+                    <span>2025 2025 2025 2025 2025</span>
+                  <% } %>
+                </div>
+                <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" class="special-badge-logo">
+              <% } else if (badgeClass === 'gold-badge-container') { %>
+                <div class="gold-badge-metal-bg" style="color: var(--team-alt-color, #aaa); --team-alt-color: <%= team.alternateColor || '#aaa' %>">
+                  <% for (let i = 0; i < 6; i++) { %>
+                    <span>2025 2025 2025 2025 2025</span>
+                  <% } %>
+                </div>
+                <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" class="special-badge-logo">
+              <% } else if (badgeClass === 'bronze-badge-container') { %>
+                <div class="bronze-badge-metal-bg" style="color: var(--team-alt-color, #aaa); --team-alt-color: <%= team.alternateColor || '#aaa' %>">
+                  <% for (let i = 0; i < 6; i++) { %>
+                    <span>2025 2025 2025 2025 2025</span>
+                  <% } %>
+                </div>
+                <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" class="special-badge-logo">
+              <% } else { %>
+                <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>">
+              <% } %>
+            </div>
           </div>
-        </div>
-      <% }) %>
-    </div>
+        <% }) %>
+      </div>
+    <% } %>
   </div>
 </div>
+
       </div>
 
       <!-- Right column -->

@@ -250,9 +250,9 @@
             const inProgress = percent < 100;
         %>
         <div class="col badge-col" data-conferences="<%= (badge.conferenceConstraints || []).map(String).join(',') %>" data-teams="<%= (badge.teamConstraints || []).map(String).join(',') %>" style="<%= index >= 9 ? 'display: none;' : '' %>">
-            <div class="card h-100 p-3 badge-card">
-                <% const badgeClass = getBadgeStyleClass(badge.badgeID); %>
-                <div class="badge-icon-container <%= badgeClass %>" style="<%= badgeClass ? '' : 'background-color: ' + (team?.alternateColor || '#ccc') %>">
+            <div class="card h-100 badge-card p-3 d-flex flex-column">
+  <% const badgeClass = getBadgeStyleClass(badge.badgeID); %>
+  <div class="badge-icon-container <%= badgeClass %>" style="<%= badgeClass ? '' : 'background-color: ' + (team?.alternateColor || '#ccc') %>">
   <% if (badgeClass === 'special-badge-container') { %>
     <div class="special-badge-metal-bg" style="color: var(--team-alt-color, #aaa); --team-alt-color: <%= team?.alternateColor || '#aaa' %>">
       <% for (let i = 0; i < 6; i++) { %>
@@ -290,10 +290,11 @@
     <% } %>
   <% } %>
   </div>
-</div>
 
-                <div class="diamond-text">💎 <%= badge.pointValue %></div>
-                <div class="card-body d-flex flex-column">
+
+                 <div class="diamond-text mt-2">💎 <%= badge.pointValue %></div>
+
+  <div class="card-body d-flex flex-column p-0 mt-2">
                     <h5 class="card-title badge-title">
                         <%= badge.badgeName %> (<%= progress %>/<%= badge.reqGames %>)
                     </h5>
