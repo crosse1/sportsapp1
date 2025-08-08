@@ -257,6 +257,21 @@ app.get('/team/:id', async (req, res) => {
         relevantBadges
     });
 });
+app.get('/badge/:id', async (req, res) => {
+    try {
+        const badge = await Badge.findById(req.params.id).lean();
+        if (!badge) return res.status(404).send('Badge not found');
+
+        let team = null;
+        if (badge.teamConstraints && badge.teamConstraints.length > 0) {
+            team = await Team.findById(badge.teamConstraints[0]).lean();
+        }
+
+        res.render('badge', { badge, team });
+    } catch (err) {
+        res.status(500).send('Server error');
+    }
+});
 app.post('/games/:id/checkin', gamesController.checkIn);
 app.post('/games/:id/wishlist', requireAuth, gamesController.toggleWishlist);
 app.post('/games/:id/list', requireAuth, gamesController.toggleGameList);

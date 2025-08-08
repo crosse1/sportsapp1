@@ -247,50 +247,10 @@
             const team = teamsData.find(t => String(t._id) === String(teams));
             const progress = userProgress[badge.badgeID] || 0;
             const percent = Math.round((progress / badge.reqGames) * 100);
-            const inProgress = percent < 100;
         %>
         <div class="col badge-col" data-conferences="<%= (badge.conferenceConstraints || []).map(String).join(',') %>" data-teams="<%= (badge.teamConstraints || []).map(String).join(',') %>" style="<%= index >= 9 ? 'display: none;' : '' %>">
             <div class="card h-100 badge-card p-3 d-flex flex-column">
-  <% const badgeClass = getBadgeStyleClass(badge.badgeID); %>
-  <div class="badge-icon-container <%= badgeClass %>" style="<%= badgeClass ? '' : 'background-color: ' + (team?.alternateColor || '#ccc') %>">
-  <% if (badgeClass === 'special-badge-container') { %>
-    <div class="special-badge-metal-bg" style="color: var(--team-alt-color, #aaa); --team-alt-color: <%= team?.alternateColor || '#aaa' %>">
-      <% for (let i = 0; i < 6; i++) { %>
-        <span>2025 2025 2025 2025 2025</span>
-      <% } %>
-    </div>
-    <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" class="special-badge-logo <%= inProgress ? 'blurred' : '' %>">
-    <% if (inProgress) { %>
-      <div class="badge-icon-overlay"><%= percent %>%</div>
-    <% } %>
-  <% } else if (badgeClass === 'gold-badge-container') { %>
-    <div class="gold-badge-metal-bg" style="color: var(--team-alt-color, #aaa); --team-alt-color: <%= team?.alternateColor || '#aaa' %>">
-      <% for (let i = 0; i < 6; i++) { %>
-        <span>2025 2025 2025 2025 2025</span>
-      <% } %>
-    </div>
-    <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" class="special-badge-logo <%= inProgress ? 'blurred' : '' %>">
-    <% if (inProgress) { %>
-      <div class="badge-icon-overlay"><%= percent %>%</div>
-    <% } %>
-  <% } else if (badgeClass === 'bronze-badge-container') { %>
-    <div class="bronze-badge-metal-bg" style="color: var(--team-alt-color, #aaa); --team-alt-color: <%= team?.alternateColor || '#aaa' %>">
-      <% for (let i = 0; i < 6; i++) { %>
-        <span>2025 2025 2025 2025 2025</span>
-      <% } %>
-    </div>
-    <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" class="special-badge-logo <%= inProgress ? 'blurred' : '' %>">
-    <% if (inProgress) { %>
-      <div class="badge-icon-overlay"><%= percent %>%</div>
-    <% } %>
-  <% } else { %>
-    <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" style="<%= inProgress ? 'filter: blur(2px);' : '' %>">
-    <% if (inProgress) { %>
-      <div class="badge-icon-overlay"><%= percent %>%</div>
-    <% } %>
-  <% } %>
-  </div>
-
+  <%- include('partials/badgeIcon', { badge, team, percent }) %>
 
                  <div class="diamond-text mt-2">💎 <%= badge.pointValue %></div>
 
