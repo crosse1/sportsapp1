@@ -501,6 +501,43 @@ for (const team of profileUser.teamsList || []) {
   };
 }
 
+const teamFrequencyMap = {};
+for (const team of profileUser.teamsList || []) {
+    const id = String(team._id || team);
+    if (!teamFrequencyMap[id]) {
+        teamFrequencyMap[id] = { team, count: 1 };
+    } else {
+        teamFrequencyMap[id].count++;
+    }
+}
+const teamEntries = Object.values(teamFrequencyMap).sort((a, b) => b.count - a.count);
+
+// Count venues
+const venueFrequencyMap = {};
+for (const venue of profileUser.venuesList || []) {
+    const key = venue.name || venue._id; // fallback to _id if name is missing
+    if (!venueFrequencyMap[key]) {
+        venueFrequencyMap[key] = { venue, count: 1 };
+    } else {
+        venueFrequencyMap[key].count++;
+    }
+}
+const venueEntries = Object.values(venueFrequencyMap).sort((a, b) => b.count - a.count);
+
+// Count states
+const stateFrequencyMap = {};
+for (const venue of profileUser.venuesList || []) {
+    let state = venue.state;
+    if (!state && venue.coordinates && Array.isArray(venue.coordinates.coordinates)) {
+        const [lon, lat] = venue.coordinates.coordinates;
+        state = getStateFromCoordinates(lat, lon);
+    }
+    if (state) {
+        stateFrequencyMap[state] = (stateFrequencyMap[state] || 0) + 1;
+    }
+}
+const stateEntries = Object.entries(stateFrequencyMap).sort((a, b) => b[1] - a[1]);
+
         const eloGames = await enrichEloGames(profileUser.gameElo || []);
         res.render('profileStats', {
             user: profileUser,
@@ -522,6 +559,9 @@ for (const team of profileUser.teamsList || []) {
             conferenceTeamMap,
             statesCount,
             conferenceStats,
+            teamEntries,     // ← Add this
+    venueEntries,    // ← Add this
+    stateEntries,
             eloGames
         });
     } catch (err) {

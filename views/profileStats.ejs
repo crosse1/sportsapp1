@@ -448,7 +448,12 @@
 <body class="d-flex flex-column min-vh-100">
     <%- include('partials/header') %>
     <%- include('partials/profileHeader', { user, isCurrentUser, isFollowing, canMessage, viewer, activeTab: 'stats' }) %>
-
+    <!-- DEBUG EJS -->
+<% if (teamEntries && teamEntries.length) { %>
+  <p>✅ teamEntries length: <%= teamEntries.length %></p>
+<% } else { %>
+  <p>❌ teamEntries not defined or empty</p>
+<% } %>
     <div class="container my-4 flex-grow-1">
         <div class="stats-grid">
             <div class="stat-block">
@@ -609,14 +614,21 @@
     </div>
 
     <script>
+
         const gameEntries = <%- JSON.stringify(gameEntries || []) %>;
         const topRatedGames = <%- JSON.stringify(topRatedGames || []) %>;
-        const venuesList = <%- JSON.stringify(venuesList || []) %>;
-        const teamsList = <%- JSON.stringify(teamsList || []) %>;
+        const teamEntries = <%- JSON.stringify(teamEntries || []) %>;
+const venueEntries = <%- JSON.stringify(venueEntries || []) %>;
+const stateEntries = <%- JSON.stringify(stateEntries || []) %>;
+
+console.log('teamEntries:', teamEntries);
+console.log('venueEntries:', venueEntries);
+console.log('stateEntries:', stateEntries);
+
         const teamsCount = <%- typeof teamsCount !== 'undefined' ? teamsCount : 0 %>;
         const venuesCount = <%- typeof venuesCount !== 'undefined' ? venuesCount : 0 %>;
         const statesCount = <%- typeof statesCount !== 'undefined' ? statesCount : 0 %>;
-
+        
         function buildGameRows(games) {
             const ratingCounts = {};
             games.forEach(g => { ratingCounts[g.rating] = (ratingCounts[g.rating] || 0) + 1; });
@@ -714,7 +726,7 @@
         }
 
         function renderStats() {
-    console.log({ gameEntries, topRatedGames, venuesList, teamsList });
+    
 
     // Games section
     const validGames = [];
@@ -750,13 +762,7 @@
 
 
     // Venues section
-    const venueMap = {};
-    venuesList.forEach(v => {
-        if (!v || !v.name) return;
-        if (!venueMap[v.name]) venueMap[v.name] = { count: 0, venue: v };
-        venueMap[v.name].count++;
-    });
-    const venueEntries = Object.values(venueMap).sort((a, b) => b.count - a.count);
+    
     window.allRankedVenues = venueEntries;
     document.getElementById('venuesCount').textContent = venuesCount;
     const venuesTopEl = document.getElementById('venuesTop');
@@ -764,16 +770,9 @@
     venuesTopEl.innerHTML = buildVenueRows(venueEntries.slice(0,3));
 
     // Teams section
-    const teamMap = {};
-    teamsList.forEach(t => {
-        if (!t || !t._id) return;
-        const id = t._id;
-        if (!teamMap[id]) teamMap[id] = { count: 0, team: t };
-        teamMap[id].count++;
-    });
-    const teamEntries = Object.values(teamMap).sort((a, b) => b.count - a.count);
+    
     window.allRankedTeams = teamEntries;
-    document.getElementById('teamsCount').textContent = Object.keys(teamMap).length;
+    document.getElementById('teamsCount').textContent = teamEntries.length;
 
     function isLight(hex){
         hex = hex.replace('#','');
@@ -808,13 +807,7 @@
     }).join('');
 
     // States section
-    const stateMap = {};
-    venuesList.forEach(v => {
-        const s = v.state || (v.location && v.location.state);
-        if (!s) return;
-        stateMap[s] = (stateMap[s] || 0) + 1;
-    });
-    const stateEntries = Object.entries(stateMap).sort((a, b) => b[1] - a[1]);
+    
     window.allRankedStates = stateEntries;
     document.getElementById('statesCount').textContent = statesCount;
     const statesTopEl = document.getElementById('statesTop');
