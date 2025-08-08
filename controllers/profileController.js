@@ -394,6 +394,7 @@ exports.profileStats = async (req, res, next) => {
         const userId = req.params.user || req.user.id;
         console.log('[profileStats] Requested User ID:', userId);
 
+        // Get populated lists for UI rendering
         const profileUser = await User.findById(userId)
             .populate('favoriteTeams')
             .populate('teamsList')
@@ -404,9 +405,17 @@ exports.profileStats = async (req, res, next) => {
             return res.redirect('/profileStats/' + req.user.id);
         }
 
-        console.log(`[profileStats] Found user: ${profileUser.username} (${profileUser._id})`);
-        console.log(`[profileStats] teamsList count: ${profileUser.teamsList?.length}`);
-        console.log(`[profileStats] venuesList count: ${profileUser.venuesList?.length}`);
+        console.log(`[profileStats] Loaded user: ${profileUser.username} (${profileUser._id})`);
+        console.log(`[profileStats] Populated teamsList count: ${profileUser.teamsList?.length}`);
+        console.log(`[profileStats] Populated venuesList count: ${profileUser.venuesList?.length}`);
+
+        // Get raw, unpopulated list of IDs
+        const rawUser = await User.findById(userId).lean();
+        const rawTeamIds = rawUser.teamsList || [];
+        const rawVenueIds = rawUser.venuesList || [];
+
+        console.log('[profileStats] Raw teamsList length (with duplicates):', rawTeamIds.length);
+        console.log('[profileStats] Raw venuesList length (with duplicates):', rawVenueIds.length);
 
         const isCurrentUser = req.user && req.user.id.toString() === profileUser._id.toString();
 
@@ -416,9 +425,11 @@ exports.profileStats = async (req, res, next) => {
             isFollowing = viewer.following.some(f => String(f) === String(profileUser._id));
             const followsBack = profileUser.following.some(f => String(f) === String(viewer._id));
             canMessage = isFollowing && followsBack;
+            console.log(`[profileStats] Viewer follows user: ${isFollowing}, Follows back: ${followsBack}`);
         }
 
         const enrichedEntries = await enrichGameEntries(profileUser.gameEntries || []);
+        console.log(`[profileStats] Enriched gameEntries count: ${enrichedEntries.length}`);
 
         const topRatedGames = enrichedEntries
             .filter(e => e.game && e.game._id)
@@ -427,33 +438,32 @@ exports.profileStats = async (req, res, next) => {
                 const rawScore = e.elo ? ((e.elo - 1000) / 1000) * 9 + 1 : 0;
                 const rating = Math.max(1.0, Math.min(10.0, Math.round(rawScore * 10) / 10));
                 const gameDate = game.startDate || game.StartDate || null;
-                const awayLogo = (game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0]) ?
-                    game.awayTeam.logos[0] : '/images/placeholder.jpg';
-                const homeLogo = (game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0]) ?
-                    game.homeTeam.logos[0] : '/images/placeholder.jpg';
+                const awayLogo = (game.awayTeam?.logos?.[0]) || '/images/placeholder.jpg';
+                const homeLogo = (game.homeTeam?.logos?.[0]) || '/images/placeholder.jpg';
                 return { _id: game._id, gameDate, awayTeamLogoUrl: awayLogo, homeTeamLogoUrl: homeLogo, rating };
             })
-            .sort((a,b) => b.rating - a.rating)
-            .slice(0,3);
+            .sort((a, b) => b.rating - a.rating)
+            .slice(0, 3);
+
+        console.log('[profileStats] Top 3 rated games:', topRatedGames.map(g => g._id));
 
         const uniqueTeamIds = [...new Set((profileUser.teamsList || []).map(t => String(t._id || t)))];
+        console.log('[profileStats] Unique team IDs:', uniqueTeamIds);
 
-        console.log('[profileStats] Unique Team IDs:', uniqueTeamIds);
-
-        // Build conference stats from precomputed map
+        // Load conference team map
         const mapPath = path.join(__dirname, '../conferenceTeamMap.json');
         const mapRaw = fs.readFileSync(mapPath, 'utf8');
         const conferenceTeamMap = JSON.parse(mapRaw);
+        console.log('[profileStats] Loaded conferenceTeamMap with', Object.keys(conferenceTeamMap).length, 'conferences');
 
         const conferenceStats = Object.entries(conferenceTeamMap).map(([name, teamIds]) => {
-            const totalTeams = teamIds.length;
             const teamsUnlocked = [];
             const teamDots = [];
-        
+
             teamIds.forEach(id => {
                 const team = (profileUser.teamsList || []).find(t => String(t._id || t) === String(id));
                 if (team) {
-                    teamsUnlocked.push(team); // user has seen this team
+                    teamsUnlocked.push(team);
                     teamDots.push({
                         unlocked: true,
                         logo: team.logos?.[0] || '/images/placeholder.jpg',
@@ -463,10 +473,12 @@ exports.profileStats = async (req, res, next) => {
                     teamDots.push({ unlocked: false });
                 }
             });
-        
-            const percentage = totalTeams ? Math.round((teamsUnlocked.length / totalTeams) * 100) : 0;
-            return { name, percentage, totalTeams, teamDots };
+
+            const percentage = Math.round((teamsUnlocked.length / teamIds.length) * 100);
+            return { name, percentage, totalTeams: teamIds.length, teamDots };
         });
+
+        console.log('[profileStats] Built conferenceStats:', conferenceStats.filter(c => c.percentage > 0).map(c => c.name));
 
         const teamMap = {};
         for (const team of profileUser.teamsList || []) {
@@ -477,35 +489,55 @@ exports.profileStats = async (req, res, next) => {
             };
         }
 
-        // Count teams (with frequency)
+        // Frequency: Teams
         const teamFrequencyMap = {};
+        for (const id of rawTeamIds) {
+            const idStr = String(id);
+            if (!teamFrequencyMap[idStr]) {
+                teamFrequencyMap[idStr] = { team: null, count: 1 };
+            } else {
+                teamFrequencyMap[idStr].count++;
+            }
+        }
         for (const team of profileUser.teamsList || []) {
             const id = String(team._id || team);
-            if (!teamFrequencyMap[id]) {
-                teamFrequencyMap[id] = { team, count: 1 };
-            } else {
-                teamFrequencyMap[id].count++;
+            if (teamFrequencyMap[id]) {
+                teamFrequencyMap[id].team = team;
             }
         }
-        const teamEntries = Object.values(teamFrequencyMap).sort((a, b) => b.count - a.count);
+        const teamEntries = Object.values(teamFrequencyMap).filter(e => e.team).sort((a, b) => b.count - a.count);
+        console.log('[profileStats] Top team frequency:', teamEntries.slice(0, 3).map(e => ({
+            name: e.team.school,
+            count: e.count
+        })));
 
-        // Count venues (with frequency)
+        // Frequency: Venues
         const venueFrequencyMap = {};
+        for (const id of rawVenueIds) {
+            const idStr = String(id);
+            if (!venueFrequencyMap[idStr]) {
+                venueFrequencyMap[idStr] = { venue: null, count: 1 };
+            } else {
+                venueFrequencyMap[idStr].count++;
+            }
+        }
         for (const venue of profileUser.venuesList || []) {
             const id = String(venue._id || venue);
-            if (!venueFrequencyMap[id]) {
-                venueFrequencyMap[id] = { venue, count: 1 };
-            } else {
-                venueFrequencyMap[id].count++;
+            if (venueFrequencyMap[id]) {
+                venueFrequencyMap[id].venue = venue;
             }
         }
-        const venueEntries = Object.values(venueFrequencyMap).sort((a, b) => b.count - a.count);
+        const venueEntries = Object.values(venueFrequencyMap).filter(e => e.venue).sort((a, b) => b.count - a.count);
+        console.log('[profileStats] Top venue frequency:', venueEntries.slice(0, 3).map(e => ({
+            name: e.venue.name,
+            count: e.count
+        })));
 
-        // Count states (with frequency)
+        // Frequency: States
         const stateFrequencyMap = {};
         for (const venue of profileUser.venuesList || []) {
             let state = venue.state;
-            if (!state && venue.coordinates && Array.isArray(venue.coordinates.coordinates)) {
+            if (!state && venue.coordinates?.coordinates?.length === 2) {
                 const [lon, lat] = venue.coordinates.coordinates;
                 state = getStateFromCoordinates(lat, lon);
             }
@@ -514,13 +546,18 @@ exports.profileStats = async (req, res, next) => {
             }
         }
         const stateEntries = Object.entries(stateFrequencyMap).sort((a, b) => b[1] - a[1]);
+        console.log('[profileStats] Top state frequency:', stateEntries.slice(0, 3));
 
-        // Unique counts for left-side stats
+        // Unique counts
         const teamsCount = teamEntries.length;
         const venuesCount = venueEntries.length;
         const statesCount = stateEntries.length;
 
+        console.log(`[profileStats] Unique counts — Teams: ${teamsCount}, Venues: ${venuesCount}, States: ${statesCount}`);
+
         const eloGames = await enrichEloGames(profileUser.gameElo || []);
+        console.log(`[profileStats] Loaded eloGames: ${eloGames.length}`);
+
         res.render('profileStats', {
             user: profileUser,
             isCurrentUser,
@@ -544,11 +581,14 @@ exports.profileStats = async (req, res, next) => {
             stateEntries,
             eloGames
         });
+
     } catch (err) {
         console.error('[profileStats] Error occurred:', err);
         next(err);
     }
 };
+
+
 
 
 exports.profileGames = async (req, res, next) => {
@@ -971,15 +1011,13 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
         }
 
         const update = {
-            $push: {
-                gameEntries: entry,
-                gameElo: newEloEntry
-            },
-            $addToSet: {
-                teamsList: { $each: teamsToAdd.map(toObjectId) },
-                venuesList: { $each: venuesToAdd.map(toObjectId) }
-            }
-        };
+  $push: {
+    gameEntries: entry,
+    gameElo: newEloEntry,
+    teamsList: { $each: teamsToAdd.map(toObjectId) },
+    venuesList: { $each: venuesToAdd.map(toObjectId) }
+  }
+};
 
         await User.findByIdAndUpdate(user._id, update);
         console.log('[SAVE] Added game entry with elo:', finalElo);

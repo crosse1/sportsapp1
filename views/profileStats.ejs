@@ -791,9 +791,10 @@ const stateEntries = <%- JSON.stringify(stateEntries || []) %>;
         const team = item.team;
         const logo = team.logos && team.logos[0] ? team.logos[0] : '/images/placeholder.jpg';
         return `<div class="team-stat-col">
-            <div class="team-count">${item.count}</div>
-            <img src="${logo}" alt="${team.school}" class="team-logo">
-        </div>`;
+    <div class="team-count">${item.count}</div>
+    <img src="${logo}" alt="${team.school}" class="team-logo" title="${team.school}">
+    
+</div>`;
     }).join('');
 
     // States section
