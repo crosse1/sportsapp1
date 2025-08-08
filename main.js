@@ -13,6 +13,9 @@ const express = require("express"),
     Message = require('./models/Message'),
     User = require('./models/users'),
     Team = require('./models/Team'),
+    Game = require('./models/Game'),
+    PastGame = require('./models/PastGame'),
+    Badge = require('./models/Badge'),
     layouts = require('express-ejs-layouts'),
     mongoose = require('mongoose'),
     cookieParser = require('cookie-parser'),
@@ -203,7 +206,55 @@ app.get('/games/:id', gamesController.showGame);
 app.get('/team/:id', async (req, res) => {
     const team = await Team.findById(req.params.id);
     if (!team) return res.status(404).send('Team not found');
-    res.render('team', { team });
+
+    const games = await Game.find({
+        $or: [{ homeTeam: team._id }, { awayTeam: team._id }]
+    }).populate('homeTeam awayTeam');
+
+    const upcomingGames = games
+        .filter(g => g.startDate && g.startDate > new Date())
+        .sort((a, b) => a.startDate - b.startDate);
+
+    const pastGames = await PastGame.find({
+        $or: [{ HomeId: team.teamId }, { AwayId: team.teamId }]
+    }).select('_id');
+    const pastGameIds = pastGames.map(pg => pg._id);
+    let averageElo = 'N/A';
+    if (pastGameIds.length) {
+        const eloAgg = await User.aggregate([
+            { $unwind: '$gameElo' },
+            {
+                $match: {
+                    'gameElo.game': { $in: pastGameIds },
+                    'gameElo.elo': { $ne: null }
+                }
+            },
+            { $group: { _id: null, avgElo: { $avg: '$gameElo.elo' } } }
+        ]);
+        if (eloAgg.length && eloAgg[0].avgElo != null) {
+            const rating = ((eloAgg[0].avgElo - 1000) / 1000) * 9 + 1;
+            averageElo = rating.toFixed(1);
+        }
+    }
+
+    const gameIds = games.map(g => g._id);
+    const usersCheckedIn = await User.countDocuments({ gamesList: { $in: gameIds } });
+
+    const relevantBadges = await Badge.find({
+        $or: [
+            { teamConstraints: { $exists: false } },
+            { teamConstraints: { $size: 0 } },
+            { teamConstraints: { $in: [String(team._id)] } }
+        ]
+    });
+
+    res.render('team', {
+        team,
+        upcomingGames,
+        averageElo,
+        usersCheckedIn,
+        relevantBadges
+    });
 });
 app.post('/games/:id/checkin', gamesController.checkIn);
 app.post('/games/:id/wishlist', requireAuth, gamesController.toggleWishlist);
