@@ -680,7 +680,9 @@ const stateEntries = <%- JSON.stringify(stateEntries || []) %>;
                 const name = team.school || team.name;
                 return `
                     <div class="top-list-item">${prefix}${displayTeamRank}.</div>
-                    <img src="${logo}" alt="${name}" class="game-logo-sm">
+                    <a href="/team/${team._id}" class="team-link">
+                        <img src="${logo}" alt="${name}" class="game-logo-sm">
+                    </a>
                     <div class="venue-name"><span class="venue-name-text">${name}</span></div>
                     <div class="venue-count">${item.count}</div>
                 `;
@@ -792,8 +794,10 @@ const stateEntries = <%- JSON.stringify(stateEntries || []) %>;
         const logo = team.logos && team.logos[0] ? team.logos[0] : '/images/placeholder.jpg';
         return `<div class="team-stat-col">
     <div class="team-count">${item.count}</div>
-    <img src="${logo}" alt="${team.school}" class="team-logo" title="${team.school}">
-    
+    <a href="/team/${team._id}" class="team-link">
+        <img src="${logo}" alt="${team.school}" class="team-logo" title="${team.school}">
+    </a>
+
 </div>`;
     }).join('');
 

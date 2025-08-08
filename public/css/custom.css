@@ -184,6 +184,15 @@
     border: 1px solid #ccc;
 }
 
+/* Hover expand effect for team links */
+.team-link img {
+    transition: transform 0.2s ease;
+}
+
+.team-link:hover img {
+    transform: scale(1.05);
+}
+
 .gradient-bg {
     background: linear-gradient(to right, #7e22ce, #14b8a6);
 }

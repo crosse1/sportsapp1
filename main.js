@@ -12,6 +12,7 @@ const express = require("express"),
     comparisonController = require('./controllers/comparisonController'),
     Message = require('./models/Message'),
     User = require('./models/users'),
+    Team = require('./models/Team'),
     layouts = require('express-ejs-layouts'),
     mongoose = require('mongoose'),
     cookieParser = require('cookie-parser'),
@@ -199,6 +200,11 @@ app.get('/pastGames/teams', gamesController.listPastGameTeams);
 app.get('/pastGames/search', gamesController.searchPastGames);
 app.get('/pastGames/:id', gamesController.showPastGame);
 app.get('/games/:id', gamesController.showGame);
+app.get('/team/:id', async (req, res) => {
+    const team = await Team.findById(req.params.id);
+    if (!team) return res.status(404).send('Team not found');
+    res.render('team', { team });
+});
 app.post('/games/:id/checkin', gamesController.checkIn);
 app.post('/games/:id/wishlist', requireAuth, gamesController.toggleWishlist);
 app.post('/games/:id/list', requireAuth, gamesController.toggleGameList);
