@@ -437,37 +437,13 @@ exports.profileStats = async (req, res, next) => {
             .slice(0,3);
 
         const uniqueTeamIds = [...new Set((profileUser.teamsList || []).map(t => String(t._id || t)))];
-        const uniqueVenueIds = [...new Set((profileUser.venuesList || []).map(v => String(v._id || v)))];
 
         console.log('[profileStats] Unique Team IDs:', uniqueTeamIds);
-        console.log('[profileStats] Unique Venue IDs:', uniqueVenueIds);
-
-        const teamsCount = uniqueTeamIds.length;
-        const venuesCount = uniqueVenueIds.length;
-
-        const statesVisited = new Set();
-        for (const v of profileUser.venuesList || []) {
-            let state = v.state;
-            if (!state && v.coordinates && Array.isArray(v.coordinates.coordinates)) {
-                const [lon, lat] = v.coordinates.coordinates;
-                state = getStateFromCoordinates(lat, lon);
-                console.log(`[profileStats] Converted coordinates (${lat}, ${lon}) to state: ${state}`);
-            } else {
-                console.log(`[profileStats] Venue already has state: ${state}`);
-            }
-            if (state) statesVisited.add(state);
-        }
-
-        const statesCount = statesVisited.size;
-        console.log('[profileStats] States visited:', [...statesVisited]);
-        console.log('[profileStats] Count of unique states:', statesCount);
 
         // Build conference stats from precomputed map
         const mapPath = path.join(__dirname, '../conferenceTeamMap.json');
         const mapRaw = fs.readFileSync(mapPath, 'utf8');
         const conferenceTeamMap = JSON.parse(mapRaw);
-
-        const userTeamIdsSet = new Set(uniqueTeamIds);
 
         const conferenceStats = Object.entries(conferenceTeamMap).map(([name, teamIds]) => {
             const totalTeams = teamIds.length;
@@ -493,50 +469,56 @@ exports.profileStats = async (req, res, next) => {
         });
 
         const teamMap = {};
-for (const team of profileUser.teamsList || []) {
-  const id = String(team._id || team);
-  teamMap[id] = {
-    logos: team.logos || [],
-    alternateColor: team.alternateColor || '#bbb'
-  };
-}
+        for (const team of profileUser.teamsList || []) {
+            const id = String(team._id || team);
+            teamMap[id] = {
+                logos: team.logos || [],
+                alternateColor: team.alternateColor || '#bbb'
+            };
+        }
 
-const teamFrequencyMap = {};
-for (const team of profileUser.teamsList || []) {
-    const id = String(team._id || team);
-    if (!teamFrequencyMap[id]) {
-        teamFrequencyMap[id] = { team, count: 1 };
-    } else {
-        teamFrequencyMap[id].count++;
-    }
-}
-const teamEntries = Object.values(teamFrequencyMap).sort((a, b) => b.count - a.count);
+        // Count teams (with frequency)
+        const teamFrequencyMap = {};
+        for (const team of profileUser.teamsList || []) {
+            const id = String(team._id || team);
+            if (!teamFrequencyMap[id]) {
+                teamFrequencyMap[id] = { team, count: 1 };
+            } else {
+                teamFrequencyMap[id].count++;
+            }
+        }
+        const teamEntries = Object.values(teamFrequencyMap).sort((a, b) => b.count - a.count);
 
-// Count venues
-const venueFrequencyMap = {};
-for (const venue of profileUser.venuesList || []) {
-    const key = venue.name || venue._id; // fallback to _id if name is missing
-    if (!venueFrequencyMap[key]) {
-        venueFrequencyMap[key] = { venue, count: 1 };
-    } else {
-        venueFrequencyMap[key].count++;
-    }
-}
-const venueEntries = Object.values(venueFrequencyMap).sort((a, b) => b.count - a.count);
+        // Count venues (with frequency)
+        const venueFrequencyMap = {};
+        for (const venue of profileUser.venuesList || []) {
+            const id = String(venue._id || venue);
+            if (!venueFrequencyMap[id]) {
+                venueFrequencyMap[id] = { venue, count: 1 };
+            } else {
+                venueFrequencyMap[id].count++;
+            }
+        }
+        const venueEntries = Object.values(venueFrequencyMap).sort((a, b) => b.count - a.count);
 
-// Count states
-const stateFrequencyMap = {};
-for (const venue of profileUser.venuesList || []) {
-    let state = venue.state;
-    if (!state && venue.coordinates && Array.isArray(venue.coordinates.coordinates)) {
-        const [lon, lat] = venue.coordinates.coordinates;
-        state = getStateFromCoordinates(lat, lon);
-    }
-    if (state) {
-        stateFrequencyMap[state] = (stateFrequencyMap[state] || 0) + 1;
-    }
-}
-const stateEntries = Object.entries(stateFrequencyMap).sort((a, b) => b[1] - a[1]);
+        // Count states (with frequency)
+        const stateFrequencyMap = {};
+        for (const venue of profileUser.venuesList || []) {
+            let state = venue.state;
+            if (!state && venue.coordinates && Array.isArray(venue.coordinates.coordinates)) {
+                const [lon, lat] = venue.coordinates.coordinates;
+                state = getStateFromCoordinates(lat, lon);
+            }
+            if (state) {
+                stateFrequencyMap[state] = (stateFrequencyMap[state] || 0) + 1;
+            }
+        }
+        const stateEntries = Object.entries(stateFrequencyMap).sort((a, b) => b[1] - a[1]);
+
+        // Unique counts for left-side stats
+        const teamsCount = teamEntries.length;
+        const venuesCount = venueEntries.length;
+        const statesCount = stateEntries.length;
 
         const eloGames = await enrichEloGames(profileUser.gameElo || []);
         res.render('profileStats', {
@@ -545,7 +527,6 @@ const stateEntries = Object.entries(stateFrequencyMap).sort((a, b) => b[1] - a[1
             isFollowing,
             canMessage,
             conferenceStats,
-            teamsList: profileUser.teamsList || [],
             viewer: req.user,
             activeTab: 'stats',
             gameEntries: enrichedEntries,
@@ -553,15 +534,14 @@ const stateEntries = Object.entries(stateFrequencyMap).sort((a, b) => b[1] - a[1
             userTeamIds: uniqueTeamIds,
             teamsList: profileUser.teamsList || [],
             venuesList: profileUser.venuesList || [],
+            teamMap,
             teamsCount,
-            teamMap,   
             venuesCount,
-            conferenceTeamMap,
             statesCount,
-            conferenceStats,
-            teamEntries,     // ← Add this
-    venueEntries,    // ← Add this
-    stateEntries,
+            conferenceTeamMap,
+            teamEntries,
+            venueEntries,
+            stateEntries,
             eloGames
         });
     } catch (err) {

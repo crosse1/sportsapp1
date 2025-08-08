@@ -448,12 +448,6 @@
 <body class="d-flex flex-column min-vh-100">
     <%- include('partials/header') %>
     <%- include('partials/profileHeader', { user, isCurrentUser, isFollowing, canMessage, viewer, activeTab: 'stats' }) %>
-    <!-- DEBUG EJS -->
-<% if (teamEntries && teamEntries.length) { %>
-  <p>✅ teamEntries length: <%= teamEntries.length %></p>
-<% } else { %>
-  <p>❌ teamEntries not defined or empty</p>
-<% } %>
     <div class="container my-4 flex-grow-1">
         <div class="stats-grid">
             <div class="stat-block">
@@ -620,10 +614,6 @@
         const teamEntries = <%- JSON.stringify(teamEntries || []) %>;
 const venueEntries = <%- JSON.stringify(venueEntries || []) %>;
 const stateEntries = <%- JSON.stringify(stateEntries || []) %>;
-
-console.log('teamEntries:', teamEntries);
-console.log('venueEntries:', venueEntries);
-console.log('stateEntries:', stateEntries);
 
         const teamsCount = <%- typeof teamsCount !== 'undefined' ? teamsCount : 0 %>;
         const venuesCount = <%- typeof venuesCount !== 'undefined' ? venuesCount : 0 %>;
