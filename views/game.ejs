@@ -16,7 +16,9 @@
         <div class="team-diagonal-square mx-auto" style="--homeColor:<%= homeBgColor %>; --awayColor:<%= awayBgColor %>">
           <!-- Away Team: Top-left triangle -->
           <div class="triangle away-bg" style="background: var(--awayColor); clip-path: polygon(0 0, 100% 0, 0 100%);">
-            <a href="/team/<%= game.awayTeam && game.awayTeam._id %>">
+
+            <a href="/team/<%= game.awayTeam && game.awayTeam._id %>" class="team-link">
+
               <img src="<%= game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0] ? game.awayTeam.logos[0] : 'https://via.placeholder.com/150' %>"
                    alt="<%= game.awayTeamName %>" class="team-logo-detail away-logo">
             </a>
@@ -24,7 +26,9 @@
 
           <!-- Home Team: Bottom-right triangle -->
           <div class="triangle home-bg" style="background: var(--homeColor); clip-path: polygon(100% 0, 100% 100%, 0 100%);">
-            <a href="/team/<%= game.homeTeam && game.homeTeam._id %>">
+
+            <a href="/team/<%= game.homeTeam && game.homeTeam._id %>" class="team-link">
+
               <img src="<%= game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0] ? game.homeTeam.logos[0] : 'https://via.placeholder.com/150' %>"
                    alt="<%= game.homeTeamName %>" class="team-logo-detail home-logo">
             </a>
