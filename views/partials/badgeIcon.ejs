@@ -1,0 +1,36 @@
+<%
+  const badgeClass = getBadgeStyleClass(badge.badgeID);
+  const altColor = team?.alternateColor || '#ccc';
+  const showOverlay = typeof percent !== 'undefined' && percent < 100;
+%>
+<a href="/badge/<%= badge._id %>" class="badge-link d-inline-block">
+  <div class="badge-icon badge-icon-container <%= badgeClass %>" style="<%= badgeClass ? '' : 'background-color: ' + altColor %>">
+    <% if (badgeClass === 'special-badge-container') { %>
+      <div class="special-badge-metal-bg" style="color: var(--team-alt-color, #aaa); --team-alt-color: <%= altColor %>">
+        <% for (let i = 0; i < 6; i++) { %>
+          <span>2025 2025 2025 2025 2025</span>
+        <% } %>
+      </div>
+      <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" class="special-badge-logo <%= showOverlay ? 'blurred' : '' %>">
+    <% } else if (badgeClass === 'gold-badge-container') { %>
+      <div class="gold-badge-metal-bg" style="color: var(--team-alt-color, #aaa); --team-alt-color: <%= altColor %>">
+        <% for (let i = 0; i < 6; i++) { %>
+          <span>2025 2025 2025 2025 2025</span>
+        <% } %>
+      </div>
+      <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" class="special-badge-logo <%= showOverlay ? 'blurred' : '' %>">
+    <% } else if (badgeClass === 'bronze-badge-container') { %>
+      <div class="bronze-badge-metal-bg" style="color: var(--team-alt-color, #aaa); --team-alt-color: <%= altColor %>">
+        <% for (let i = 0; i < 6; i++) { %>
+          <span>2025 2025 2025 2025 2025</span>
+        <% } %>
+      </div>
+      <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" class="special-badge-logo <%= showOverlay ? 'blurred' : '' %>">
+    <% } else { %>
+      <img src="<%= badge.iconUrl %>" alt="<%= badge.badgeName %>" style="<%= showOverlay ? 'filter: blur(2px);' : '' %>">
+    <% } %>
+    <% if (showOverlay) { %>
+      <div class="badge-icon-overlay"><%= percent %>%</div>
+    <% } %>
+  </div>
+</a>

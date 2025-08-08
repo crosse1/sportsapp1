@@ -1030,6 +1030,15 @@
   overflow: hidden;
 }
 
+.badge-icon {
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+.badge-icon:hover {
+  transform: scale(1.05);
+}
+
 .badge-icon-container img {
   max-width: 80%;
   max-height: 80%;
