@@ -259,6 +259,8 @@ app.get('/team/:id', async (req, res) => {
     });
 });
 app.get('/badge/:id', badgeController.showBadge);
+app.post('/api/nearbyGameCheckin', gamesController.nearbyGameCheckin);
+app.post('/api/checkin', gamesController.apiCheckIn);
 app.post('/games/:id/checkin', gamesController.checkIn);
 app.post('/games/:id/wishlist', requireAuth, gamesController.toggleWishlist);
 app.post('/games/:id/list', requireAuth, gamesController.toggleGameList);

@@ -2,6 +2,7 @@ const Game = require('../models/Game');
 const Team = require('../models/Team');
 const Venue = require('../models/Venue');
 const PastGame = require('../models/PastGame');
+const User = require('../models/users');
 const mongoose = require('mongoose');
 
 function hexToRgb(hex) {
@@ -200,10 +201,93 @@ exports.showGame = async (req, res, next) => {
   }
 };
 
+exports.nearbyGameCheckin = async (req, res, next) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const { lat, lng, latitude, longitude } = req.body || {};
+    const userLat = parseFloat(lat ?? latitude);
+    const userLng = parseFloat(lng ?? longitude);
+    if (isNaN(userLat) || isNaN(userLng)) {
+      return res.status(400).json({ error: 'Invalid coordinates' });
+    }
+
+    const now = new Date();
+    const startWindow = new Date(now.getTime() - 1.5 * 60 * 60 * 1000);
+    const endWindow = new Date(now.getTime() + 4 * 60 * 60 * 1000);
+
+    let games = await Game.find({
+      startDate: { $gte: startWindow, $lte: endWindow }
+    })
+      .populate('homeTeam')
+      .populate('awayTeam')
+      .lean();
+
+    if (!games.length) return res.json({ game: null });
+
+    const venueIds = [...new Set(games.map(g => g.venueId).filter(v => v !== undefined))];
+    const venues = await Venue.find({ venueId: { $in: venueIds } }).lean();
+    const venueMap = {};
+    venues.forEach(v => { venueMap[v.venueId] = v; });
+
+    const user = await User.findById(req.user.id).select('gamesList').lean();
+    const checked = new Set((user.gamesList || []).map(g => String(g)));
+
+    const maxKm = 0.25 * 1.60934;
+
+    const match = games.find(g => {
+      const venue = venueMap[g.venueId];
+      if (!venue || !venue.coordinates || !Array.isArray(venue.coordinates.coordinates)) return false;
+      const [vLng, vLat] = venue.coordinates.coordinates;
+      const distKm = haversine(userLat, userLng, vLat, vLng);
+      if (distKm > maxKm) return false;
+      return !checked.has(String(g._id));
+    });
+
+    if (!match) return res.json({ game: null });
+
+    const resp = {
+      _id: match._id,
+      startDate: match.startDate,
+      homeTeamName: match.homeTeamName,
+      awayTeamName: match.awayTeamName,
+      homeTeam: match.homeTeam ? { logos: match.homeTeam.logos, school: match.homeTeam.school } : null,
+      awayTeam: match.awayTeam ? { logos: match.awayTeam.logos, school: match.awayTeam.school } : null
+    };
+
+    res.json({ game: resp });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.apiCheckIn = async (req, res, next) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const { gameId } = req.body || {};
+    if (!gameId) return res.status(400).json({ error: 'Game ID required' });
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    const exists = user.gamesList.some(g => String(g) === String(gameId));
+    if (!exists) {
+      user.gamesList.push(gameId);
+      await user.save();
+    }
+    res.json({ success: true, alreadyCheckedIn: exists });
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.checkIn = async (req, res, next) => {
   try {
-    // Placeholder implementation
-    res.redirect(`/games/${req.params.id}`);
+    if (!req.user) return res.redirect('/login');
+    const gameId = req.params.id;
+    const user = await User.findById(req.user.id);
+    if (user && !user.gamesList.some(g => String(g) === String(gameId))) {
+      user.gamesList.push(gameId);
+      await user.save();
+    }
+    res.redirect(`/games/${gameId}`);
   } catch (err) {
     next(err);
   }
