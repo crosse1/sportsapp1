@@ -1,73 +1,87 @@
 <div class="profile-header pt-5 pb-0 text-white">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-md-3 text-center mb-4 mb-md-0">
-                <div class="profile-avatar-wrapper d-inline-block">
-                    <img src="/users/<%= user._id %>/profile-image" class="avatar avatar-lg profile-avatar" alt="Profile Photo">
-                    <% if (user.favoriteTeams && user.favoriteTeams.length > 0) { %>
-                        <% user.favoriteTeams.forEach(function(t){ %>
-                            <a href="/teams/<%= t._id %>" class="chain-logo">
-                                <img src="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>" alt="<%= t.school %>">
-                            </a>
-                        <% }) %>
-                    <% } %>
-                </div>
-            </div>
-            <div class="col-md-6 text-center text-md-start">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div class="d-flex align-items-center">
-                        <h2 class="fw-bold mb-0 me-3">@<%= user.username %></h2>
-                        <% if(isCurrentUser){ %>
-                            <a href="/profile/edit" class="btn glassy-btn btn-sm edit-profile-btn ms-2">Edit Profile</a>
-                        <% } else if(canMessage){ %>
-                            <button class="btn glassy-btn btn-sm message-btn ms-2" data-user="<%= user._id %>">Message</button>
-                        <% } %>
-                    </div>
-                    <% if(isCurrentUser){ %>
-                        <button id="addGameBtn" type="button" class="btn glassy-btn add-game-btn ms-3" data-bs-toggle="modal" data-bs-target="#addGameModal">+ Game</button>
-                    <% } %>
-                </div>
-                <div class="d-flex justify-content-center justify-content-md-start pb-2">
-                    <div class="me-4">
-                        <a href="/users/<%= user._id %>/followers" class="text-decoration-none text-white">
-                            <div id="followersCount" class="fw-bold"><%= user.followersCount %></div>
-                            <small class="text-white-50">Followers</small>
-                        </a>
-                    </div>
-                    <div>
-                        <a href="/users/<%= user._id %>/following" class="text-decoration-none text-white">
-                            <div class="fw-bold"><%= user.followingCount %></div>
-                            <small class="text-white-50">Following</small>
-                        </a>
-                    </div>
-                </div>
-                <% if (isCurrentUser) { %>
-                <div class="mt-3">
-                    <button id="openUserModal" class="btn glassy-btn rounded-pill follow-users-btn px-4" data-bs-toggle="modal" data-bs-target="#userSearchModal">Follow Users</button>
-                </div>
-                <% } %>
-            </div>
-            
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-md-3 text-center mb-4 mb-md-0">
+        <div class="profile-avatar-wrapper d-inline-block">
+          <img src="/users/<%= user._id %>/profile-image" class="avatar avatar-lg profile-avatar" alt="Profile Photo">
+          <% if (user.favoriteTeams && user.favoriteTeams.length > 0) { %>
+            <% user.favoriteTeams.forEach(function(t){ %>
+              <a href="/teams/<%= t._id %>" class="chain-logo">
+                <img src="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>" alt="<%= t.school %>">
+              </a>
+            <% }) %>
+          <% } %>
         </div>
-    </div>
-    <br>
-    <div class="container mt-4 pb-0">
-        <ul class="nav nav-tabs profile-tabs" id="profileTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <a href="/profileBadges/<%= user._id %>" class="nav-link profile-tab <%= activeTab==='badges' ? 'active' : '' %>">Badges</a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a href="/profileGames/<%= user._id %>" class="nav-link profile-tab <%= activeTab==='games' ? 'active' : '' %>">Games</a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a href="/profileStats/<%= user._id %>" class="nav-link profile-tab <%= activeTab==='stats' ? 'active' : '' %>">Stats</a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a href="/profileWaitlist/<%= user._id %>" class="nav-link profile-tab <%= activeTab==='waitlist' ? 'active' : '' %>">Waitlist</a>
-            </li>
-        </ul>
-    </div>
+        <!-- removed the old points-under-avatar block -->
+      </div>
+
+      <div class="col-md-6 text-center text-md-start">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="d-flex align-items-center flex-wrap gap-2">
+            <h2 class="fw-bold mb-0">@<%= user.username %> |</h2>
+
+            <!-- 💎 Points directly right of the username -->
+            <div class="user-points ms-2 fw-bold d-inline-flex align-items-center" style="gap:.3rem;">
+  <span aria-hidden="true">💎</span>
+  <span><%= (user.points || 0).toLocaleString() %></span>
 </div>
+
+            <% if(isCurrentUser){ %>
+              <a href="/profile/edit" class="btn glassy-btn btn-sm edit-profile-btn ms-2">Edit Profile</a>
+            <% } else if(canMessage){ %>
+              <button class="btn glassy-btn btn-sm message-btn ms-2" data-user="<%= user._id %>">Message</button>
+            <% } %>
+          </div>
+
+          <% if(isCurrentUser){ %>
+            <button id="addGameBtn" type="button" class="btn glassy-btn add-game-btn ms-3" data-bs-toggle="modal" data-bs-target="#addGameModal">+ Game</button>
+          <% } %>
+        </div>
+
+        <div class="d-flex justify-content-center justify-content-md-start pb-2">
+          <div class="me-4">
+            <a href="/users/<%= user._id %>/followers" class="text-decoration-none text-white">
+              <div id="followersCount" class="fw-bold"><%= user.followersCount %></div>
+              <small class="text-white-50">Followers</small>
+            </a>
+          </div>
+          <div>
+            <a href="/users/<%= user._id %>/following" class="text-decoration-none text-white">
+              <div class="fw-bold"><%= user.followingCount %></div>
+              <small class="text-white-50">Following</small>
+            </a>
+          </div>
+        </div>
+
+        <% if (isCurrentUser) { %>
+        <div class="mt-3">
+          <button id="openUserModal" class="btn glassy-btn rounded-pill follow-users-btn px-4" data-bs-toggle="modal" data-bs-target="#userSearchModal">Follow Users</button>
+        </div>
+        <% } %>
+      </div>
+      
+    </div>
+  </div>
+  <br>
+  <div class="container mt-4 pb-0">
+    <ul class="nav nav-tabs profile-tabs" id="profileTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <a href="/profileBadges/<%= user._id %>" class="nav-link profile-tab <%= activeTab==='badges' ? 'active' : '' %>">Badges</a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a href="/profileGames/<%= user._id %>" class="nav-link profile-tab <%= activeTab==='games' ? 'active' : '' %>">Games</a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a href="/profileStats/<%= user._id %>" class="nav-link profile-tab <%= activeTab==='stats' ? 'active' : '' %>">Stats</a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a href="/profileWaitlist/<%= user._id %>" class="nav-link profile-tab <%= activeTab==='waitlist' ? 'active' : '' %>">Waitlist</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+
 
 <% if (isCurrentUser) { %>
 <div class="modal fade user-search-modal" id="userSearchModal" tabindex="-1" aria-hidden="true">

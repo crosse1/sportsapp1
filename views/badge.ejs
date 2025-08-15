@@ -27,7 +27,7 @@
     }
     .diamond-text {
       font-weight: bold;
-      background: linear-gradient(90deg, #ffffff, #8b5cf6);
+      background: linear-gradient(90deg, #ffffff, #e0dceb);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       text-align: center;
@@ -50,7 +50,7 @@
 
 .diamond-text {
   font-weight: bold;
-  
+  font-size: 2.5rem;
   color: white; /* solid white */
   text-align: center;
   margin-bottom: 2rem;
@@ -116,7 +116,7 @@
         <div class="badge-detail-wrapper">
           <%- include('partials/badgeIcon', { badge, team }) %>
         </div>
-        <div class="diamond-text mt-3">💎 <%= badge.pointValue %></div>
+        <div class="diamond-text mt-3" style="font-size: 3rem; color:#ffffff">💎 <%= badge.pointValue %></div>
 <h2 class="fw-bold text-start w-100"><%= badge.badgeName %></h2>
 <p class="badge-description"><%= badge.description %></p>
       </div>

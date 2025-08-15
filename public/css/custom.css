@@ -1275,6 +1275,17 @@
 }
 
 
+
+.user-points {
+  font-weight: bold;
+      background: linear-gradient(90deg, #ffffff, #fcfcfc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-size: 1.7rem;
+   /* very light blue */
+}
+
+
 @keyframes badgeGlow {
   0% {
     box-shadow: 0 0 0 rgba(255, 255, 255, 0.4);
