@@ -161,6 +161,34 @@
     });
 
     function handleBadgeFlow(completed, progressed) {
+      function buildBadgeIcon(b, extra = '') {
+        const showOverlay = b.percent < 100;
+        const spans = Array(6).fill('<span>2025 2025 2025 2025 2025</span>').join('');
+        const cls = `badge-icon badge-icon-container ${b.styleClass || ''} ${extra}`.trim();
+        let inner = '';
+        if (b.styleClass === 'special-badge-container') {
+          inner = `
+            <div class="special-badge-metal-bg">${spans}</div>
+            <img src="${b.iconUrl}" alt="${b.badgeName}" class="special-badge-logo${showOverlay ? ' blurred' : ''}">
+            ${showOverlay ? `<div class="badge-icon-overlay">${b.percent}%</div>` : ''}`;
+        } else if (b.styleClass === 'gold-badge-container') {
+          inner = `
+            <div class="gold-badge-metal-bg">${spans}</div>
+            <img src="${b.iconUrl}" alt="${b.badgeName}" class="special-badge-logo${showOverlay ? ' blurred' : ''}">
+            ${showOverlay ? `<div class="badge-icon-overlay">${b.percent}%</div>` : ''}`;
+        } else if (b.styleClass === 'bronze-badge-container') {
+          inner = `
+            <div class="bronze-badge-metal-bg">${spans}</div>
+            <img src="${b.iconUrl}" alt="${b.badgeName}" class="special-badge-logo${showOverlay ? ' blurred' : ''}">
+            ${showOverlay ? `<div class="badge-icon-overlay">${b.percent}%</div>` : ''}`;
+        } else {
+          inner = `
+            <img src="${b.iconUrl}" alt="${b.badgeName}" ${showOverlay ? 'style="filter: blur(2px);"' : ''}>
+            ${showOverlay ? `<div class="badge-icon-overlay">${b.percent}%</div>` : ''}`;
+        }
+        return `<div class="${cls}">${inner}</div>`;
+      }
+
       const showThankYou = () => {
         thanks.show();
         setTimeout(() => thanks.hide(), 2500);
@@ -176,16 +204,16 @@
         }
         combined.forEach(b => {
           const card = document.createElement('div');
-          card.className = 'badge-card p-2 d-flex align-items-center gap-2';
+          card.className = 'badge-card p-2 d-flex align-items-center gap-3';
           if (completed.find(cb => cb._id === b._id)) {
             card.classList.add('badge-celebrate');
           }
           card.innerHTML = `
-            <div class="badge-icon-container"><img src="${b.iconUrl}" alt="${b.badgeName}" class="badge-icon"></div>
+            ${buildBadgeIcon(b)}
             <div class="text-start">
-              <div class="fw-bold">${b.badgeName}</div>
-              <div class="small">${b.description || ''}</div>
-              <div class="small">${b.progress}/${b.reqGames} (${b.percent}%)</div>
+              <div class="gradient-text fs-5">${b.badgeName}</div>
+              <div class="gradient-text fw-light small">${b.description || ''}</div>
+              <div class="gradient-text small">${b.progress}/${b.reqGames} (${b.percent}%)</div>
             </div>`;
           container.appendChild(card);
         });
@@ -204,9 +232,9 @@
         const showBadge = () => {
           const b = completed[index];
           content.innerHTML = `
-            <div class="badge-icon-container mb-3 badge-celebrate"><img id="badgeCompleteImage" src="${b.iconUrl}" alt="${b.badgeName}" class="badge-icon"></div>
-            <h3 id="badgeCompleteTitle" class="fw-bold mb-2">${b.badgeName}</h3>
-            <p id="badgeCompleteDesc" class="mb-0">${b.description || ''}</p>`;
+            ${buildBadgeIcon(b, 'mb-3 badge-celebrate')}
+            <h3 id="badgeCompleteTitle" class="fw-bold mb-2 gradient-text">${b.badgeName}</h3>
+            <p id="badgeCompleteDesc" class="mb-0 gradient-text fw-light">${b.description || ''}</p>`;
           completeModal.show();
         };
 
