@@ -19,6 +19,8 @@ const userSchema = new mongoose.Schema({
     gamesList: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Game' }], default: [] },
     teamsList: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Team' }], default: [] },
     venuesList: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Venue' }], default: [] },
+    badges: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Badge' }],
+    points: { type: Number, default: 0 },
     gameEntries: [{
         game: { type: mongoose.Schema.Types.ObjectId, ref: 'Game' },
         elo: Number,
