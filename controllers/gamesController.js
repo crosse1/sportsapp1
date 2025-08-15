@@ -5,7 +5,7 @@ const PastGame = require('../models/PastGame');
 const User = require('../models/users');
 const mongoose = require('mongoose');
 const Badge = require('../models/Badge');
-const { computeBadgeProgress } = require('../lib/badgeUtils');
+const { computeBadgeProgress, formatBadgeForClient } = require('../lib/badgeUtils');
 
 function hexToRgb(hex) {
   if (!hex) return null;
@@ -232,30 +232,33 @@ exports.nearbyGameCheckin = async (req, res, next) => {
     }
 
     // Time window (configurable via env)
-    const BEFORE_HOURS = Number(process.env.CHECKIN_WINDOW_BEFORE_HOURS ?? 6); // default 6h before
-    const AFTER_HOURS  = Number(process.env.CHECKIN_WINDOW_AFTER_HOURS  ?? 8); // default 8h after
+    const BEFORE_HOURS = Number(process.env.CHECKIN_WINDOW_BEFORE_HOURS ?? 6);
+    const AFTER_HOURS  = Number(process.env.CHECKIN_WINDOW_AFTER_HOURS  ?? 8);
     const now = new Date();
     const startMin = new Date(now.getTime() - BEFORE_HOURS * 3600 * 1000);
     const startMax = new Date(now.getTime() + AFTER_HOURS  * 3600 * 1000);
 
     // Get time-eligible candidates
     let games = await Game.find({
-      completed: { $ne: true },            // prefer not completed
+      completed: { $ne: true },
       startDate: { $gte: startMin, $lte: startMax }
     })
-      .populate('homeTeam')
-      .populate('awayTeam')
-      .lean();
+    .populate('homeTeam')
+    .populate('awayTeam')
+    .lean();
 
     console.log('[checkin] time window', { startMin, startMax, candidates: games.length });
     if (!games.length) return res.json({ game: null });
 
-    // Load venues for the candidate games (we key by venueId)
+    // Load venues for the candidate games (keyed by venueId)
     const venueIds = [...new Set(games.map(g => g.venueId).filter(v => v !== undefined))];
-    const venues = await Venue.find({ venueId: { $in: venueIds } }, { venueId: 1, name: 1, coordinates: 1 }).lean();
+    const venues = await Venue.find(
+      { venueId: { $in: venueIds } },
+      { venueId: 1, name: 1, coordinates: 1 }
+    ).lean();
     const venueMap = new Map(venues.map(v => [v.venueId, v]));
 
-    // Dedupe already checked-in games
+    // Already checked-in games for this user
     const user = await User.findById(req.user.id).select('gamesList').lean();
     const already = new Set((user?.gamesList || []).map(g => String(g)));
 
@@ -269,13 +272,12 @@ exports.nearbyGameCheckin = async (req, res, next) => {
       }
       const [vLng, vLat] = v.coordinates.coordinates; // GeoJSON = [lng, lat]
       const dist = haversineMeters(userLat, userLng, vLat, vLng);
-      const isChecked = already.has(String(g._id));
       withDistances.push({
         game: g,
         venue: { id: v.venueId, name: v.name },
         distMeters: dist,
         startDate: g.startDate,
-        checked: isChecked
+        checked: already.has(String(g._id))
       });
     }
 
@@ -290,7 +292,7 @@ exports.nearbyGameCheckin = async (req, res, next) => {
       return Math.abs(new Date(a.startDate) - now) - Math.abs(new Date(b.startDate) - now);
     });
 
-    // Distance threshold (meters). Default ~1000m; adjust as needed.
+    // Distance threshold (meters). Default ~1000m
     const NEAR_THRESHOLD_M = Number(process.env.CHECKIN_NEAR_THRESHOLD_M ?? 1000);
 
     // Pick nearest, un-checked game within threshold
@@ -298,10 +300,12 @@ exports.nearbyGameCheckin = async (req, res, next) => {
 
     if (!pick) {
       const nearest = withDistances[0];
-      console.log('[checkin] no un-checked game within threshold.',
+      console.log(
+        '[checkin] no un-checked game within threshold.',
         'nearestDist(m)=', Math.round(nearest.distMeters),
         'nearestGameId=', nearest.game.gameId,
-        'nearestVenue=', nearest.venue);
+        'nearestVenue=', nearest.venue
+      );
       return res.json({ game: null });
     }
 
@@ -318,10 +322,14 @@ exports.nearbyGameCheckin = async (req, res, next) => {
       startDate: pick.game.startDate,
       homeTeamName: pick.game.homeTeamName,
       awayTeamName: pick.game.awayTeamName,
-      homeTeam: pick.game.homeTeam ? { logos: pick.game.homeTeam.logos, school: pick.game.homeTeam.school } : null,
-      awayTeam: pick.game.awayTeam ? { logos: pick.game.awayTeam.logos, school: pick.game.awayTeam.school } : null,
-      distanceMeters: pick.distMeters,       // non-breaking extra info
-      venue: pick.venue                      // non-breaking extra info
+      homeTeam: pick.game.homeTeam
+        ? { logos: pick.game.homeTeam.logos, school: pick.game.homeTeam.school }
+        : null,
+      awayTeam: pick.game.awayTeam
+        ? { logos: pick.game.awayTeam.logos, school: pick.game.awayTeam.school }
+        : null,
+      distanceMeters: pick.distMeters,
+      venue: pick.venue
     };
 
     return res.json({ game: resp });
@@ -353,7 +361,6 @@ exports.apiCheckIn = async (req, res, next) => {
 
     const user = await User.findById(req.user.id)
       .populate({ path: 'gamesList', populate: [{ path: 'homeTeam' }, { path: 'awayTeam' }] });
-
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     const gameMongoId = String(gameDoc._id);
@@ -366,35 +373,22 @@ exports.apiCheckIn = async (req, res, next) => {
     }
     const afterGames = alreadyCheckedIn ? beforeGames : [...beforeGames, gameDoc];
 
-    // Badges
-    const badgesRaw = await Badge.find().lean();
-    const badges = badgesRaw.map(b => {
-      if (b.iconUrl && b.iconUrl.data) {
-        b.iconUrl = `data:${b.iconUrl.contentType};base64,${b.iconUrl.data.toString('base64')}`;
-      }
-      return b;
-    });
+    // Load badges (lean), convert buffer icons, attach style + progress
+    const badges = await Badge.find().lean();
 
     const completedBadges = [];
     const progressedBadges = [];
+
     for (const badge of badges) {
       const progressBefore = computeBadgeProgress(badge, beforeGames);
-      const progressAfter = computeBadgeProgress(badge, afterGames);
+      const progressAfter  = computeBadgeProgress(badge, afterGames);
+
       if (progressAfter > progressBefore) {
-        const percent = Math.round((progressAfter / badge.reqGames) * 100);
-        const badgeInfo = {
-          _id: badge._id,
-          badgeName: badge.badgeName,
-          iconUrl: badge.iconUrl,
-          description: badge.description,
-          reqGames: badge.reqGames,
-          progress: progressAfter,
-          percent
-        };
-        if (progressAfter >= badge.reqGames && progressBefore < badge.reqGames) {
-          completedBadges.push(badgeInfo);
+        const payload = formatBadgeForClient(badge, { progress: progressAfter });
+        if (progressAfter >= (badge.reqGames || 0) && progressBefore < (badge.reqGames || 0)) {
+          completedBadges.push(payload);
         } else {
-          progressedBadges.push(badgeInfo);
+          progressedBadges.push(payload);
         }
       }
     }
@@ -435,6 +429,7 @@ exports.checkIn = async (req, res, next) => {
     next(err);
   }
 };
+
 
 
 exports.toggleWishlist = async (req, res, next) => {
