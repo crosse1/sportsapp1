@@ -24,6 +24,8 @@ const express = require("express"),
     jwt = require('./lib/simpleJWT'),
     { getBadgeStyleClass } = require('./lib/badgeUtils');
 
+const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
+
 
 
 mongoose.connect(
@@ -51,10 +53,11 @@ app.locals.getBadgeStyleClass = getBadgeStyleClass;
 // Middleware to authenticate token
 app.use(async (req, res, next) => {
     const token = req.cookies.token;
+    let userDoc = null;
     if (token) {
         try {
             const decoded = jwt.verify(token, 'secret');
-            const userDoc = await User.findById(decoded.id).lean();
+            userDoc = await User.findById(decoded.id).lean();
             if (userDoc) {
                 req.user = {
                     id: String(userDoc._id),
@@ -80,10 +83,18 @@ app.use(async (req, res, next) => {
         res.locals.hasUnreadMessages = !!hasUnread;
         res.locals.newFollowers = req.user.newFollowers || [];
         res.locals.hasNewFollowers = res.locals.newFollowers.length > 0;
+
+        const now = Date.now();
+        const unrated = (userDoc?.gameEntries || []).filter(entry =>
+            entry.rating === null &&
+            entry.startDate && new Date(entry.startDate).getTime() + SIX_HOURS_MS < now
+        );
+        res.locals.unratedGameEntries = unrated;
     } else {
         res.locals.hasUnreadMessages = false;
         res.locals.hasNewFollowers = false;
         res.locals.newFollowers = [];
+        res.locals.unratedGameEntries = [];
     }
     next();
 });
