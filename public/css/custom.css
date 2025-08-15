@@ -1073,6 +1073,25 @@
   font-weight: bold;
 }
 
+.badge-card {
+  border: 2px solid transparent;
+  background-image: linear-gradient(white, white), linear-gradient(to right, #14b8a6, #7e22ce);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  border-radius: 0.5rem;
+}
+
+.badge-label {
+  color: #fff;
+  font-weight: bold;
+  text-align: center;
+}
+
+.badge-complete-icon {
+  width: 20rem;
+  height: 20rem;
+  object-fit: contain;
+}
 .special-badge-container {
   position: relative;
   width: 7rem;
