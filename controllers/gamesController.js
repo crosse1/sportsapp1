@@ -368,6 +368,24 @@ exports.apiCheckIn = async (req, res, next) => {
     const gameMongoId = String(gameDoc._id);
     const alreadyCheckedIn = user.gamesList.some(g => String(g._id) === gameMongoId);
 
+    if (!user.gameEntries) user.gameEntries = [];
+    const alreadyHasEntry = user.gameEntries.some(e => String(e.game) === gameMongoId);
+    if (!alreadyHasEntry) {
+      const gameEntry = {
+        game: gameDoc._id,
+        homeTeam: gameDoc.homeTeam,
+        awayTeam: gameDoc.awayTeam,
+        startDate: gameDoc.startDate,
+        venueId: gameDoc.venueId,
+        score: null,
+        rating: null,
+        comment: null,
+        image: null,
+        elo: null
+      };
+      user.gameEntries.push(gameEntry);
+    }
+
     const beforeGames = [...user.gamesList];
     if (!alreadyCheckedIn) {
       user.gamesList.push(gameDoc._id); // normalize to ObjectId ref
@@ -427,29 +445,51 @@ exports.checkIn = async (req, res, next) => {
     }
     if (!gameDoc) return res.redirect('/games'); // or 404 if you prefer
 
-    const user = await User.findById(req.user.id)
-      .populate({ path: 'gamesList', populate: [{ path: 'homeTeam' }, { path: 'awayTeam' }] });
-    if (user && !user.gamesList.some(g => String(g._id) === String(gameDoc._id))) {
-      const beforeGames = [...user.gamesList];
-      user.gamesList.push(gameDoc._id); // store normalized ObjectId
-      user.points = (user.points || 0) + 225;
-      user.badges = user.badges || [];
+      const user = await User.findById(req.user.id)
+        .populate({ path: 'gamesList', populate: [{ path: 'homeTeam' }, { path: 'awayTeam' }] });
+      if (user) {
+        const gameIdStr = String(gameDoc._id);
+        if (!user.gamesList.some(g => String(g._id) === gameIdStr)) {
+          const beforeGames = [...user.gamesList];
+          user.gamesList.push(gameDoc._id); // store normalized ObjectId
+          user.points = (user.points || 0) + 225;
+          user.badges = user.badges || [];
 
-      const badges = await Badge.find().lean();
-      for (const badge of badges) {
-        const progressBefore = computeBadgeProgress(badge, beforeGames);
-        const progressAfter = computeBadgeProgress(badge, [...beforeGames, gameDoc]);
-        if (progressAfter > progressBefore && progressAfter >= (badge.reqGames || 0) && progressBefore < (badge.reqGames || 0)) {
-          const alreadyEarned = user.badges.some(id => String(id) === String(badge._id));
-          if (!alreadyEarned) {
-            user.points += badge.pointValue || 0;
-            user.badges.push(badge._id);
+          const badges = await Badge.find().lean();
+          for (const badge of badges) {
+            const progressBefore = computeBadgeProgress(badge, beforeGames);
+            const progressAfter = computeBadgeProgress(badge, [...beforeGames, gameDoc]);
+            if (progressAfter > progressBefore && progressAfter >= (badge.reqGames || 0) && progressBefore < (badge.reqGames || 0)) {
+              const alreadyEarned = user.badges.some(id => String(id) === String(badge._id));
+              if (!alreadyEarned) {
+                user.points += badge.pointValue || 0;
+                user.badges.push(badge._id);
+              }
+            }
           }
         }
+
+        if (!user.gameEntries) user.gameEntries = [];
+        const alreadyHasEntry = user.gameEntries.some(e => String(e.game) === gameIdStr);
+        if (!alreadyHasEntry) {
+          const gameEntry = {
+            game: gameDoc._id,
+            homeTeam: gameDoc.homeTeam,
+            awayTeam: gameDoc.awayTeam,
+            startDate: gameDoc.startDate,
+            venueId: gameDoc.venueId,
+            score: null,
+            rating: null,
+            comment: null,
+            image: null,
+            elo: null
+          };
+          user.gameEntries.push(gameEntry);
+        }
+
+        await user.save();
       }
-      await user.save();
-    }
-    res.redirect(`/games/${gameDoc._id}`);
+      res.redirect(`/games/${gameDoc._id}`);
   } catch (err) {
     console.error('[checkin] checkIn error', err);
     next(err);

@@ -23,9 +23,16 @@ const userSchema = new mongoose.Schema({
     points: { type: Number, default: 0 },
     gameEntries: [{
         game: { type: mongoose.Schema.Types.ObjectId, ref: 'Game' },
-        elo: Number,
-        comment: String,
-        image: String
+        homeTeam: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
+        awayTeam: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
+        startDate: Date,
+        venueId: Number,
+        score: { type: String, default: null },
+        rating: { type: Number, default: null },
+        comment: { type: String, default: null },
+        image: { type: String, default: null },
+        elo: { type: Number, default: null },
+        createdAt: { type: Date, default: Date.now }
     }],
     profileImage: {
         data: Buffer,
