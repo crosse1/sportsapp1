@@ -1223,6 +1223,58 @@
   animation: badgeGlow 1.5s ease-in-out infinite;
 }
 
+/* Make the container an honest circle and prevent flex stretching */
+.badge-icon-container {
+  width: 7rem;            /* adjust as you like */
+  aspect-ratio: 1 / 1;    /* <-- keeps it square */
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;         /* don't let flexbox stretch it */
+}
+
+/* Background “2025” layer should fill the circle instead of sizing content */
+.special-badge-metal-bg,
+.gold-badge-metal-bg,
+.bronze-badge-metal-bg {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+/* Make the repeated 2025s scale with the container */
+.special-badge-metal-bg span,
+.gold-badge-metal-bg span,
+.bronze-badge-metal-bg span {
+  font-size: clamp(1.25rem, 7vw, 2.25rem);
+  line-height: 1;
+  opacity: 0.12;         /* whatever you used before */
+  white-space: nowrap;
+}
+
+/* Ensure the logo sits nicely inside the circle */
+.special-badge-logo,
+.badge-icon-container > img {
+  width: 70%;
+  height: 70%;
+  object-fit: contain;
+  z-index: 1;
+}
+
+/* Centered progress overlay */
+.badge-icon-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  z-index: 2;
+}
+
+
 @keyframes badgeGlow {
   0% {
     box-shadow: 0 0 0 rgba(255, 255, 255, 0.4);

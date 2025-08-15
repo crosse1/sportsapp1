@@ -76,6 +76,7 @@
         <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content p-4 text-center gradient-bg text-white">
             <div class="modal-body">
+            <div class="game-date mb-3">${dateStr}</div>
               <div class="d-flex align-items-center justify-content-between mb-3">
                 <div class="logo-wrapper">
                   <div class="team-logo-container mb-1"><img src="${awayLogo}" alt="${awayName}"></div>
@@ -87,7 +88,7 @@
                   <span class="team-name">${homeName}</span>
                 </div>
               </div>
-              <div class="game-date mb-3">${dateStr}</div>
+              
               <button class="btn gradient-glass-btn w-100 fw-bold" id="confirmCheckin">Check In</button>
             </div>
           </div>
@@ -162,32 +163,42 @@
 
     function handleBadgeFlow(completed, progressed) {
       function buildBadgeIcon(b, extra = '') {
-        const showOverlay = b.percent < 100;
-        const spans = Array(6).fill('<span>2025 2025 2025 2025 2025</span>').join('');
-        const cls = `badge-icon badge-icon-container ${b.styleClass || ''} ${extra}`.trim();
-        let inner = '';
-        if (b.styleClass === 'special-badge-container') {
-          inner = `
-            <div class="special-badge-metal-bg">${spans}</div>
-            <img src="${b.iconUrl}" alt="${b.badgeName}" class="special-badge-logo${showOverlay ? ' blurred' : ''}">
-            ${showOverlay ? `<div class="badge-icon-overlay">${b.percent}%</div>` : ''}`;
-        } else if (b.styleClass === 'gold-badge-container') {
-          inner = `
-            <div class="gold-badge-metal-bg">${spans}</div>
-            <img src="${b.iconUrl}" alt="${b.badgeName}" class="special-badge-logo${showOverlay ? ' blurred' : ''}">
-            ${showOverlay ? `<div class="badge-icon-overlay">${b.percent}%</div>` : ''}`;
-        } else if (b.styleClass === 'bronze-badge-container') {
-          inner = `
-            <div class="bronze-badge-metal-bg">${spans}</div>
-            <img src="${b.iconUrl}" alt="${b.badgeName}" class="special-badge-logo${showOverlay ? ' blurred' : ''}">
-            ${showOverlay ? `<div class="badge-icon-overlay">${b.percent}%</div>` : ''}`;
-        } else {
-          inner = `
-            <img src="${b.iconUrl}" alt="${b.badgeName}" ${showOverlay ? 'style="filter: blur(2px);"' : ''}>
-            ${showOverlay ? `<div class="badge-icon-overlay">${b.percent}%</div>` : ''}`;
-        }
-        return `<div class="${cls}">${inner}</div>`;
-      }
+  const showOverlay = b.percent < 100;
+  const spans = Array(6).fill('<span>2025 2025 2025 2025 2025</span>').join('');
+
+  // ⬇️ remove "badge-icon" from the container; keep only the container class
+  const cls = `badge-icon-container ${b.styleClass || ''} ${extra}`.trim();
+
+  let inner = '';
+  if (b.styleClass === 'special-badge-container') {
+    inner = `
+      <div class="special-badge-metal-bg">${spans}</div>
+      <img src="${b.iconUrl}" alt="${b.badgeName}" class="special-badge-logo${showOverlay ? ' blurred' : ''}">
+      ${showOverlay ? `<div class="badge-icon-overlay">${b.percent}%</div>` : ''}`;
+  } else if (b.styleClass === 'gold-badge-container') {
+    inner = `
+      <div class="gold-badge-metal-bg">${spans}</div>
+      <img src="${b.iconUrl}" alt="${b.badgeName}" class="special-badge-logo${showOverlay ? ' blurred' : ''}">
+      ${showOverlay ? `<div class="badge-icon-overlay">${b.percent}%</div>` : ''}`;
+  } else if (b.styleClass === 'bronze-badge-container') {
+    inner = `
+      <div class="bronze-badge-metal-bg">${spans}</div>
+      <img src="${b.iconUrl}" alt="${b.badgeName}" class="special-badge-logo${showOverlay ? ' blurred' : ''}">
+      ${showOverlay ? `<div class="badge-icon-overlay">${b.percent}%</div>` : ''}`;
+  } else {
+    inner = `
+      <img src="${b.iconUrl}" alt="${b.badgeName}" ${showOverlay ? 'style="filter: blur(2px);"' : ''}>
+      ${showOverlay ? `<div class="badge-icon-overlay">${b.percent}%</div>` : ''}`;
+  }
+
+  // ⬇️ inline safety net (in case your global CSS doesn’t load)
+  const fix =
+    'style="width:7rem;aspect-ratio:1/1;border-radius:50%;' +
+    'position:relative;overflow:hidden;display:grid;place-items:center;flex:0 0 auto"';
+
+  return `<div class="${cls}" ${fix}>${inner}</div>`;
+}
+
 
       const showThankYou = () => {
         thanks.show();
@@ -213,7 +224,7 @@
             <div class="text-start">
               <div class="gradient-text fs-5">${b.badgeName}</div>
               <div class="gradient-text fw-light small">${b.description || ''}</div>
-              <div class="gradient-text small">${b.progress}/${b.reqGames} (${b.percent}%)</div>
+              
             </div>`;
           container.appendChild(card);
         });
@@ -233,8 +244,9 @@
           const b = completed[index];
           content.innerHTML = `
             ${buildBadgeIcon(b, 'mb-3 badge-celebrate')}
-            <h3 id="badgeCompleteTitle" class="fw-bold mb-2 gradient-text">${b.badgeName}</h3>
-            <p id="badgeCompleteDesc" class="mb-0 gradient-text fw-light">${b.description || ''}</p>`;
+            <h3 id="badgeCompleteTitle" class="fw-bold mb-2 text-white">${b.badgeName}</h3>
+  <p id="badgeCompleteDesc" class="mb-0 fw-light text-white">${b.description || ''}</p>
+`;
           completeModal.show();
         };
 
