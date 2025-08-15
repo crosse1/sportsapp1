@@ -141,7 +141,12 @@ const requireAuth = async (req, res, next) => {
   };
 
 // Public landing page
-app.get('/', homeController.index);
+app.get('/', (req, res) => {
+    if (req.user) {
+        return res.redirect('/games');
+    }
+    return homeController.index(req, res);
+});
 app.get('/signup', profileController.getSignUp);
 app.get('/login', profileController.getLogin);
 app.post('/signup', profileController.saveUser);
