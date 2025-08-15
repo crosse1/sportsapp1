@@ -381,7 +381,16 @@ exports.apiCheckIn = async (req, res, next) => {
       const progressBefore = computeBadgeProgress(badge, beforeGames);
       const progressAfter = computeBadgeProgress(badge, afterGames);
       if (progressAfter > progressBefore) {
-        const badgeInfo = { _id: badge._id, badgeName: badge.badgeName, iconUrl: badge.iconUrl };
+        const percent = Math.round((progressAfter / badge.reqGames) * 100);
+        const badgeInfo = {
+          _id: badge._id,
+          badgeName: badge.badgeName,
+          iconUrl: badge.iconUrl,
+          description: badge.description,
+          reqGames: badge.reqGames,
+          progress: progressAfter,
+          percent
+        };
         if (progressAfter >= badge.reqGames && progressBefore < badge.reqGames) {
           completedBadges.push(badgeInfo);
         } else {

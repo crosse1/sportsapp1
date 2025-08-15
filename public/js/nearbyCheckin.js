@@ -74,7 +74,7 @@
     const html = `
       <div class="modal fade checkin-modal" id="checkinModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content p-4 text-center">
+          <div class="modal-content p-4 text-center gradient-bg text-white">
             <div class="modal-body">
               <div class="d-flex align-items-center justify-content-between mb-3">
                 <div class="logo-wrapper">
@@ -88,14 +88,35 @@
                 </div>
               </div>
               <div class="game-date mb-3">${dateStr}</div>
-              <button class="btn gradient-glass-btn w-100" id="confirmCheckin">Check In</button>
+              <button class="btn gradient-glass-btn w-100 fw-bold" id="confirmCheckin">Check In</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal fade checkin-modal" id="badgeCompleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content p-4 text-center gradient-bg text-white">
+            <div class="modal-body">
+              <div id="badgeCompleteContent"></div>
+              <button class="btn gradient-glass-btn mt-3" id="badgeNextBtn">Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal fade checkin-modal" id="badgeProgressModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content p-4 text-center gradient-bg text-white">
+            <div class="modal-body">
+              <h5 class="fw-bold mb-3">Badge Progress</h5>
+              <div id="badgeProgressContainer" class="d-flex flex-wrap justify-content-center gap-3"></div>
+              <button class="btn gradient-glass-btn mt-3" id="progressNextBtn">Continue</button>
             </div>
           </div>
         </div>
       </div>
       <div class="modal fade checkin-modal" id="checkinThanks" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content p-3 text-center">
+          <div class="modal-content p-3 text-center gradient-bg text-white">
             <div class="modal-body">Thank you for checking in!</div>
           </div>
         </div>
@@ -104,29 +125,106 @@
     document.body.insertAdjacentHTML('beforeend', html);
 
     const modalEl = document.getElementById('checkinModal');
+    const completeEl = document.getElementById('badgeCompleteModal');
+    const progressEl = document.getElementById('badgeProgressModal');
     const thanksEl = document.getElementById('checkinThanks');
     const modal = new bootstrap.Modal(modalEl);
+    const completeModal = new bootstrap.Modal(completeEl);
+    const progressModal = new bootstrap.Modal(progressEl);
     const thanks = new bootstrap.Modal(thanksEl);
 
-    modalEl.addEventListener('hidden.bs.modal', () => modalEl.remove());
-    thanksEl.addEventListener('hidden.bs.modal', () => thanksEl.remove());
+    [modalEl, completeEl, progressEl, thanksEl].forEach(el => {
+      el.addEventListener('hidden.bs.modal', () => el.remove());
+    });
 
     modalEl.querySelector('#confirmCheckin').addEventListener('click', async function () {
+      let completed = [];
+      let progressed = [];
       try {
         const idToSend = game._id || game.gameId; // support either shape
-        await fetch('/api/checkin', {
+        const res = await fetch('/api/checkin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ gameId: idToSend })
         });
+        if (res.ok) {
+          const data = await res.json();
+          completed = data.completedBadges || [];
+          progressed = data.progressedBadges || [];
+        }
       } catch (err) {
         console.error('[checkin] checkin POST error:', err);
       }
       modal.hide();
-      thanks.show();
-      setTimeout(() => thanks.hide(), 2500);
+      handleBadgeFlow(completed, progressed);
     });
+
+    function handleBadgeFlow(completed, progressed) {
+      const showThankYou = () => {
+        thanks.show();
+        setTimeout(() => thanks.hide(), 2500);
+      };
+
+      const showProgress = () => {
+        const container = progressEl.querySelector('#badgeProgressContainer');
+        container.innerHTML = '';
+        const combined = [...completed, ...progressed];
+        if (!combined.length) {
+          showThankYou();
+          return;
+        }
+        combined.forEach(b => {
+          const card = document.createElement('div');
+          card.className = 'badge-card p-2 d-flex align-items-center gap-2';
+          if (completed.find(cb => cb._id === b._id)) {
+            card.classList.add('badge-celebrate');
+          }
+          card.innerHTML = `
+            <div class="badge-icon-container"><img src="${b.iconUrl}" alt="${b.badgeName}" class="badge-icon"></div>
+            <div class="text-start">
+              <div class="fw-bold">${b.badgeName}</div>
+              <div class="small">${b.description || ''}</div>
+              <div class="small">${b.progress}/${b.reqGames} (${b.percent}%)</div>
+            </div>`;
+          container.appendChild(card);
+        });
+        progressModal.show();
+        progressEl.querySelector('#progressNextBtn').onclick = () => {
+          progressModal.hide();
+          showThankYou();
+        };
+      };
+
+      if (completed.length) {
+        let index = 0;
+        const content = completeEl.querySelector('#badgeCompleteContent');
+        const nextBtn = completeEl.querySelector('#badgeNextBtn');
+
+        const showBadge = () => {
+          const b = completed[index];
+          content.innerHTML = `
+            <div class="badge-icon-container mb-3 badge-celebrate"><img id="badgeCompleteImage" src="${b.iconUrl}" alt="${b.badgeName}" class="badge-icon"></div>
+            <h3 id="badgeCompleteTitle" class="fw-bold mb-2">${b.badgeName}</h3>
+            <p id="badgeCompleteDesc" class="mb-0">${b.description || ''}</p>`;
+          completeModal.show();
+        };
+
+        nextBtn.onclick = () => {
+          index++;
+          if (index < completed.length) {
+            showBadge();
+          } else {
+            completeModal.hide();
+            showProgress();
+          }
+        };
+
+        showBadge();
+      } else {
+        showProgress();
+      }
+    }
 
     modal.show();
   }
