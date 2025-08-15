@@ -72,15 +72,15 @@ async function main() {
       venue: venueName,                    // will be actual venue name if found, else "10804"
 
       // Teams from your example (ObjectId strings)
-      homeTeam: new mongoose.Types.ObjectId('687ebf79c6407a8e20ade535'),
-      homeTeamName: 'Kansas',
+      awayTeam: new mongoose.Types.ObjectId('687ebf79c6407a8e20ade535'),
+      homeTeamName: 'Fresno State',
       homeClassification: 'fbs',
       homeConference: 'Big 12',
       homeLineScores: [],
       homePregameElo: 1583,
 
-      awayTeam: new mongoose.Types.ObjectId('687ebf79c6407a8e20ade4d2'),
-      awayTeamName: 'Fresno State',
+      homeTeam: new mongoose.Types.ObjectId('687ebf79c6407a8e20ade4d2'),
+      awayTeamName: 'Kansas',
       awayClassification: 'fbs',
       awayConference: 'Mountain West',
       awayLineScores: [],
