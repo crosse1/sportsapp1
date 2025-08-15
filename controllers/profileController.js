@@ -290,7 +290,9 @@ exports.getProfileImage = async (req, res, next) => {
 exports.profileBadges = async (req, res, next) => {
     try {
         const userId = req.params.user || req.user.id;
-        const profileUser = await User.findById(userId).populate('favoriteTeams');
+        const profileUser = await User.findById(userId)
+            .populate('favoriteTeams')
+            .populate({ path: 'gamesList', populate: ['homeTeam', 'awayTeam'] });
         if (!profileUser) return res.redirect('/profileBadges/' + req.user.id);
         const isCurrentUser = req.user && req.user.id.toString() === profileUser._id.toString();
         let isFollowing = false, canMessage = false;
@@ -327,25 +329,26 @@ exports.profileBadges = async (req, res, next) => {
             return b;
         });
 
-        // Gather all games the user has attended
-        const gameIds = (profileUser.gameEntries || []).map(g => g.game).filter(Boolean);
-        const pastGames = await PastGame.find({ _id: { $in: gameIds } }).lean();
+        // User's attended games populated with full Game documents
+        const games = profileUser.gamesList || [];
 
         const userProgress = {};
 
         badges.forEach(badge => {
-            const eligible = pastGames.filter(g => {
+            const eligible = games.filter(g => {
+                const homeTeam = g.homeTeam || {};
+                const awayTeam = g.awayTeam || {};
                 const leagueMatch = !badge.leagueConstraints?.length ||
-                    badge.leagueConstraints.some(l => [String(g.homeLeagueId), String(g.awayLeagueId)].includes(String(l)));
+                    badge.leagueConstraints.some(l => [homeTeam.leagueId, awayTeam.leagueId].map(String).includes(String(l)));
                 const teamMatch = !badge.teamConstraints?.length ||
                     badge.teamConstraints.some(t => {
-                        if (badge.homeTeamOnly) return String(g.HomeId) === String(t);
-                        return [String(g.HomeId), String(g.AwayId)].includes(String(t));
+                        if (badge.homeTeamOnly) return String(homeTeam._id) === String(t);
+                        return [homeTeam._id, awayTeam._id].map(String).includes(String(t));
                     });
                 const confMatch = !badge.conferenceConstraints?.length ||
-                    badge.conferenceConstraints.some(c => [String(g.homeConferenceId), String(g.awayConferenceId)].includes(String(c)));
-                const startOk = !badge.startDate || g.StartDate >= badge.startDate;
-                const endOk = !badge.endDate || g.StartDate <= badge.endDate;
+                    badge.conferenceConstraints.some(c => [homeTeam.conferenceId, awayTeam.conferenceId].map(String).includes(String(c)));
+                const startOk = !badge.startDate || g.startDate >= badge.startDate;
+                const endOk = !badge.endDate || g.startDate <= badge.endDate;
                 return leagueMatch && teamMatch && confMatch && startOk && endOk;
             });
 
@@ -353,17 +356,19 @@ exports.profileBadges = async (req, res, next) => {
             if (badge.oneTeamEach) {
                 const teamSet = new Set();
                 eligible.forEach(g => {
+                    const homeTeam = g.homeTeam || {};
+                    const awayTeam = g.awayTeam || {};
                     if (badge.teamConstraints && badge.teamConstraints.length) {
                         badge.teamConstraints.forEach(t => {
                             if (badge.homeTeamOnly) {
-                                if (String(g.HomeId) === String(t)) teamSet.add(String(t));
-                            } else if ([String(g.HomeId), String(g.AwayId)].includes(String(t))) {
+                                if (String(homeTeam._id) === String(t)) teamSet.add(String(t));
+                            } else if ([String(homeTeam._id), String(awayTeam._id)].includes(String(t))) {
                                 teamSet.add(String(t));
                             }
                         });
                     } else {
-                        teamSet.add(String(g.HomeId));
-                        if (!badge.homeTeamOnly) teamSet.add(String(g.AwayId));
+                        teamSet.add(String(homeTeam._id));
+                        if (!badge.homeTeamOnly) teamSet.add(String(awayTeam._id));
                     }
                 });
                 progress = teamSet.size;
@@ -382,7 +387,8 @@ exports.profileBadges = async (req, res, next) => {
             badges,
             userProgress,
             teamsData,
-            conferences
+            conferences,
+            gamesList: profileUser.gamesList
         });
     } catch (err) {
         next(err);
