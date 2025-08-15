@@ -10,7 +10,8 @@
     .badge-detail-wrapper .badge-icon-container {
       width: 20rem;
       height: 20rem;
-      border-radius: 0.75rem;
+      border-radius: 50%;
+      margin-left: -5rem;
     }
     .badge-detail-wrapper .badge-icon {
       pointer-events: none;
@@ -32,6 +33,78 @@
       text-align: center;
       font-size: 1.2rem;
     }
+
+    .game-card {
+  color: white !important;
+}
+
+.game-card .team-name,
+.game-card .game-date,
+.game-card .at-symbol {
+  color: white !important;
+}
+
+.game-card a {
+  color: white !important;
+}
+
+.diamond-text {
+  font-weight: bold;
+  
+  color: white; /* solid white */
+  text-align: center;
+  margin-bottom: 2rem;
+  margin-left: -5rem;
+  font-size: 1.2rem;
+}
+
+.badge-description {
+  color: white;           /* solid white */
+  text-align: left !important;  /* override any inherited center */
+  display: block;
+  width: 100%;
+}
+
+/* Make the badge size a variable so everything can scale from it */
+.badge-detail-wrapper .badge-icon-container {
+  --badge-size: 20rem;              /* change this to scale the whole badge */
+  width: var(--badge-size);
+  height: var(--badge-size);
+  border-radius: 50%;
+  margin-left: -5rem;
+  position: relative;               /* ensure overlay layers can fill */
+  overflow: hidden;
+}
+
+/* Scale the “2025” layers with the badge size */
+.special-badge-metal-bg,
+.gold-badge-metal-bg,
+.bronze-badge-metal-bg {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  font-size: calc(var(--badge-size) * 0.22);  /* <-- key: scales with badge */
+  line-height: 0.9;
+}
+
+/* If spans had a fixed font-size in the partial, override it */
+.special-badge-metal-bg span,
+.gold-badge-metal-bg span,
+.bronze-badge-metal-bg span {
+  font-size: inherit !important;
+}
+
+/* (Optional) Keep the logo on top and scale it with the badge */
+.special-badge-logo {
+  position: relative;
+  z-index: 1;
+  width: calc(var(--badge-size) * 0.55);
+  height: auto;
+}
+
+
   </style>
 </head>
 <body class="d-flex flex-column min-vh-100 gradient-bg">
@@ -44,8 +117,8 @@
           <%- include('partials/badgeIcon', { badge, team }) %>
         </div>
         <div class="diamond-text mt-3">💎 <%= badge.pointValue %></div>
-        <h2 class="fw-bold text-start w-100"><%= badge.badgeName %></h2>
-        <p class="text-start text-white-50"><%= badge.description %></p>
+<h2 class="fw-bold text-start w-100"><%= badge.badgeName %></h2>
+<p class="badge-description"><%= badge.description %></p>
       </div>
 
       <!-- Right column -->
