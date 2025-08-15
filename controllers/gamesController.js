@@ -203,84 +203,170 @@ exports.showGame = async (req, res, next) => {
   }
 };
 
+// --- Utility (local) ---
+function haversineMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371000; // meters
+  const toRad = d => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+// =======================
+//  nearbyGameCheckin
+// =======================
 exports.nearbyGameCheckin = async (req, res, next) => {
   try {
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+
+    // Accept lat/lng OR latitude/longitude
     const { lat, lng, latitude, longitude } = req.body || {};
     const userLat = parseFloat(lat ?? latitude);
     const userLng = parseFloat(lng ?? longitude);
-    if (isNaN(userLat) || isNaN(userLng)) {
+    if (Number.isNaN(userLat) || Number.isNaN(userLng)) {
+      console.warn('[checkin] Invalid coordinates:', req.body);
       return res.status(400).json({ error: 'Invalid coordinates' });
     }
 
+    // Time window (configurable via env)
+    const BEFORE_HOURS = Number(process.env.CHECKIN_WINDOW_BEFORE_HOURS ?? 6); // default 6h before
+    const AFTER_HOURS  = Number(process.env.CHECKIN_WINDOW_AFTER_HOURS  ?? 8); // default 8h after
     const now = new Date();
-    const startWindow = new Date(now.getTime() - 1.5 * 60 * 60 * 1000);
-    const endWindow = new Date(now.getTime() + 4 * 60 * 60 * 1000);
+    const startMin = new Date(now.getTime() - BEFORE_HOURS * 3600 * 1000);
+    const startMax = new Date(now.getTime() + AFTER_HOURS  * 3600 * 1000);
 
+    // Get time-eligible candidates
     let games = await Game.find({
-      startDate: { $gte: startWindow, $lte: endWindow }
+      completed: { $ne: true },            // prefer not completed
+      startDate: { $gte: startMin, $lte: startMax }
     })
       .populate('homeTeam')
       .populate('awayTeam')
       .lean();
 
+    console.log('[checkin] time window', { startMin, startMax, candidates: games.length });
     if (!games.length) return res.json({ game: null });
 
+    // Load venues for the candidate games (we key by venueId)
     const venueIds = [...new Set(games.map(g => g.venueId).filter(v => v !== undefined))];
-    const venues = await Venue.find({ venueId: { $in: venueIds } }).lean();
-    const venueMap = {};
-    venues.forEach(v => { venueMap[v.venueId] = v; });
+    const venues = await Venue.find({ venueId: { $in: venueIds } }, { venueId: 1, name: 1, coordinates: 1 }).lean();
+    const venueMap = new Map(venues.map(v => [v.venueId, v]));
 
+    // Dedupe already checked-in games
     const user = await User.findById(req.user.id).select('gamesList').lean();
-    const checked = new Set((user.gamesList || []).map(g => String(g)));
+    const already = new Set((user?.gamesList || []).map(g => String(g)));
 
-    const maxKm = 0.25 * 1.60934;
+    // Compute distances; keep everything for logging
+    const withDistances = [];
+    for (const g of games) {
+      const v = venueMap.get(g.venueId);
+      if (!v?.coordinates?.type || !Array.isArray(v.coordinates.coordinates)) {
+        console.log('[checkin] skip (no coords) gameId', g.gameId, 'venueId', g.venueId);
+        continue;
+      }
+      const [vLng, vLat] = v.coordinates.coordinates; // GeoJSON = [lng, lat]
+      const dist = haversineMeters(userLat, userLng, vLat, vLng);
+      const isChecked = already.has(String(g._id));
+      withDistances.push({
+        game: g,
+        venue: { id: v.venueId, name: v.name },
+        distMeters: dist,
+        startDate: g.startDate,
+        checked: isChecked
+      });
+    }
 
-    const match = games.find(g => {
-      const venue = venueMap[g.venueId];
-      if (!venue || !venue.coordinates || !Array.isArray(venue.coordinates.coordinates)) return false;
-      const [vLng, vLat] = venue.coordinates.coordinates;
-      const distKm = haversine(userLat, userLng, vLat, vLng);
-      if (distKm > maxKm) return false;
-      return !checked.has(String(g._id));
+    if (!withDistances.length) {
+      console.log('[checkin] no candidates with valid venue coords');
+      return res.json({ game: null });
+    }
+
+    // Sort by distance ASC, then by |startDate - now| ASC
+    withDistances.sort((a, b) => {
+      if (a.distMeters !== b.distMeters) return a.distMeters - b.distMeters;
+      return Math.abs(new Date(a.startDate) - now) - Math.abs(new Date(b.startDate) - now);
     });
 
-    if (!match) return res.json({ game: null });
+    // Distance threshold (meters). Default ~1000m; adjust as needed.
+    const NEAR_THRESHOLD_M = Number(process.env.CHECKIN_NEAR_THRESHOLD_M ?? 1000);
 
+    // Pick nearest, un-checked game within threshold
+    const pick = withDistances.find(x => !x.checked && x.distMeters <= NEAR_THRESHOLD_M);
+
+    if (!pick) {
+      const nearest = withDistances[0];
+      console.log('[checkin] no un-checked game within threshold.',
+        'nearestDist(m)=', Math.round(nearest.distMeters),
+        'nearestGameId=', nearest.game.gameId,
+        'nearestVenue=', nearest.venue);
+      return res.json({ game: null });
+    }
+
+    console.log('[checkin] returning game', {
+      gameId: pick.game.gameId,
+      mongoId: pick.game._id,
+      venue: pick.venue,
+      distMeters: Math.round(pick.distMeters)
+    });
+
+    // Minimal shape the frontend expects + a bit of helpful meta
     const resp = {
-      _id: match._id,
-      startDate: match.startDate,
-      homeTeamName: match.homeTeamName,
-      awayTeamName: match.awayTeamName,
-      homeTeam: match.homeTeam ? { logos: match.homeTeam.logos, school: match.homeTeam.school } : null,
-      awayTeam: match.awayTeam ? { logos: match.awayTeam.logos, school: match.awayTeam.school } : null
+      _id: pick.game._id,
+      startDate: pick.game.startDate,
+      homeTeamName: pick.game.homeTeamName,
+      awayTeamName: pick.game.awayTeamName,
+      homeTeam: pick.game.homeTeam ? { logos: pick.game.homeTeam.logos, school: pick.game.homeTeam.school } : null,
+      awayTeam: pick.game.awayTeam ? { logos: pick.game.awayTeam.logos, school: pick.game.awayTeam.school } : null,
+      distanceMeters: pick.distMeters,       // non-breaking extra info
+      venue: pick.venue                      // non-breaking extra info
     };
 
-    res.json({ game: resp });
+    return res.json({ game: resp });
   } catch (err) {
+    console.error('[checkin] nearbyGameCheckin error', err);
     next(err);
   }
 };
 
+// =======================
+//  apiCheckIn
+// =======================
 exports.apiCheckIn = async (req, res, next) => {
   try {
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
-    const { gameId } = req.body || {};
-    if (!gameId) return res.status(400).json({ error: 'Game ID required' });
+
+    const rawGameId = (req.body || {}).gameId;
+    if (!rawGameId && rawGameId !== 0) return res.status(400).json({ error: 'Game ID required' });
+
+    // Accept either Mongo _id or numeric gameId
+    let gameDoc = null;
+    if (mongoose.isValidObjectId(String(rawGameId))) {
+      gameDoc = await Game.findById(rawGameId).populate('homeTeam awayTeam');
+    }
+    if (!gameDoc && !Number.isNaN(Number(rawGameId))) {
+      gameDoc = await Game.findOne({ gameId: Number(rawGameId) }).populate('homeTeam awayTeam');
+    }
+    if (!gameDoc) return res.status(404).json({ error: 'Game not found' });
+
     const user = await User.findById(req.user.id)
       .populate({ path: 'gamesList', populate: [{ path: 'homeTeam' }, { path: 'awayTeam' }] });
+
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const alreadyCheckedIn = user.gamesList.some(g => String(g._id) === String(gameId));
-    const beforeGames = [...user.gamesList];
-    let gameDoc = await Game.findById(gameId).populate('homeTeam awayTeam');
-    let afterGames = [...beforeGames];
-    if (!alreadyCheckedIn) {
-      user.gamesList.push(gameId);
-      await user.save();
-      afterGames.push(gameDoc);
-    }
+    const gameMongoId = String(gameDoc._id);
+    const alreadyCheckedIn = user.gamesList.some(g => String(g._id) === gameMongoId);
 
+    const beforeGames = [...user.gamesList];
+    if (!alreadyCheckedIn) {
+      user.gamesList.push(gameDoc._id); // normalize to ObjectId ref
+      await user.save();
+    }
+    const afterGames = alreadyCheckedIn ? beforeGames : [...beforeGames, gameDoc];
+
+    // Badges
     const badgesRaw = await Badge.find().lean();
     const badges = badgesRaw.map(b => {
       if (b.iconUrl && b.iconUrl.data) {
@@ -306,24 +392,41 @@ exports.apiCheckIn = async (req, res, next) => {
 
     res.json({ success: true, alreadyCheckedIn, completedBadges, progressedBadges });
   } catch (err) {
+    console.error('[checkin] apiCheckIn error', err);
     next(err);
   }
 };
 
+// =======================
+//  checkIn (non-API redirect)
+// =======================
 exports.checkIn = async (req, res, next) => {
   try {
     if (!req.user) return res.redirect('/login');
-    const gameId = req.params.id;
+
+    const rawId = req.params.id;
+    let gameDoc = null;
+
+    if (mongoose.isValidObjectId(String(rawId))) {
+      gameDoc = await Game.findById(rawId);
+    }
+    if (!gameDoc && !Number.isNaN(Number(rawId))) {
+      gameDoc = await Game.findOne({ gameId: Number(rawId) });
+    }
+    if (!gameDoc) return res.redirect('/games'); // or 404 if you prefer
+
     const user = await User.findById(req.user.id);
-    if (user && !user.gamesList.some(g => String(g) === String(gameId))) {
-      user.gamesList.push(gameId);
+    if (user && !user.gamesList.some(g => String(g) === String(gameDoc._id))) {
+      user.gamesList.push(gameDoc._id); // store normalized ObjectId
       await user.save();
     }
-    res.redirect(`/games/${gameId}`);
+    res.redirect(`/games/${gameDoc._id}`);
   } catch (err) {
+    console.error('[checkin] checkIn error', err);
     next(err);
   }
 };
+
 
 exports.toggleWishlist = async (req, res, next) => {
   try {
