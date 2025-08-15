@@ -4,6 +4,8 @@ const Venue = require('../models/Venue');
 const PastGame = require('../models/PastGame');
 const User = require('../models/users');
 const mongoose = require('mongoose');
+const Badge = require('../models/Badge');
+const { computeBadgeProgress } = require('../lib/badgeUtils');
 
 function hexToRgb(hex) {
   if (!hex) return null;
@@ -265,14 +267,44 @@ exports.apiCheckIn = async (req, res, next) => {
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
     const { gameId } = req.body || {};
     if (!gameId) return res.status(400).json({ error: 'Game ID required' });
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id)
+      .populate({ path: 'gamesList', populate: [{ path: 'homeTeam' }, { path: 'awayTeam' }] });
     if (!user) return res.status(404).json({ error: 'User not found' });
-    const exists = user.gamesList.some(g => String(g) === String(gameId));
-    if (!exists) {
+
+    const alreadyCheckedIn = user.gamesList.some(g => String(g._id) === String(gameId));
+    const beforeGames = [...user.gamesList];
+    let gameDoc = await Game.findById(gameId).populate('homeTeam awayTeam');
+    let afterGames = [...beforeGames];
+    if (!alreadyCheckedIn) {
       user.gamesList.push(gameId);
       await user.save();
+      afterGames.push(gameDoc);
     }
-    res.json({ success: true, alreadyCheckedIn: exists });
+
+    const badgesRaw = await Badge.find().lean();
+    const badges = badgesRaw.map(b => {
+      if (b.iconUrl && b.iconUrl.data) {
+        b.iconUrl = `data:${b.iconUrl.contentType};base64,${b.iconUrl.data.toString('base64')}`;
+      }
+      return b;
+    });
+
+    const completedBadges = [];
+    const progressedBadges = [];
+    for (const badge of badges) {
+      const progressBefore = computeBadgeProgress(badge, beforeGames);
+      const progressAfter = computeBadgeProgress(badge, afterGames);
+      if (progressAfter > progressBefore) {
+        const badgeInfo = { _id: badge._id, badgeName: badge.badgeName, iconUrl: badge.iconUrl };
+        if (progressAfter >= badge.reqGames && progressBefore < badge.reqGames) {
+          completedBadges.push(badgeInfo);
+        } else {
+          progressedBadges.push(badgeInfo);
+        }
+      }
+    }
+
+    res.json({ success: true, alreadyCheckedIn, completedBadges, progressedBadges });
   } catch (err) {
     next(err);
   }
