@@ -363,13 +363,15 @@ exports.apiCheckIn = async (req, res, next) => {
       .populate({ path: 'gamesList', populate: [{ path: 'homeTeam' }, { path: 'awayTeam' }] });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
+    user.badges = user.badges || [];
+
     const gameMongoId = String(gameDoc._id);
     const alreadyCheckedIn = user.gamesList.some(g => String(g._id) === gameMongoId);
 
     const beforeGames = [...user.gamesList];
     if (!alreadyCheckedIn) {
       user.gamesList.push(gameDoc._id); // normalize to ObjectId ref
-      await user.save();
+      user.points = (user.points || 0) + 225;
     }
     const afterGames = alreadyCheckedIn ? beforeGames : [...beforeGames, gameDoc];
 
@@ -386,6 +388,11 @@ exports.apiCheckIn = async (req, res, next) => {
       if (progressAfter > progressBefore) {
         const payload = formatBadgeForClient(badge, { progress: progressAfter });
         if (progressAfter >= (badge.reqGames || 0) && progressBefore < (badge.reqGames || 0)) {
+          const alreadyEarned = user.badges.some(id => String(id) === String(badge._id));
+          if (!alreadyEarned) {
+            user.points += badge.pointValue || 0;
+            user.badges.push(badge._id);
+          }
           completedBadges.push(payload);
         } else {
           progressedBadges.push(payload);
@@ -393,7 +400,9 @@ exports.apiCheckIn = async (req, res, next) => {
       }
     }
 
-    res.json({ success: true, alreadyCheckedIn, completedBadges, progressedBadges });
+    await user.save();
+
+    res.json({ success: true, alreadyCheckedIn, newPoints: user.points, completedBadges, progressedBadges });
   } catch (err) {
     console.error('[checkin] apiCheckIn error', err);
     next(err);
@@ -411,16 +420,33 @@ exports.checkIn = async (req, res, next) => {
     let gameDoc = null;
 
     if (mongoose.isValidObjectId(String(rawId))) {
-      gameDoc = await Game.findById(rawId);
+      gameDoc = await Game.findById(rawId).populate('homeTeam awayTeam');
     }
     if (!gameDoc && !Number.isNaN(Number(rawId))) {
-      gameDoc = await Game.findOne({ gameId: Number(rawId) });
+      gameDoc = await Game.findOne({ gameId: Number(rawId) }).populate('homeTeam awayTeam');
     }
     if (!gameDoc) return res.redirect('/games'); // or 404 if you prefer
 
-    const user = await User.findById(req.user.id);
-    if (user && !user.gamesList.some(g => String(g) === String(gameDoc._id))) {
+    const user = await User.findById(req.user.id)
+      .populate({ path: 'gamesList', populate: [{ path: 'homeTeam' }, { path: 'awayTeam' }] });
+    if (user && !user.gamesList.some(g => String(g._id) === String(gameDoc._id))) {
+      const beforeGames = [...user.gamesList];
       user.gamesList.push(gameDoc._id); // store normalized ObjectId
+      user.points = (user.points || 0) + 225;
+      user.badges = user.badges || [];
+
+      const badges = await Badge.find().lean();
+      for (const badge of badges) {
+        const progressBefore = computeBadgeProgress(badge, beforeGames);
+        const progressAfter = computeBadgeProgress(badge, [...beforeGames, gameDoc]);
+        if (progressAfter > progressBefore && progressAfter >= (badge.reqGames || 0) && progressBefore < (badge.reqGames || 0)) {
+          const alreadyEarned = user.badges.some(id => String(id) === String(badge._id));
+          if (!alreadyEarned) {
+            user.points += badge.pointValue || 0;
+            user.badges.push(badge._id);
+          }
+        }
+      }
       await user.save();
     }
     res.redirect(`/games/${gameDoc._id}`);
