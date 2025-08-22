@@ -215,6 +215,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="/js/profileModals.js"></script>
     <script>
         window.existingGameIds = <%- JSON.stringify((user.gameEntries || []).map(e => String(e.game))) %>;
         window.gameEntryCount = <%- (user.gameEntries || []).length %>;
@@ -231,7 +232,6 @@
         const searchInput = document.getElementById('searchInput');
         const resultsEl = document.getElementById('searchResults');
         const followBtn = document.getElementById('followBtn');
-        const userSearchModal = document.getElementById('userSearchModal');
         if(followBtn){
             followBtn.addEventListener('click', async function(){
                 const targetId = this.dataset.user;
@@ -303,14 +303,6 @@
                 }
             });
         }
-        if(userSearchModal){
-            userSearchModal.addEventListener('hidden.bs.modal', () => {
-                if(searchInput){
-                    searchInput.value = '';
-                    resultsEl.innerHTML = '';
-                }
-            });
-        }
         const wrapper = document.querySelector('.profile-avatar-wrapper');
         if(wrapper){
             const logos = wrapper.querySelectorAll('.chain-logo');
@@ -327,24 +319,6 @@
                     logo.style.top = y + 'px';
                 });
             }
-        }
-        const addGameBtn = document.getElementById('addGameBtn');
-        if(addGameBtn){
-            addGameBtn.addEventListener('click', () => {
-                const modalEl = document.getElementById('addGameModal');
-                if(modalEl){
-                    bootstrap.Modal.getOrCreateInstance(modalEl).show();
-                }
-            });
-        }
-        const openUserModalBtn = document.getElementById('openUserModal');
-        if(openUserModalBtn){
-            openUserModalBtn.addEventListener('click', () => {
-                const modalEl = document.getElementById('userSearchModal');
-                if(modalEl){
-                    bootstrap.Modal.getOrCreateInstance(modalEl).show();
-                }
-            });
         }
         
 
