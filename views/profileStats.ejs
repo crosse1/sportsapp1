@@ -10,17 +10,13 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>        @media
 
-        #gamesModal, #venuesModal, #teamsModal, #statesModal { color: #fff; }
+        #gamesModal, #teamsModal, #statesModal { color: #fff; }
         #gamesModal .gradient-text,
-        #venuesModal .gradient-text,
         #teamsModal .gradient-text,
         #statesModal .gradient-text,
         #gamesModal .top-list-item,
         #gamesModal .venue-name-text,
         #gamesModal .venue-count,
-        #venuesModal .top-list-item,
-        #venuesModal .venue-name-text,
-        #venuesModal .venue-count,
         #teamsModal .top-list-item,
         #teamsModal .venue-name-text,
         #teamsModal .venue-count,
@@ -31,6 +27,19 @@
             -webkit-background-clip: initial !important;
             -webkit-text-fill-color: #fff !important;
             color: #fff !important;
+        }
+
+        #venuesModal .modal-content {
+            background: #fff;
+            color: #000;
+        }
+
+        #venuesModal .modal-title {
+            color: #000;
+        }
+
+        #venuesModal .btn-close {
+            filter: invert(0);
         }
 
         .venue-name-text {
@@ -317,6 +326,12 @@
   gap: 0.5rem;
 }
 
+#venuesModalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 
 
 #conferenceBlock .stat-rows {
@@ -371,6 +386,22 @@
 }
 
 .unlocked-team img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.team-dot.locked-venue {
+  opacity: 0.3;
+  filter: grayscale(100%);
+}
+
+.team-dot.unlocked-venue {
+  box-shadow: 0 0 0 2px rgba(20,184,166,0.8), 0 0 6px rgba(126,34,206,0.6);
+}
+
+.team-dot.unlocked-venue img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -555,7 +586,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="venuesModalBody" class="d-grid" style="grid-template-columns: 1fr 3fr 1fr; row-gap:0.5rem; column-gap:0.5rem;"></div>
+                    <div id="venuesModalBody"></div>
                 </div>
             </div>
         </div>
@@ -602,6 +633,8 @@
   const teamEntries = <%- JSON.stringify(teamEntries || []) %>;
   const venueEntries = <%- JSON.stringify(venueEntries || []) %>;
   const stateEntries = <%- JSON.stringify(stateEntries || []) %>;
+  const venuesList = <%- JSON.stringify(venuesList || []) %>;
+  const conferenceTeamMap = <%- JSON.stringify(conferenceTeamMap || {}) %>;
   const teamsCount = <%- typeof teamsCount !== 'undefined' ? teamsCount : 0 %>;
   const venuesCount = <%- typeof venuesCount !== 'undefined' ? venuesCount : 0 %>;
   const statesCount = <%- typeof statesCount !== 'undefined' ? statesCount : 0 %>;
@@ -648,6 +681,46 @@
         <div class="venue-count">${item.count}</div>
       `;
     }).join('');
+  }
+
+  function buildVenueModalRows() {
+    const venueByTeam = {};
+    (venuesList || []).forEach(v => {
+      if (v && v.team) {
+        const tid = typeof v.team === 'object' && v.team._id ? v.team._id : v.team;
+        venueByTeam[String(tid)] = v;
+      }
+    });
+
+    return Object.entries(conferenceTeamMap).map(([conf, teamIds]) => {
+      const unlockedIds = teamIds.filter(tid => venueByTeam[String(tid)]);
+      if (unlockedIds.length === 0) return '';
+
+      const sortedIds = [...teamIds].sort((a, b) => {
+        const aUnlocked = venueByTeam[String(a)] ? 0 : 1;
+        const bUnlocked = venueByTeam[String(b)] ? 0 : 1;
+        return aUnlocked - bUnlocked;
+      });
+
+      const dots = sortedIds.map(tid => {
+        const ven = venueByTeam[String(tid)];
+        if (ven) {
+          const img = ven.imgUrl || '/images/stadium.png';
+          const name = ven.name || '';
+          return `<span class="team-dot unlocked-venue" title="${name}"><img src="${img}" alt="${name}"></span>`;
+        }
+        return '<span class="team-dot locked-venue"></span>';
+      }).join('');
+
+      const pct = Math.round((unlockedIds.length / teamIds.length) * 100);
+
+      return `
+        <div class="stat-row">
+          <div class="stat-name-col conference-name-text">${conf}</div>
+          <div class="stat-middle conference-dots-row">${dots}</div>
+          <div class="stat-percent-col conference-percentage-text">${pct}%</div>
+        </div>`;
+    }).filter(Boolean).join('');
   }
 
   function buildTeamRows(entries){
@@ -798,7 +871,7 @@
     if (hVenues && mVenues) {
       hVenues.addEventListener('click', () => {
         const body = document.getElementById('venuesModalBody');
-        if (body) body.innerHTML = buildVenueRows(window.allRankedVenues || []);
+        if (body) body.innerHTML = buildVenueModalRows();
         bootstrap.Modal.getOrCreateInstance(mVenues).show();
       });
     }
@@ -958,7 +1031,7 @@
             venuesHeader.addEventListener('click', () => {
                 const body = document.getElementById('venuesModalBody');
                 if(body){
-                    body.innerHTML = buildVenueRows(window.allRankedVenues);
+                    body.innerHTML = buildVenueModalRows();
                 }
                 bootstrap.Modal.getOrCreateInstance(venuesModal).show();
             });
