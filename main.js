@@ -19,6 +19,7 @@ const express = require("express"),
     Badge = require('./models/Badge'),
     layouts = require('express-ejs-layouts'),
     mongoose = require('mongoose'),
+    { startPastGameScheduler, runPastGameMigrationOnce } = require('./pastGameScheduler'),
     cookieParser = require('cookie-parser'),
     path = require('path'),
     jwt = require('./lib/simpleJWT'),
@@ -30,10 +31,41 @@ mongoose.connect(
     "mongodb+srv://crosse:Zack0018@christiancluster.0ejv5.mongodb.net/appUsers?retryWrites=true&w=majority&appName=ChristianCluster"
 );
 
+
+
 const db = mongoose.connection;
-db.once("open", () => {
-    console.log('Connected to MongoDB');
+db.once('open', async () => {
+  console.log('Connected to MongoDB');
+  db.once('open', async () => {
+  console.log('Connected to MongoDB');
+
+  // --- ONE-TIME RECOVERY: clear stuck claims on due docs ---
+  try {
+    const gamesCol = mongoose.connection.db.collection('games');
+    const cutoff = new Date(Date.now() - 4 * 60 * 60 * 1000); // 4 hours ago
+    const rec = await gamesCol.updateMany(
+      {
+        startDate: { $exists: true, $lte: cutoff },
+        $or: [ { migrating: true }, { claimAt: { $exists: true } } ]
+      },
+      { $set: { migrating: false }, $unset: { claimAt: "" } }
+    );
+    console.log(`[recovery] cleared flags on ${rec.modifiedCount} due docs`);
+  } catch (e) {
+    console.error('[recovery] error:', e);
+  }
+  // ---------------------------------------------------------
+
+  startPastGameScheduler();
+  // keep manual run commented to avoid races:
+  // await runPastGameMigrationOnce();
 });
+
+  startPastGameScheduler();
+  // await runPastGameMigrationOnce(); // ← comment this out OR the startup one in the scheduler
+});
+
+
 
 app.set('port', process.env.PORT || 3000);
 app.set('view engine', 'ejs');
