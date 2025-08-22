@@ -693,6 +693,7 @@
     });
 
     return Object.entries(conferenceTeamMap).map(([conf, teamIds]) => {
+
       const unlockedIds = teamIds.filter(tid => venueByTeam[String(tid)]);
       if (unlockedIds.length === 0) return '';
 
@@ -703,6 +704,7 @@
       });
 
       const dots = sortedIds.map(tid => {
+
         const ven = venueByTeam[String(tid)];
         if (ven) {
           const img = ven.imgUrl || '/images/stadium.png';
@@ -712,7 +714,9 @@
         return '<span class="team-dot locked-venue"></span>';
       }).join('');
 
+
       const pct = Math.round((unlockedIds.length / teamIds.length) * 100);
+
 
       return `
         <div class="stat-row">
@@ -720,7 +724,9 @@
           <div class="stat-middle conference-dots-row">${dots}</div>
           <div class="stat-percent-col conference-percentage-text">${pct}%</div>
         </div>`;
+
     }).filter(Boolean).join('');
+
   }
 
   function buildTeamRows(entries){
