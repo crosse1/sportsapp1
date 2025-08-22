@@ -8,25 +8,7 @@
     <link rel="stylesheet" href="/css/custom.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <style>
-        .profile-header { background: linear-gradient(to right, #7e22ce, #14b8a6); }
-        .trophy-panel { background-color: rgba(255,255,255,0.15); }
-        .follow-btn { transition: background-color 0.3s, color 0.3s; }
-        .avatar { border-radius: 50%; object-fit: cover; border: 2px solid rgba(255, 255, 255, 0.8); display: inline-block; }
-        .profile-avatar { display: block; margin-left: auto; margin-right: auto; }
-        .profile-search.form-control { background-color: rgba(255, 255, 255, 0.2) !important; border: 1px solid #ccc !important; color: #fff !important; border-radius: 8px !important; padding: 0.5rem 1rem !important; font-family: inherit !important; font-weight: bold !important; font-size: 1.1rem !important; }
-        .profile-search.form-control::placeholder { color: rgba(255, 255, 255, 0.7) !important; font-style: italic; }
-        .profile-search.form-control:focus { outline: none !important; box-shadow: 0 0 0 3px rgba(204, 204, 204, 0.5) !important; border-color: #bbb !important; }
-        .user-search-modal .modal-content { background: linear-gradient(to right, #7e22ce, #14b8a6); background-clip: padding-box; border-radius: 1rem; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); color: #fff; backdrop-filter: blur(10px); font-family: inherit; }
-        .user-search-modal .modal-title { font-family: inherit; font-weight: bold; font-size: 1.5rem; color: #fff; }
-        .user-search-modal .btn-close { filter: invert(1); }
-        .user-search-modal .profile-search.form-control { background-color: rgba(255, 255, 255, 0.2) !important; border: 1px solid #ccc !important; color: #fff !important; font-family: inherit !important; font-weight: bold !important; font-size: 1.1rem !important; border-radius: 8px !important; padding: 0.5rem 1rem 0.5rem 2.5rem !important; transition: box-shadow 0.2s ease, border-color 0.2s ease; }
-        .user-search-modal .profile-search.form-control::placeholder { color: rgba(255, 255, 255, 0.7) !important; font-style: italic; }
-        .user-search-modal .profile-search.form-control:focus { outline: none !important; box-shadow: 0 0 0 3px rgba(204, 204, 204, 0.5) !important; border-color: #bbb !important; }
-        @media (min-width: 768px) { .profile-avatar { margin-left: 0; margin-right: 0; } }
-        .avatar-lg { width: clamp(80px, 20vw, 300px); height: clamp(80px, 20vw, 300px); }
-        .avatar-sm { width: clamp(40px, 10vw, 60px); height: clamp(40px, 10vw, 60px); }
-
+    <style>        @media
 
         #gamesModal, #venuesModal, #teamsModal, #statesModal { color: #fff; }
         #gamesModal .gradient-text,
@@ -843,6 +825,7 @@ document.addEventListener('DOMContentLoaded', renderStats);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="/js/profileModals.js"></script>
     <script>
         window.existingGameIds = <%- JSON.stringify((user.gameEntries || []).map(e => String(e.game))) %>;
         window.gameEntryCount = <%- (user.gameEntries || []).length %>;
@@ -857,7 +840,6 @@ document.addEventListener('DOMContentLoaded', renderStats);
         const searchInput = document.getElementById('searchInput');
         const resultsEl = document.getElementById('searchResults');
         const followBtn = document.getElementById('followBtn');
-        const userSearchModal = document.getElementById('userSearchModal');
         if(followBtn){
             followBtn.addEventListener('click', async function(){
                 const targetId = this.dataset.user;
@@ -929,12 +911,6 @@ document.addEventListener('DOMContentLoaded', renderStats);
                 }
             });
         }
-        if(userSearchModal){
-            userSearchModal.addEventListener('hidden.bs.modal', () => {
-                if(searchInput){
-                    searchInput.value = '';
-                    resultsEl.innerHTML = '';
-                }
             });
         }
         const wrapper = document.querySelector('.profile-avatar-wrapper');
@@ -954,13 +930,6 @@ document.addEventListener('DOMContentLoaded', renderStats);
                 });
             }
         }
-        const addGameBtn = document.getElementById('addGameBtn');
-        if(addGameBtn){
-            addGameBtn.addEventListener('click', () => {
-                const modalEl = document.getElementById('addGameModal');
-                if(modalEl){
-                    bootstrap.Modal.getOrCreateInstance(modalEl).show();
-                }
             });
         }
         const gamesHeader = document.getElementById('gamesHeader');
@@ -1007,13 +976,6 @@ document.addEventListener('DOMContentLoaded', renderStats);
                 bootstrap.Modal.getOrCreateInstance(statesModal).show();
             });
         }
-        const openUserModalBtn = document.getElementById('openUserModal');
-        if(openUserModalBtn){
-            openUserModalBtn.addEventListener('click', () => {
-                const modalEl = document.getElementById('userSearchModal');
-                if(modalEl){
-                    bootstrap.Modal.getOrCreateInstance(modalEl).show();
-                }
             });
         }
 
