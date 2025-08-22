@@ -10,17 +10,13 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>        @media
 
-        #gamesModal, #venuesModal, #teamsModal, #statesModal { color: #fff; }
+        #gamesModal, #teamsModal, #statesModal { color: #fff; }
         #gamesModal .gradient-text,
-        #venuesModal .gradient-text,
         #teamsModal .gradient-text,
         #statesModal .gradient-text,
         #gamesModal .top-list-item,
         #gamesModal .venue-name-text,
         #gamesModal .venue-count,
-        #venuesModal .top-list-item,
-        #venuesModal .venue-name-text,
-        #venuesModal .venue-count,
         #teamsModal .top-list-item,
         #teamsModal .venue-name-text,
         #teamsModal .venue-count,
@@ -31,6 +27,19 @@
             -webkit-background-clip: initial !important;
             -webkit-text-fill-color: #fff !important;
             color: #fff !important;
+        }
+
+        #venuesModal .modal-content {
+            background: #fff;
+            color: #000;
+        }
+
+        #venuesModal .modal-title {
+            color: #000;
+        }
+
+        #venuesModal .btn-close {
+            filter: invert(0);
         }
 
         .venue-name-text {
@@ -684,7 +693,18 @@
     });
 
     return Object.entries(conferenceTeamMap).map(([conf, teamIds]) => {
-      const dots = teamIds.map(tid => {
+
+      const unlockedIds = teamIds.filter(tid => venueByTeam[String(tid)]);
+      if (unlockedIds.length === 0) return '';
+
+      const sortedIds = [...teamIds].sort((a, b) => {
+        const aUnlocked = venueByTeam[String(a)] ? 0 : 1;
+        const bUnlocked = venueByTeam[String(b)] ? 0 : 1;
+        return aUnlocked - bUnlocked;
+      });
+
+      const dots = sortedIds.map(tid => {
+
         const ven = venueByTeam[String(tid)];
         if (ven) {
           const img = ven.imgUrl || '/images/stadium.png';
@@ -694,8 +714,9 @@
         return '<span class="team-dot locked-venue"></span>';
       }).join('');
 
-      const unlockedCount = teamIds.filter(tid => venueByTeam[String(tid)]).length;
-      const pct = Math.round((unlockedCount / teamIds.length) * 100);
+
+      const pct = Math.round((unlockedIds.length / teamIds.length) * 100);
+
 
       return `
         <div class="stat-row">
@@ -703,7 +724,9 @@
           <div class="stat-middle conference-dots-row">${dots}</div>
           <div class="stat-percent-col conference-percentage-text">${pct}%</div>
         </div>`;
-    }).join('');
+
+    }).filter(Boolean).join('');
+
   }
 
   function buildTeamRows(entries){
