@@ -17,7 +17,7 @@
 
 .avatar-sm { width:40px; height:40px; }
 .avatar-md { width:120px; height:120px; }
-.avatar-lg { width: clamp(80px, 20vw, 300px); height: clamp(80px, 20vw, 300px); }
+.avatar-lg { width: clamp(80px, 20vw, 200px); height: clamp(80px, 20vw, 200px); }
 
 .profile-search {
     background-color: rgba(255, 255, 255, 0.2);

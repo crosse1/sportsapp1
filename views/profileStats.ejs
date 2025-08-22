@@ -590,205 +590,170 @@
     </div>
 
     <script>
+(function () {
+  // guard: make sure Bootstrap JS is present
+  if (!window.bootstrap || !bootstrap.Modal) {
+    console.error('[modal] Bootstrap bundle not loaded');
+  }
 
-        const gameEntries = <%- JSON.stringify(gameEntries || []) %>;
-        const topRatedGames = <%- JSON.stringify(topRatedGames || []) %>;
-        const teamEntries = <%- JSON.stringify(teamEntries || []) %>;
-const venueEntries = <%- JSON.stringify(venueEntries || []) %>;
-const stateEntries = <%- JSON.stringify(stateEntries || []) %>;
+  // ---- Data from server-side template ----
+  const gameEntries = <%- JSON.stringify(gameEntries || []) %>;
+  const topRatedGames = <%- JSON.stringify(topRatedGames || []) %>;
+  const teamEntries = <%- JSON.stringify(teamEntries || []) %>;
+  const venueEntries = <%- JSON.stringify(venueEntries || []) %>;
+  const stateEntries = <%- JSON.stringify(stateEntries || []) %>;
+  const teamsCount = <%- typeof teamsCount !== 'undefined' ? teamsCount : 0 %>;
+  const venuesCount = <%- typeof venuesCount !== 'undefined' ? venuesCount : 0 %>;
+  const statesCount = <%- typeof statesCount !== 'undefined' ? statesCount : 0 %>;
 
-        const teamsCount = <%- typeof teamsCount !== 'undefined' ? teamsCount : 0 %>;
-        const venuesCount = <%- typeof venuesCount !== 'undefined' ? venuesCount : 0 %>;
-        const statesCount = <%- typeof statesCount !== 'undefined' ? statesCount : 0 %>;
-        
-        function buildGameRows(games) {
-            const ratingCounts = {};
-            games.forEach(g => { ratingCounts[g.rating] = (ratingCounts[g.rating] || 0) + 1; });
-            let prevRating = null;
-            let rankIndex = 0;
-            let displayRank = 0;
-            return games.map(g => {
-                rankIndex++;
-                if (g.rating !== prevRating) displayRank = rankIndex;
-                const prefix = ratingCounts[g.rating] > 1 ? 'T-' : '';
-                prevRating = g.rating;
-                return `
-                <a href="/pastGames/${g._id}" class="top-game-link">
-                    <div class="game-rank gradient-text fw-semibold">${prefix}${displayRank}.</div>
-                    <div class="game-matchup">
-                        <div class="gradient-text small fw-light game-date">${formatGameDate(g.gameDate)}</div>
-                        <div class="d-flex align-items-center justify-content-center flex-wrap gap-1">
-                            <img src="${g.awayTeamLogoUrl}" class="game-logo-sm" alt="">
-                            <span class="gradient-text">@</span>
-                            <img src="${g.homeTeamLogoUrl}" class="game-logo-sm" alt="">
-                        </div>
-                    </div>
-                    <div class="game-rating gradient-text fw-semibold">${Number(g.rating).toFixed(1)}</div>
-                </a>`;
-            }).join('');
-        }
+  // ---- Helpers (same as you had) ----
+  function buildGameRows(games) {
+    const ratingCounts = {};
+    games.forEach(g => { ratingCounts[g.rating] = (ratingCounts[g.rating] || 0) + 1; });
+    let prevRating = null, rankIndex = 0, displayRank = 0;
+    return games.map(g => {
+      rankIndex++;
+      if (g.rating !== prevRating) displayRank = rankIndex;
+      const prefix = ratingCounts[g.rating] > 1 ? 'T-' : '';
+      prevRating = g.rating;
+      return `
+        <a href="/pastGames/${g._id}" class="top-game-link">
+          <div class="game-rank gradient-text fw-semibold">${prefix}${displayRank}.</div>
+          <div class="game-matchup">
+            <div class="gradient-text small fw-light game-date">${formatGameDate(g.gameDate)}</div>
+            <div class="d-flex align-items-center justify-content-center flex-wrap gap-1">
+              <img src="${g.awayTeamLogoUrl}" class="game-logo-sm" alt="">
+              <span class="gradient-text">@</span>
+              <img src="${g.homeTeamLogoUrl}" class="game-logo-sm" alt="">
+            </div>
+          </div>
+          <div class="game-rating gradient-text fw-semibold">${Number(g.rating).toFixed(1)}</div>
+        </a>`;
+    }).join('');
+  }
 
-        function buildVenueRows(entries){
-            let prevCount = null;
-            let rank = 0;
-            let displayVenueRank = 0;
-            return entries.map(item => {
-                rank++;
-                if(item.count !== prevCount) displayVenueRank = rank;
-                const prefix = entries.filter(e => e.count === item.count).length > 1 ? 'T-' : '';
-                prevCount = item.count;
-                const v = item.venue || {};
-                const name = v.name || '';
-                const img = v.imgUrl || '/images/stadium.png';
-                return `
-                    <div class="top-list-item">${prefix}${displayVenueRank}.</div>
-                    <div class="venue-name"><img src="${img}" alt="${name}" class="avatar avatar-sm"><p class="venue-name-text">${name}</p></div>
-                    <div class="venue-count">${item.count}</div>
-                `;
-            }).join('');
-        }
+  function buildVenueRows(entries){
+    let prevCount = null, rank = 0, displayVenueRank = 0;
+    return entries.map(item => {
+      rank++;
+      if(item.count !== prevCount) displayVenueRank = rank;
+      const prefix = entries.filter(e => e.count === item.count).length > 1 ? 'T-' : '';
+      prevCount = item.count;
+      const v = item.venue || {};
+      const name = v.name || '';
+      const img = v.imgUrl || '/images/stadium.png';
+      return `
+        <div class="top-list-item">${prefix}${displayVenueRank}.</div>
+        <div class="venue-name"><img src="${img}" alt="${name}" class="avatar avatar-sm"><p class="venue-name-text">${name}</p></div>
+        <div class="venue-count">${item.count}</div>
+      `;
+    }).join('');
+  }
 
-        function buildTeamRows(entries){
-            let prevCount = null;
-            let rank = 0;
-            let displayTeamRank = 0;
-            return entries.map(item => {
-                rank++;
-                if(item.count !== prevCount) displayTeamRank = rank;
-                const prefix = entries.filter(e => e.count === item.count).length > 1 ? 'T-' : '';
-                prevCount = item.count;
-                const team = item.team;
-                const logo = team.logos && team.logos[0] ? team.logos[0] : '/images/placeholder.jpg';
-                const name = team.school || team.name;
-                return `
-                    <div class="top-list-item">${prefix}${displayTeamRank}.</div>
+  function buildTeamRows(entries){
+    let prevCount = null, rank = 0, displayTeamRank = 0;
+    return entries.map(item => {
+      rank++;
+      if(item.count !== prevCount) displayTeamRank = rank;
+      const prefix = entries.filter(e => e.count === item.count).length > 1 ? 'T-' : '';
+      prevCount = item.count;
+      const team = item.team;
+      const logo = (team.logos && team.logos[0]) ? team.logos[0] : '/images/placeholder.jpg';
+      const name = team.school || team.name;
+      return `
+        <div class="top-list-item">${prefix}${displayTeamRank}.</div>
+        <a href="/team/${team._id}" class="team-link">
+          <img src="${logo}" alt="${name}" class="game-logo-sm">
+        </a>
+        <div class="venue-name"><span class="venue-name-text">${name}</span></div>
+        <div class="venue-count">${item.count}</div>
+      `;
+    }).join('');
+  }
 
-                    <a href="/team/${team._id}" class="team-link">
+  function buildStateRows(entries){
+    let prevCount = null, rank = 0, displayStateRank = 0;
+    return entries.map(([name,count]) => {
+      rank++;
+      if(count !== prevCount) displayStateRank = rank;
+      const prefix = entries.filter(e => e[1] === count).length > 1 ? 'T-' : '';
+      prevCount = count;
+      return `
+        <div class="top-list-item">${prefix}${displayStateRank}.</div>
+        <div class="venue-name"><span class="venue-name-text">${name}</span></div>
+        <div class="venue-count">${count}</div>
+      `;
+    }).join('');
+  }
 
-                        <img src="${logo}" alt="${name}" class="game-logo-sm">
-                    </a>
-                    <div class="venue-name"><span class="venue-name-text">${name}</span></div>
-                    <div class="venue-count">${item.count}</div>
-                `;
-            }).join('');
-        }
+  function ordinal(n){ const s=["th","st","nd","rd"],v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
+  function formatGameDate(d){
+    if(!d) return '';
+    const date = new Date(d);
+    return new Intl.DateTimeFormat(navigator.language,{dateStyle:'medium'}).format(date);
+  }
 
-        function buildStateRows(entries){
-            let prevCount = null;
-            let rank = 0;
-            let displayStateRank = 0;
-            return entries.map(([name,count]) => {
-                rank++;
-                if(count !== prevCount) displayStateRank = rank;
-                const prefix = entries.filter(e => e[1] === count).length > 1 ? 'T-' : '';
-                prevCount = count;
-                return `
-                    <div class="top-list-item">${prefix}${displayStateRank}.</div>
-                    <div class="venue-name"><span class="venue-name-text">${name}</span></div>
-                    <div class="venue-count">${count}</div>
-                `;
-            }).join('');
-        }
-
-        function ordinal(n){
-            const s=["th","st","nd","rd"],v=n%100;
-            return n+(s[(v-20)%10]||s[v]||s[0]);
-        }
-
-        function formatGameDate(d){
-            if(!d) return '';
-            const date = new Date(d);
-            return new Intl.DateTimeFormat(navigator.language,{dateStyle:'medium'}).format(date);
-        }
-
-        function renderStats() {
-    
-
-    // Games section
+  function renderStats() {
+    // Games
     const validGames = [];
     const seenGameIds = new Set();
     for (const entry of gameEntries) {
-        const g = entry && entry.game;
-        if (!g || !g._id || seenGameIds.has(g._id)) continue;
-        seenGameIds.add(g._id);
-        validGames.push(entry);
+      const g = entry && entry.game;
+      if (!g || !g._id || seenGameIds.has(g._id)) continue;
+      seenGameIds.add(g._id);
+      validGames.push(entry);
     }
     document.getElementById('gamesCount').textContent = validGames.length;
 
     const gamesTopEl = document.getElementById('gamesTop');
     const allGames = gameEntries
-        .filter(e => e && e.game && e.game._id)
-        .map(e => {
-            const g = e.game;
-            const gameDate = g.startDate || g.StartDate || null;
-            const awayLogo = g.awayTeam && g.awayTeam.logos && g.awayTeam.logos[0] ? g.awayTeam.logos[0] : '/images/placeholder.jpg';
-            const homeLogo = g.homeTeam && g.homeTeam.logos && g.homeTeam.logos[0] ? g.homeTeam.logos[0] : '/images/placeholder.jpg';
-            const rawScore = e.elo ? ((e.elo - 1000) / 1000) * 9 + 1 : 0;
-            const rating = Math.max(1.0, Math.min(10.0, Math.round(rawScore * 10) / 10));
-            return { _id: g._id, gameDate, awayTeamLogoUrl: awayLogo, homeTeamLogoUrl: homeLogo, rating };
-        })
-        .sort((a,b) => b.rating - a.rating);
+      .filter(e => e && e.game && e.game._id)
+      .map(e => {
+        const g = e.game;
+        const gameDate = g.startDate || g.StartDate || null;
+        const awayLogo = g.awayTeam && g.awayTeam.logos && g.awayTeam.logos[0] ? g.awayTeam.logos[0] : '/images/placeholder.jpg';
+        const homeLogo = g.homeTeam && g.homeTeam.logos && g.homeTeam.logos[0] ? g.homeTeam.logos[0] : '/images/placeholder.jpg';
+        const rawScore = e.elo ? ((e.elo - 1000) / 1000) * 9 + 1 : 0;
+        const rating = Math.max(1.0, Math.min(10.0, Math.round(rawScore * 10) / 10));
+        return { _id: g._id, gameDate, awayTeamLogoUrl: awayLogo, homeTeamLogoUrl: homeLogo, rating };
+      })
+      .sort((a,b) => b.rating - a.rating);
 
     window.allRankedGames = allGames;
-
     gamesTopEl.innerHTML = buildGameRows(allGames.slice(0, 3));
 
-
-
-
-
-    // Venues section
-    
+    // Venues
     window.allRankedVenues = venueEntries;
-    document.getElementById('venuesCount').textContent = venuesCount;
-    const venuesTopEl = document.getElementById('venuesTop');
+    document.getElementById('venuesCount').textContent = <%- typeof venuesCount !== 'undefined' ? venuesCount : 0 %>;
+    document.getElementById('venuesTop').innerHTML = buildVenueRows(venueEntries.slice(0,3));
 
-    venuesTopEl.innerHTML = buildVenueRows(venueEntries.slice(0,3));
-
-    // Teams section
-    
+    // Teams
     window.allRankedTeams = teamEntries;
     document.getElementById('teamsCount').textContent = teamEntries.length;
-
-    function isLight(hex){
-        hex = hex.replace('#','');
-        if(hex.length===3){ hex = hex.split('').map(c=>c+c).join(''); }
-        const r=parseInt(hex.substr(0,2),16), g=parseInt(hex.substr(2,2),16), b=parseInt(hex.substr(4,2),16);
-        const lum=(0.299*r+0.587*g+0.114*b)/255;
-        return lum>0.6;
-    }
-
     const teamsTopEl = document.getElementById('teamsTop');
     const topTeams = teamEntries.slice(0, 3);
     const colors = topTeams.map(item => {
-        const t = item.team;
-        let c = t.alternateColor && t.alternateColor.toLowerCase() !== '#ffffff'
-            ? t.alternateColor : (t.color || '#666');
-        if(!c.startsWith('#')) c = '#' + c;
-        return c;
+      const t = item.team;
+      let c = t.alternateColor && t.alternateColor.toLowerCase() !== '#ffffff' ? t.alternateColor : (t.color || '#666');
+      if(!c.startsWith('#')) c = '#' + c;
+      return c;
     });
     if(colors.length){
-        const gradient = `linear-gradient(to right, ${colors.join(',')})`;
-        teamsTopEl.style.background = gradient;
-        teamsTopEl.style.borderRadius = '0.5rem';
-        
+      teamsTopEl.style.background = `linear-gradient(to right, ${colors.join(',')})`;
+      teamsTopEl.style.borderRadius = '0.5rem';
     }
     teamsTopEl.innerHTML = topTeams.map(item => {
-        const team = item.team;
-        const logo = team.logos && team.logos[0] ? team.logos[0] : '/images/placeholder.jpg';
-        return `<div class="team-stat-col">
-    <div class="team-count">${item.count}</div>
-
-    <a href="/team/${team._id}" class="team-link">
-
-        <img src="${logo}" alt="${team.school}" class="team-logo" title="${team.school}">
-    </a>
-
-</div>`;
+      const team = item.team;
+      const logo = team.logos && team.logos[0] ? team.logos[0] : '/images/placeholder.jpg';
+      return `<div class="team-stat-col">
+        <div class="team-count">${item.count}</div>
+        <a href="/team/${team._id}" class="team-link">
+          <img src="${logo}" alt="${team.school}" class="team-logo" title="${team.school}">
+        </a>
+      </div>`;
     }).join('');
 
-    // States section
-    
+    // States
     window.allRankedStates = stateEntries;
     document.getElementById('statesCount').textContent = statesCount;
     const statesTopEl = document.getElementById('statesTop');
@@ -796,31 +761,71 @@ const stateEntries = <%- JSON.stringify(stateEntries || []) %>;
     statesTopEl.style.color = '#333';
 
     if (stateEntries.length === 0) {
-        statesTopEl.style.background = 'none';
-        statesTopEl.innerHTML = '';
+      statesTopEl.style.background = 'none';
+      statesTopEl.innerHTML = '';
     } else {
-        let gradient;
-        if (stateEntries.length === 1) {
-            gradient = 'linear-gradient(to right, #FFD700, white)';
-        } else if (stateEntries.length === 2) {
-            gradient = 'linear-gradient(to right, #FFD700, #C0C0C0, white)';
-        } else {
-            gradient = 'linear-gradient(to right, #FFD700, #C0C0C0, #CD7F32)';
-        }
-        statesTopEl.style.background = gradient;
-        statesTopEl.innerHTML = stateEntries.slice(0, 3).map(s =>
-            `<div class="state-stat-col">
-                <div class="team-count">${s[1]}</div>
-                <div class="state-abbr">${s[0]}</div>
-            </div>`
-        ).join('');
+      let gradient;
+      if (stateEntries.length === 1) gradient = 'linear-gradient(to right, #FFD700, white)';
+      else if (stateEntries.length === 2) gradient = 'linear-gradient(to right, #FFD700, #C0C0C0, white)';
+      else gradient = 'linear-gradient(to right, #FFD700, #C0C0C0, #CD7F32)';
+      statesTopEl.style.background = gradient;
+      statesTopEl.innerHTML = stateEntries.slice(0, 3).map(s => `
+        <div class="state-stat-col">
+          <div class="team-count">${s[1]}</div>
+          <div class="state-abbr">${s[0]}</div>
+        </div>
+      `).join('');
     }
-}
+  }
 
-document.addEventListener('DOMContentLoaded', renderStats);
+  function bindModals() {
+    const hGames = document.getElementById('gamesHeader');
+    const hVenues = document.getElementById('venuesHeader');
+    const hTeams  = document.getElementById('teamsHeader');
+    const hStates = document.getElementById('statesHeader');
+    const mGames  = document.getElementById('gamesModal');
+    const mVenues = document.getElementById('venuesModal');
+    const mTeams  = document.getElementById('teamsModal');
+    const mStates = document.getElementById('statesModal');
 
-        console.log("DOMContentLoaded event listener registered");
-    </script>
+    if (hGames && mGames) {
+      hGames.addEventListener('click', () => {
+        const body = document.getElementById('gamesModalBody');
+        if (body) body.innerHTML = buildGameRows(window.allRankedGames || []);
+        bootstrap.Modal.getOrCreateInstance(mGames).show();
+      });
+    }
+    if (hVenues && mVenues) {
+      hVenues.addEventListener('click', () => {
+        const body = document.getElementById('venuesModalBody');
+        if (body) body.innerHTML = buildVenueRows(window.allRankedVenues || []);
+        bootstrap.Modal.getOrCreateInstance(mVenues).show();
+      });
+    }
+    if (hTeams && mTeams) {
+      hTeams.addEventListener('click', () => {
+        const body = document.getElementById('teamsModalBody');
+        if (body) body.innerHTML = buildTeamRows(window.allRankedTeams || []);
+        bootstrap.Modal.getOrCreateInstance(mTeams).show();
+      });
+    }
+    if (hStates && mStates) {
+      hStates.addEventListener('click', () => {
+        const body = document.getElementById('statesModalBody');
+        if (body) body.innerHTML = buildStateRows(window.allRankedStates || []);
+        bootstrap.Modal.getOrCreateInstance(mStates).show();
+      });
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    try { renderStats(); } catch (e) { console.error('renderStats error', e); }
+    bindModals();
+    console.log('[modals] bound');
+  });
+})();
+</script>
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
