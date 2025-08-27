@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Select Teams</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/custom.css">
+  <style>
+    .gradient-text {
+      background: linear-gradient(to right, #7e22ce, #14b8a6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      color: transparent;
+      font-weight: bold;
+    }
+    .team-card {
+      border: 1px solid #ccc;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      padding: 1rem;
+      transition: border-color 0.2s;
+      background:white;
+    }
+    .team-card.selected { border-color: green; }
+    #selectedLogos img { max-height:40px; }
+    #selectedLogos { overflow-x:auto; }
+    #teamSearch { background:#f0f0f0; font-weight:bold; }
+  </style>
+</head>
+<body>
+<div class="modal show d-block" tabindex="-1">
+  <div class="modal-dialog modal-fullscreen">
+    <div class="modal-content bg-white">
+      <div class="modal-header align-items-center">
+        <h1 class="modal-title gradient-text">Select Favorite Teams</h1>
+        <div id="selectedLogos" class="d-flex ms-3 flex-row"></div>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex align-items-center mb-3">
+          <span class="me-2">ℹ️</span>
+          <small class="text-black">Users must select at least one favorite team. If you have no strong opinions, select the team you go to the most games of.</small>
+        </div>
+        <input type="text" id="teamSearch" class="form-control mb-3" placeholder="Search teams...">
+        <div id="teamsGrid" class="row row-cols-2 row-cols-md-3 g-3">
+          <% teams.forEach(t => { %>
+            <div class="col">
+              <div class="team-card text-center" data-id="<%= t._id %>" data-name="<%= (t.mascot + ' ' + t.school).toLowerCase() %>" data-logo="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>">
+                <img src="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>" class="img-fluid mb-2" style="max-height:80px" alt="<%= t.mascot %>">
+                <div class="fw-bold text-black"><%= t.mascot %></div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="confirmTeams" class="btn btn-secondary" disabled>Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+const selected = new Map();
+function updateButton(){
+  const has = selected.size > 0;
+  const btn = $('#confirmTeams');
+  btn.prop('disabled', !has);
+  btn.toggleClass('btn-primary', has).toggleClass('btn-secondary', !has);
+}
+function renderSelected(){
+  const cont = $('#selectedLogos');
+  cont.empty();
+  selected.forEach((logo,id)=>{
+    const wrapper = $('<div class="me-2 position-relative">');
+    wrapper.append(`<img src="${logo}" alt="sel">`);
+    wrapper.append(`<span data-id="${id}" class="remove-selected position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="cursor:pointer">✖</span>`);
+    cont.append(wrapper);
+  });
+}
+$('.team-card').on('click', function(){
+  const id=$(this).data('id');
+  const logo=$(this).data('logo');
+  if(selected.has(id)){
+    selected.delete(id);
+    $(this).removeClass('selected');
+  } else {
+    selected.set(id, logo);
+    $(this).addClass('selected');
+  }
+  renderSelected();
+  updateButton();
+});
+$('#selectedLogos').on('click','.remove-selected',function(){
+  const id=$(this).data('id');
+  selected.delete(id);
+  $(`.team-card[data-id="${id}"]`).removeClass('selected');
+  renderSelected();
+  updateButton();
+});
+$('#teamSearch').on('input', function(){
+  const v=$(this).val().toLowerCase();
+  $('.team-card').each(function(){
+    const name=$(this).data('name');
+    $(this).closest('.col').toggle(name.includes(v));
+  });
+});
+$('#confirmTeams').on('click', function(){
+  if(selected.size===0) return;
+  fetch('/select-teams', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ favoriteTeams: Array.from(selected.keys()) })
+  }).then(r=>{
+    if(r.ok) window.location.href='/games';
+  });
+});
+</script>
+</body>
+</html>
