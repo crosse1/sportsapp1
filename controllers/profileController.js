@@ -309,6 +309,7 @@ exports.profileBadges = async (req, res, next) => {
         const profileUser = await User.findById(userId)
             .populate('favoriteTeams')
             .populate({ path: 'gamesList', populate: ['homeTeam', 'awayTeam'] });
+        console.log('✅ user.favoriteTeams:', profileUser.favoriteTeams);
         if (!profileUser) return res.redirect('/profileBadges/' + req.user.id);
         const isCurrentUser = req.user && req.user.id.toString() === profileUser._id.toString();
         let isFollowing = false, canMessage = false;
@@ -421,6 +422,7 @@ exports.profileStats = async (req, res, next) => {
             .populate('favoriteTeams')
             .populate('teamsList')
             .populate('venuesList');
+        console.log('✅ user.favoriteTeams:', profileUser.favoriteTeams);
 
         if (!profileUser) {
             console.warn('[profileStats] No user found, redirecting to self');
@@ -617,6 +619,7 @@ exports.profileGames = async (req, res, next) => {
     try {
         const userId = req.params.user || req.user.id;
         const profileUser = await User.findById(userId).populate('favoriteTeams');
+        console.log('✅ user.favoriteTeams:', profileUser.favoriteTeams);
         if (!profileUser) return res.redirect('/profileGames/' + req.user.id);
         const gameEntriesRaw = profileUser.gameEntries || [];
         let enrichedEntries = [];
@@ -659,6 +662,7 @@ exports.profileWaitlist = async (req, res, next) => {
         const profileUser = await User.findById(userId)
             .populate('favoriteTeams')
             .populate({ path: 'wishlist', populate: ['homeTeam', 'awayTeam'] });
+        console.log('✅ user.favoriteTeams:', profileUser.favoriteTeams);
         if (!profileUser) return res.redirect('/profileWaitlist/' + req.user.id);
         const isCurrentUser = req.user && req.user.id.toString() === profileUser._id.toString();
         let isFollowing = false, canMessage = false;
