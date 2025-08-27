@@ -1,3 +1,82 @@
+<style>
+  /* === Profile Header: unified, page-agnostic styles === */
+.profile-avatar-wrapper {
+  position: relative;
+  width: clamp(120px, 20vw, 200px);
+  height: clamp(120px, 20vw, 200px);
+}
+
+.profile-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.8);
+  display: block;
+}
+
+/* Ensure every page uses the same logical 'lg' size */
+.avatar-lg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Chain logos around the avatar */
+.chain-logo {
+  position: absolute;          /* critical for positioning */
+  width: 42px;
+  height: 42px;
+  display: inline-block;
+  transform: translateZ(0);    /* avoid blurriness on some browsers */
+}
+
+.chain-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: #fff;
+  display: block;
+}
+
+@media (max-width: 767.98px) {
+  .follow-users-btn,
+  .add-game-btn {
+    width: 100%;
+    max-width: 300px; /* optional, keeps it tidy */
+  }
+}
+
+@media (max-width: 767.98px) {
+  .profile-header .d-flex.justify-content-between {
+    justify-content: center !important;
+  }
+
+  .profile-header .d-flex.justify-content-between .d-flex {
+    justify-content: center;
+    flex-wrap: wrap;     /* allow wrapping if needed */
+    gap: .5rem;
+  }
+
+  .profile-header h2 {
+    text-align: center;
+    width: 100%;         /* push username to full width if needed */
+  }
+}
+
+@media (max-width: 767.98px) {
+  .follow-users-btn,
+  .add-game-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+
+/* Make sure nothing on pages overrides these with different sizes */
+
+</style>
 <div class="profile-header pt-5 pb-0 text-white">
   <div class="container">
     <div class="row align-items-center">
@@ -16,49 +95,59 @@
       </div>
 
       <div class="col-md-6 text-center text-md-start">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <div class="d-flex align-items-center flex-wrap gap-2">
-            <h2 class="fw-bold mb-0">@<%= user.username %> |</h2>
+  <!-- Row 1: username + points (always visible) -->
+  <div class="d-flex justify-content-center justify-content-md-start align-items-center mb-2 gap-2 flex-wrap">
+    <h2 class="fw-bold mb-0">@<%= user.username %> |</h2>
 
-            <!-- 💎 Points directly right of the username -->
-            <div class="user-points ms-2 fw-bold d-inline-flex align-items-center" style="gap:.3rem;">
-  <span aria-hidden="true">💎</span>
-  <span><%= (user.points || 0).toLocaleString() %></span>
+    <!-- 💎 Points -->
+    <div class="user-points ms-0 ms-md-2 fw-bold d-inline-flex align-items-center" style="gap:.3rem;">
+      <span aria-hidden="true">💎</span>
+      <span><%= (user.points || 0).toLocaleString() %></span>
+    </div>
+
+    <!-- Edit / Message shown inline only on md+ -->
+    <% if (isCurrentUser) { %>
+      <a href="/profile/edit" class="btn glassy-btn btn-sm edit-profile-btn ms-md-2 d-none d-md-inline-flex">Edit Profile</a>
+    <% } else if (canMessage) { %>
+      <button class="btn glassy-btn btn-sm message-btn ms-md-2 d-none d-md-inline-flex" data-user="<%= user._id %>">Message</button>
+    <% } %>
+  </div>
+
+  <!-- Row 2 (mobile only): center the action button under username/points -->
+  <% if (isCurrentUser) { %>
+    <div class="d-flex d-md-none justify-content-center mb-3">
+      <a href="/profile/edit" class="btn glassy-btn btn-sm">Edit Profile</a>
+    </div>
+  <% } else if (canMessage) { %>
+    <div class="d-flex d-md-none justify-content-center mb-3">
+      <button class="btn glassy-btn btn-sm message-btn" data-user="<%= user._id %>">Message</button>
+    </div>
+  <% } %>
+
+  <!-- followers/following row keeps existing behavior -->
+  <div class="d-flex justify-content-center justify-content-md-start pb-2">
+    <div class="me-4">
+      <a href="/users/<%= user._id %>/followers" class="text-decoration-none text-white">
+        <div id="followersCount" class="fw-bold"><%= user.followersCount %></div>
+        <small class="text-white-50">Followers</small>
+      </a>
+    </div>
+    <div>
+      <a href="/users/<%= user._id %>/following" class="text-decoration-none text-white">
+        <div class="fw-bold"><%= user.followingCount %></div>
+        <small class="text-white-50">Following</small>
+      </a>
+    </div>
+  </div>
+
+  <% if (isCurrentUser) { %>
+    <div class="mt-3 d-flex flex-column align-items-center gap-2 gap-md-0 flex-md-row">
+      <button id="openUserModal" class="btn glassy-btn rounded-pill follow-users-btn px-4" data-bs-toggle="modal" data-bs-target="#userSearchModal">Follow Users</button>
+      <button id="addGameBtn" type="button" class="btn glassy-btn add-game-btn mt-2 mt-md-0 ms-md-3" data-bs-toggle="modal" data-bs-target="#addGameModal">+ Game</button>
+    </div>
+  <% } %>
 </div>
 
-            <% if(isCurrentUser){ %>
-              <a href="/profile/edit" class="btn glassy-btn btn-sm edit-profile-btn ms-2">Edit Profile</a>
-            <% } else if(canMessage){ %>
-              <button class="btn glassy-btn btn-sm message-btn ms-2" data-user="<%= user._id %>">Message</button>
-            <% } %>
-          </div>
-
-          <% if(isCurrentUser){ %>
-            <button id="addGameBtn" type="button" class="btn glassy-btn add-game-btn ms-3" data-bs-toggle="modal" data-bs-target="#addGameModal">+ Game</button>
-          <% } %>
-        </div>
-
-        <div class="d-flex justify-content-center justify-content-md-start pb-2">
-          <div class="me-4">
-            <a href="/users/<%= user._id %>/followers" class="text-decoration-none text-white">
-              <div id="followersCount" class="fw-bold"><%= user.followersCount %></div>
-              <small class="text-white-50">Followers</small>
-            </a>
-          </div>
-          <div>
-            <a href="/users/<%= user._id %>/following" class="text-decoration-none text-white">
-              <div class="fw-bold"><%= user.followingCount %></div>
-              <small class="text-white-50">Following</small>
-            </a>
-          </div>
-        </div>
-
-        <% if (isCurrentUser) { %>
-        <div class="mt-3">
-          <button id="openUserModal" class="btn glassy-btn rounded-pill follow-users-btn px-4" data-bs-toggle="modal" data-bs-target="#userSearchModal">Follow Users</button>
-        </div>
-        <% } %>
-      </div>
       
     </div>
   </div>
@@ -203,5 +292,66 @@
             </div>
         </div>
     </div>
+    <script>
+(function initChainLogos() {
+  const wrapper = document.querySelector('.profile-avatar-wrapper');
+  if (!wrapper) return;
+
+  const avatarImg = wrapper.querySelector('.profile-avatar');
+  const logos = Array.from(wrapper.querySelectorAll('.chain-logo'));
+
+  if (!logos.length) return;
+
+  const layout = () => {
+    const w = wrapper.clientWidth || wrapper.offsetWidth;
+    const h = wrapper.clientHeight || wrapper.offsetHeight;
+    if (!w || !h) return;
+
+    const cx = w / 2;
+    const cy = h / 2;
+    const radius = Math.max(w, h) * 0.6; // same geometry as before
+    const n = logos.length;
+    const step = Math.PI / (n + 1);
+
+    logos.forEach((el, i) => {
+      const ang = Math.PI - step * (i + 1);
+      const size = el.offsetWidth || 42;
+      const x = cx + radius * Math.cos(ang) - size / 2;
+      const y = cy + radius * Math.sin(ang) - size / 2;
+      el.style.left = x + 'px';
+      el.style.top  = y + 'px';
+      el.style.opacity = '1';
+      el.style.visibility = 'visible';
+    });
+  };
+
+  const afterImages = (cb) => {
+    const imgs = [avatarImg, ...logos.map(a => a.querySelector('img')).filter(Boolean)];
+    let remaining = imgs.length;
+    if (remaining === 0) return cb();
+
+    const done = () => { if (--remaining === 0) cb(); };
+
+    imgs.forEach(img => {
+      if (!img) return done();
+      if (img.complete && img.naturalWidth > 0) return done();
+      img.addEventListener('load', done, { once: true });
+      img.addEventListener('error', done, { once: true });
+    });
+  };
+
+  // Hide until positioned to avoid flicker
+  logos.forEach(el => { el.style.visibility = 'hidden'; el.style.opacity = '0'; });
+
+  afterImages(() => {
+    layout();
+    // Re-layout on resize (debounced)
+    let t;
+    const onResize = () => { clearTimeout(t); t = setTimeout(layout, 100); };
+    window.addEventListener('resize', onResize, { passive: true });
+  });
+})();
+</script>
+
 </div>
 <% } %>
