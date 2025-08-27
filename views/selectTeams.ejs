@@ -24,7 +24,7 @@
       background:white;
     }
     .team-card.selected { border-color: green; }
-    #selectedLogos img { max-height:40px; }
+
     #selectedLogos { overflow-x:auto; overflow-y:visible; }
     #teamSearch { background:#f0f0f0; font-weight:bold; }
     .modal-header { overflow:visible; }
@@ -56,6 +56,7 @@
     </div>
     <div class="modal-footer">
       <button id="confirmTeams" class="btn btn-secondary" disabled>Confirm</button>
+
     </div>
   </div>
 </div>
@@ -74,7 +75,9 @@ function renderSelected(){
   selected.forEach((logo,id)=>{
     const wrapper = $('<div class="me-2 position-relative">');
     wrapper.append(`<img src="${logo}" alt="sel">`);
+
     wrapper.append(`<span data-id="${id}" class="remove-selected position-absolute top-0 start-100 translate-middle-x badge rounded-pill bg-danger" style="cursor:pointer">✖</span>`);
+
     cont.append(wrapper);
   });
 }
