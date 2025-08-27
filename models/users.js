@@ -25,7 +25,8 @@ const userSchema = new mongoose.Schema({
         game: { type: mongoose.Schema.Types.ObjectId, ref: 'Game' },
         elo: Number,
         comment: String,
-        image: String
+        image: String,
+        checkedIn: { type: Boolean, default: false }
     }],
     profileImage: {
         data: Buffer,
