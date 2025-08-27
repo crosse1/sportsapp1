@@ -282,7 +282,9 @@ app.get('/team/:id', async (req, res) => {
     }
 
     const gameIds = games.map(g => g._id);
-    const usersCheckedIn = await User.countDocuments({ gamesList: { $in: gameIds } });
+    const usersCheckedIn = await User.countDocuments({
+        gameEntries: { $elemMatch: { game: { $in: gameIds }, checkedIn: true } }
+    });
 
     const relevantBadges = await Badge.find({
         $or: [
