@@ -20,15 +20,19 @@
     font-weight: bold;
 }
 
+/* Glassy select2 styling */
 .select2-container--default .select2-selection--multiple {
-    background: linear-gradient(to right, #14b8a6, #7e22ce);
+    background: rgba(255, 255, 255, 0.1);
     border: none;
     border-radius: 0.5rem;
     padding: 0.5rem;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     position: relative;
     overflow: hidden;
+    color: #fff;
+    font-weight: bold;
 }
 
 .select2-container--default .select2-selection--multiple .select2-selection__choice {
@@ -53,7 +57,7 @@
 
 .select2-container--default .select2-results__option {
     background: linear-gradient(to right, #14b8a6, #7e22ce);
-    color: white;
+    color: #fff;
     font-weight: bold;
     border-radius: 0.3rem;
     margin: 2px 4px;
@@ -62,7 +66,13 @@
 }
 .select2-container--default .select2-results__option--highlighted[aria-selected] {
     background: linear-gradient(to right, #7e22ce, #14b8a6);
-    color: white;
+    color: #fff;
+}
+.select2-container .select2-dropdown {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    border: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
 .select2-container--default .select2-selection--multiple .select2-selection__choice {
@@ -77,6 +87,17 @@
     padding: 6px 12px;
     margin: 3px;
     transition: all 0.2s ease-in-out;
+}
+
+/* Profile image preview */
+.profile-image-preview {
+    width: 8rem;
+    height: 8rem;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255,255,255,0.8);
+    display: block;
+    margin: 0 auto 1rem auto;
 }
 
     </style>
@@ -94,11 +115,12 @@
         </div>
             <input type="email" name="email" placeholder="Email" class="form-control gradient-input mb-3" required>
             <input type="password" name="password" placeholder="Password" class="form-control gradient-input mb-3" required>
-            <input type="text" name="phoneNumber" placeholder="Phone Number" pattern="[0-9]{10}" class="form-control gradient-input mb-3" required>
+            <input type="text" id="phoneNumber" name="phoneNumber" placeholder="Phone Number" pattern="\d{3}-\d{3}-\d{4}" class="form-control gradient-input mb-3" required>
             <input type="file" name="profileImage" id="profileImageInput" accept="image/*" class="d-none" required>
             <label for="profileImageInput" id="profileImageLabel" class="gradient-input file-input-label mb-3  d-block">Click to add Profile Image</label>
+            <img id="profileImagePreview" class="profile-image-preview d-none" alt="Profile Preview">
             <select name="favoriteTeams" class="favoriteTeams-select gradient-input mb-4" multiple required>
-                <% teams.forEach(t => { %>
+                <% teams.filter(t => t.leagueId === 1 || t.leagueId === 8).forEach(t => { %>
                     <option value="<%= t._id %>" data-logo="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>"><%= t.school %> <%= t.mascot %></option>
                 <% }); %>
             </select>
@@ -132,8 +154,30 @@
         });
         const fileInput = document.getElementById('profileImageInput');
         const fileLabel = document.getElementById('profileImageLabel');
+        const imagePreview = document.getElementById('profileImagePreview');
         fileInput.addEventListener('change', function(){
             fileLabel.textContent = this.files[0] ? this.files[0].name : 'Profile Image';
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    imagePreview.src = e.target.result;
+                    imagePreview.classList.remove('d-none');
+                };
+                reader.readAsDataURL(this.files[0]);
+            } else {
+                imagePreview.src = '';
+                imagePreview.classList.add('d-none');
+            }
+        });
+        const phoneInput = document.getElementById('phoneNumber');
+        phoneInput.addEventListener('input', () => {
+            let val = phoneInput.value.replace(/\D/g, '').substring(0,10);
+            if (val.length > 6) {
+                val = `${val.slice(0,3)}-${val.slice(3,6)}-${val.slice(6)}`;
+            } else if (val.length > 3) {
+                val = `${val.slice(0,3)}-${val.slice(3)}`;
+            }
+            phoneInput.value = val;
         });
         const usernameInput = document.getElementById("username");
         const usernameStatus = document.getElementById("usernameStatus");
