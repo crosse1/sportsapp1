@@ -259,8 +259,10 @@ exports.nearbyGameCheckin = async (req, res, next) => {
     const venueMap = new Map(venues.map(v => [v.venueId, v]));
 
     // Already checked-in games for this user
-    const user = await User.findById(req.user.id).select('gamesList').lean();
-    const already = new Set((user?.gamesList || []).map(g => String(g)));
+    const user = await User.findById(req.user.id).select('gameEntries').lean();
+    const already = new Set((user?.gameEntries || [])
+      .filter(e => e.checkedIn)
+      .map(e => String(e.game)));
 
     // Compute distances; keep everything for logging
     const withDistances = [];
@@ -360,20 +362,22 @@ exports.apiCheckIn = async (req, res, next) => {
     if (!gameDoc) return res.status(404).json({ error: 'Game not found' });
 
     const user = await User.findById(req.user.id)
-      .populate({ path: 'gamesList', populate: [{ path: 'homeTeam' }, { path: 'awayTeam' }] });
+      .populate({ path: 'gameEntries.game', populate: [{ path: 'homeTeam' }, { path: 'awayTeam' }] });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     user.badges = user.badges || [];
 
     const gameMongoId = String(gameDoc._id);
-    const alreadyCheckedIn = user.gamesList.some(g => String(g._id) === gameMongoId);
+    const alreadyEntry = user.gameEntries.find(e => String(e.game?._id || e.game) === gameMongoId && e.checkedIn);
 
-    const beforeGames = [...user.gamesList];
-    if (!alreadyCheckedIn) {
-      user.gamesList.push(gameDoc._id); // normalize to ObjectId ref
+    const beforeGames = user.gameEntries
+      .filter(e => e.checkedIn)
+      .map(e => e.game);
+    if (!alreadyEntry) {
+      user.gameEntries.push({ game: gameDoc._id, checkedIn: true });
       user.points = (user.points || 0) + 225;
     }
-    const afterGames = alreadyCheckedIn ? beforeGames : [...beforeGames, gameDoc];
+    const afterGames = alreadyEntry ? beforeGames : [...beforeGames, gameDoc];
 
     // Load badges (lean), convert buffer icons, attach style + progress
     const badges = await Badge.find().lean();
@@ -402,7 +406,7 @@ exports.apiCheckIn = async (req, res, next) => {
 
     await user.save();
 
-    res.json({ success: true, alreadyCheckedIn, newPoints: user.points, completedBadges, progressedBadges });
+    res.json({ success: true, alreadyCheckedIn: Boolean(alreadyEntry), newPoints: user.points, completedBadges, progressedBadges });
   } catch (err) {
     console.error('[checkin] apiCheckIn error', err);
     next(err);
@@ -428,10 +432,13 @@ exports.checkIn = async (req, res, next) => {
     if (!gameDoc) return res.redirect('/games'); // or 404 if you prefer
 
     const user = await User.findById(req.user.id)
-      .populate({ path: 'gamesList', populate: [{ path: 'homeTeam' }, { path: 'awayTeam' }] });
-    if (user && !user.gamesList.some(g => String(g._id) === String(gameDoc._id))) {
-      const beforeGames = [...user.gamesList];
-      user.gamesList.push(gameDoc._id); // store normalized ObjectId
+      .populate({ path: 'gameEntries.game', populate: [{ path: 'homeTeam' }, { path: 'awayTeam' }] });
+    const hasEntry = user && user.gameEntries.some(e => String(e.game?._id || e.game) === String(gameDoc._id) && e.checkedIn);
+    if (user && !hasEntry) {
+      const beforeGames = user.gameEntries
+        .filter(e => e.checkedIn)
+        .map(e => e.game);
+      user.gameEntries.push({ game: gameDoc._id, checkedIn: true });
       user.points = (user.points || 0) + 225;
       user.badges = user.badges || [];
 
@@ -484,13 +491,13 @@ exports.toggleGameList = async (req, res, next) => {
     const User = require('../models/users');
     const user = await User.findById(req.user.id);
     const gameId = req.params.id;
-    const idx = user.gamesList.findIndex(g => String(g) === gameId);
+    const entry = user.gameEntries.find(e => String(e.game) === gameId);
     let action;
-    if(idx >= 0){
-      user.gamesList.splice(idx,1);
-      action = 'removed';
+    if (entry) {
+      entry.checkedIn = !entry.checkedIn;
+      action = entry.checkedIn ? 'added' : 'removed';
     } else {
-      user.gamesList.push(gameId);
+      user.gameEntries.push({ game: gameId, checkedIn: true });
       action = 'added';
     }
     await user.save();

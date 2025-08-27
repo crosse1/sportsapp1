@@ -49,6 +49,7 @@ const Conference = require('../models/Conference');
 const GameComparison = require('../models/gameComparison');
 const Badge = require('../models/Badge');
 const getStateFromCoordinates = require('../lib/stateLookup');
+const { computeBadgeProgress } = require('../lib/badgeUtils');
 
 function sanitizeComment(text) {
     if (!text) return '';
@@ -68,7 +69,15 @@ async function enrichGameEntries(entries){
     if(!entries || !entries.length) return [];
     const ids = entries.map(e => e.game).filter(Boolean);
     const pastGames = await PastGame.find({ _id: { $in: ids } }).lean();
-    
+    const foundIds = new Set(pastGames.map(pg => String(pg._id)));
+    const remainingIds = ids.filter(id => !foundIds.has(String(id)));
+    let upcomingGames = [];
+    if (remainingIds.length) {
+        upcomingGames = await Game.find({ _id: { $in: remainingIds } })
+            .populate('homeTeam')
+            .populate('awayTeam')
+            .lean();
+    }
 
     const teamIds = [...new Set(pastGames.flatMap(g => [g.HomeId, g.AwayId]))];
     const teams = await Team.find({ teamId: { $in: teamIds } })
@@ -89,6 +98,10 @@ async function enrichGameEntries(entries){
         pg.venue = venueMap[pg.VenueId] || null;
         pgMap[String(pg._id)] = pg;
     });
+    upcomingGames.forEach(g => {
+        pgMap[String(g._id)] = g;
+    });
+
     return entries.map(e => {
         const entryObj = e.toObject ? e.toObject() : { ...e };
         entryObj.game = pgMap[String(e.game)] || null;
@@ -208,7 +221,7 @@ exports.getProfile = async (req, res, next) => {
                 path: 'wishlist',
                 populate: ['homeTeam', 'awayTeam']
             })
-            .populate({ path: 'gamesList', populate: ['homeTeam','awayTeam'] });
+            .populate({ path: 'gameEntries.game', populate: ['homeTeam','awayTeam'] });
             
         if (!user) return res.redirect('/login');
 
@@ -226,7 +239,6 @@ exports.getProfile = async (req, res, next) => {
             canMessage: false,
             viewer: req.user,
             wishlistGames,
-            gamesList: user.gamesList,
             gameEntries: enrichedEntries
         });
     } catch (err) {
@@ -308,7 +320,7 @@ exports.profileBadges = async (req, res, next) => {
         const userId = req.params.user || req.user.id;
         const profileUser = await User.findById(userId)
             .populate('favoriteTeams')
-            .populate({ path: 'gamesList', populate: ['homeTeam', 'awayTeam'] });
+            .populate({ path: 'gameEntries.game', populate: ['homeTeam', 'awayTeam'] });
         console.log('✅ user.favoriteTeams:', profileUser.favoriteTeams);
         if (!profileUser) return res.redirect('/profileBadges/' + req.user.id);
         const isCurrentUser = req.user && req.user.id.toString() === profileUser._id.toString();
@@ -346,51 +358,14 @@ exports.profileBadges = async (req, res, next) => {
             return b;
         });
 
-        // User's attended games populated with full Game documents
-        const games = profileUser.gamesList || [];
+        const games = (profileUser.gameEntries || [])
+            .filter(e => e.checkedIn)
+            .map(e => e.game)
+            .filter(Boolean);
 
         const userProgress = {};
-
         badges.forEach(badge => {
-            const eligible = games.filter(g => {
-                const homeTeam = g.homeTeam || {};
-                const awayTeam = g.awayTeam || {};
-                const leagueMatch = !badge.leagueConstraints?.length ||
-                    badge.leagueConstraints.some(l => [homeTeam.leagueId, awayTeam.leagueId].map(String).includes(String(l)));
-                const teamMatch = !badge.teamConstraints?.length ||
-                    badge.teamConstraints.some(t => {
-                        if (badge.homeTeamOnly) return String(homeTeam._id) === String(t);
-                        return [homeTeam._id, awayTeam._id].map(String).includes(String(t));
-                    });
-                const confMatch = !badge.conferenceConstraints?.length ||
-                    badge.conferenceConstraints.some(c => [homeTeam.conferenceId, awayTeam.conferenceId].map(String).includes(String(c)));
-                const startOk = !badge.startDate || g.startDate >= badge.startDate;
-                const endOk = !badge.endDate || g.startDate <= badge.endDate;
-                return leagueMatch && teamMatch && confMatch && startOk && endOk;
-            });
-
-            let progress = eligible.length;
-            if (badge.oneTeamEach) {
-                const teamSet = new Set();
-                eligible.forEach(g => {
-                    const homeTeam = g.homeTeam || {};
-                    const awayTeam = g.awayTeam || {};
-                    if (badge.teamConstraints && badge.teamConstraints.length) {
-                        badge.teamConstraints.forEach(t => {
-                            if (badge.homeTeamOnly) {
-                                if (String(homeTeam._id) === String(t)) teamSet.add(String(t));
-                            } else if ([String(homeTeam._id), String(awayTeam._id)].includes(String(t))) {
-                                teamSet.add(String(t));
-                            }
-                        });
-                    } else {
-                        teamSet.add(String(homeTeam._id));
-                        if (!badge.homeTeamOnly) teamSet.add(String(awayTeam._id));
-                    }
-                });
-                progress = teamSet.size;
-            }
-            userProgress[badge.badgeID] = progress;
+            userProgress[badge.badgeID] = computeBadgeProgress(badge, games);
         });
 
         res.render('profileBadges', {
@@ -404,8 +379,7 @@ exports.profileBadges = async (req, res, next) => {
             badges,
             userProgress,
             teamsData,
-            conferences,
-            gamesList: profileUser.gamesList
+            conferences
         });
     } catch (err) {
         next(err);
@@ -724,7 +698,7 @@ exports.viewUser = async (req, res, next) => {
                 path: 'wishlist',
                 populate: ['homeTeam','awayTeam']
             })
-            .populate({ path: 'gamesList', populate: ['homeTeam','awayTeam'] });
+            .populate({ path: 'gameEntries.game', populate: ['homeTeam','awayTeam'] });
         if (!user) return res.redirect('/profile');
 
         if(req.user){
@@ -755,7 +729,6 @@ exports.viewUser = async (req, res, next) => {
             canMessage,
             viewer: req.user,
             wishlistGames,
-            gamesList: user.gamesList,
             gameEntries: enrichedEntries
         });
     } catch (err) {
