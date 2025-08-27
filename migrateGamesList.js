@@ -3,7 +3,7 @@ const User = require('./models/users');
 require('dotenv').config();
 
 async function migrate(){
-  await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/sportsapp');
+  await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://crosse:Zack0018@christiancluster.0ejv5.mongodb.net/appUsers?retryWrites=true&w=majority&appName=ChristianCluster');
   const users = await User.find({ gamesList: { $exists: true, $not: { $size: 0 } } });
   for (const user of users) {
     const existing = new Set((user.gameEntries || []).map(e => String(e.game)));
