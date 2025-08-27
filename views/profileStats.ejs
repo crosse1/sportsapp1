@@ -44,6 +44,11 @@
             filter: invert(0);
         }
 
+        #venuesModal .modal-dialog {
+            max-width: 900px;
+            width: 90%;
+        }
+
         .venue-name-text {
     font-size: 0.7rem; /* Or even 0.95rem if you need it tighter */
     font-weight: 600;
@@ -334,6 +339,41 @@
   gap: 0.5rem;
 }
 
+#venuesModalBody .stat-row {
+  display: grid;
+  grid-template-columns: 2fr 5fr 1fr;
+  column-gap: 0.5rem;
+  row-gap: 0;
+  align-items: center;
+}
+
+#venuesModalBody .stat-row:not(:last-child) {
+  border-bottom: 1px solid rgba(0,0,0,0.15);
+  padding-bottom: 0.5rem;
+}
+
+#venuesModalBody .stat-row > div {
+  padding: 0.25rem 0;
+}
+
+#venuesModalBody .conference-name-text,
+#venuesModalBody .conference-percentage-text {
+  font-size: 1.25rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+
+#venuesModalBody .conference-percentage-text {
+  margin-right: 0;
+  justify-content: flex-end;
+  text-align: right;
+}
+
+#venuesModalBody .conference-dots-row {
+  flex-wrap: wrap;
+}
+
 
 
 #conferenceBlock .stat-rows {
@@ -581,14 +621,14 @@
     </div>
 
     <div class="modal fade user-search-modal" id="venuesModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content p-3">
                 <div class="modal-header border-0">
                     <h5 class="modal-title">All Venues</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="venuesModalBody"></div>
+                    <div id="venuesModalBody" class="d-flex flex-column"></div>
                 </div>
             </div>
         </div>
