@@ -510,6 +510,7 @@
 
   .stat-content {
 
+
     gap: 0.75rem;
   }
   .stat-right {
@@ -880,6 +881,7 @@
   }
 
   function renderStats() {
+    const gradientDirection = window.innerWidth < 768 ? 'to bottom' : 'to right';
     // Games
     const validGames = [];
     const seenGameIds = new Set();
@@ -925,7 +927,7 @@
       return c;
     });
     if(colors.length){
-      teamsTopEl.style.background = `linear-gradient(to right, ${colors.join(',')})`;
+      teamsTopEl.style.background = `linear-gradient(${gradientDirection}, ${colors.join(',')})`;
       teamsTopEl.style.borderRadius = '0.5rem';
     }
     teamsTopEl.innerHTML = topTeams.map(item => {
@@ -951,9 +953,9 @@
       statesTopEl.innerHTML = '';
     } else {
       let gradient;
-      if (stateEntries.length === 1) gradient = 'linear-gradient(to right, #FFD700, white)';
-      else if (stateEntries.length === 2) gradient = 'linear-gradient(to right, #FFD700, #C0C0C0, white)';
-      else gradient = 'linear-gradient(to right, #FFD700, #C0C0C0, #CD7F32)';
+      if (stateEntries.length === 1) gradient = `linear-gradient(${gradientDirection}, #FFD700, white)`;
+      else if (stateEntries.length === 2) gradient = `linear-gradient(${gradientDirection}, #FFD700, #C0C0C0, white)`;
+      else gradient = `linear-gradient(${gradientDirection}, #FFD700, #C0C0C0, #CD7F32)`;
       statesTopEl.style.background = gradient;
       statesTopEl.innerHTML = stateEntries.slice(0, 3).map(s => `
         <div class="state-stat-col">
