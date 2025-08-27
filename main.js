@@ -165,6 +165,9 @@ const requireAuth = async (req, res, next) => {
       if (!user) return res.redirect('/login');
   
       req.user = user; // 🔥 THIS is the critical fix
+      if (user.favoriteTeams.length === 0 && req.path !== '/select-teams') {
+        return res.redirect('/select-teams');
+      }
       next();
     } catch (err) {
       console.error('[AUTH ERROR]', err);
@@ -184,6 +187,8 @@ app.get('/login', profileController.getLogin);
 app.post('/signup', profileController.saveUser);
 app.post('/login', profileController.loginUser);
 app.get("/check-username/:username", profileController.checkUsername);
+app.get('/select-teams', requireAuth, profileController.selectFavoriteTeams);
+app.post('/select-teams', requireAuth, profileController.saveFavoriteTeams);
 app.get('/logout', (req, res) => {
     res.clearCookie('token');
     res.redirect('/login');

@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up</title>
-    <!-- in <head> -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/custom.css">
     <style>
@@ -23,83 +20,6 @@
     font-weight: bold;
 }
 
-/* Glassy select2 styling */
-.select2-container--default .select2-selection--multiple {
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 0.5rem;
-    padding: 0.5rem;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    position: relative;
-
-    overflow: visible; /* keep search field visible */
-
-    color: #fff;
-    font-weight: bold;
-}
-
-.select2-container--default .select2-selection--multiple .select2-selection__choice {
-    background: rgba(255, 255, 255, 0.15); /* translucent for depth */
-    color: white;
-    font-weight: bold;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 0.5rem;
-    backdrop-filter: blur(10px) saturate(150%);
-    -webkit-backdrop-filter: blur(10px) saturate(150%);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2),
-                inset 0 0 6px rgba(255, 255, 255, 0.1);
-    padding: 6px 10px;
-    margin: 4px 6px 4px 0;
-    transition: all 0.25s ease-in-out;
-}
-
-.select2-container--default .select2-selection--multiple .select2-selection__rendered {
-    color: white;
-    font-weight: bold;
-}
-
-/* Ensure search text is visible */
-.select2-container--default .select2-search--inline .select2-search__field,
-.select2-container--default .select2-search--dropdown .select2-search__field {
-    color: #fff;
-}
-
-.select2-container--default .select2-results__option {
-    background: linear-gradient(to right, #14b8a6, #7e22ce);
-    color: #fff;
-    font-weight: bold;
-    border-radius: 0.3rem;
-    margin: 2px 4px;
-    padding: 6px 10px;
-    backdrop-filter: blur(6px);
-}
-.select2-container--default .select2-results__option--highlighted[aria-selected] {
-    background: linear-gradient(to right, #7e22ce, #14b8a6);
-    color: #fff;
-}
-.select2-container .select2-dropdown {
-    background: rgba(255,255,255,0.1);
-    backdrop-filter: blur(10px);
-    border: none;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-
-.select2-container--default .select2-selection--multiple .select2-selection__choice {
-    background: rgba(255, 255, 255, 0.1); /* transparent enough for blur */
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 0.5rem;
-    backdrop-filter: saturate(180%) blur(12px);
-    -webkit-backdrop-filter: saturate(180%) blur(12px); /* Safari */
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1), inset 0 0 8px rgba(255,255,255,0.1);
-    color: white;
-    font-weight: 600;
-    padding: 6px 12px;
-    margin: 3px;
-    transition: all 0.2s ease-in-out;
-}
-
 /* Profile image preview */
 .profile-image-preview {
     width: 8rem;
@@ -109,31 +29,6 @@
     border: 2px solid rgba(255,255,255,0.8);
     display: block;
     margin: 0 auto 1rem auto;
-}
-
-/* Ensure the inline renderer doesn't crush the input */
-.select2-container--default .select2-selection--multiple .select2-selection__rendered {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-}
-
-/* Give the inline search a real width */
-.select2-container--default .select2-search--inline .select2-search__field {
-  min-width: 10ch !important;
-  flex: 1 1 auto;
-}
-
-/* If the dropdown search is used, make it readable & full width */
-.select2-container .select2-search__field {
-  width: 100% !important;
-  color: #fff; /* you already had this */
-}
-
-/* Keep the dropdown on top of your glass effects */
-.select2-container {
-  z-index: 2000;
 }
 
 
@@ -156,13 +51,6 @@
             <input type="file" name="profileImage" id="profileImageInput" accept="image/*" class="d-none" required>
             <label for="profileImageInput" id="profileImageLabel" class="gradient-input file-input-label mb-3  d-block">Click to add Profile Image</label>
             <img id="profileImagePreview" class="profile-image-preview d-none" alt="Profile Preview">
-<select name="favoriteTeams[]" class="favoriteTeams-select gradient-input mb-4" multiple required>
-                <% teams.filter(t => t.leagueId === 1 || t.leagueId === 8).forEach(t => { %>
-                    <option value="<%= t._id %>" data-logo="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>"><%= t.school %> <%= t.mascot %></option>
-                <% }); %>
-            </select>
-            <br>
-            <br>
             <button type="submit" class="btn w-100 text-white gradient-glass-btn">Sign Up</button>
         </form>
         <div class="text-center mt-3">
@@ -170,44 +58,7 @@
         </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
-        
-  function formatTeam (option) {
-    if (!option.id) return option.text;
-    var $opt = $(option.element);
-    var logo = $opt.data('logo');
-    if (logo) {
-      return `<span><img src="${logo}" style="width:20px;height:20px;margin-right:6px;vertical-align:middle;">${option.text}</span>`;
-    }
-    return option.text;
-  }
-
-  $(function () {
-  const $sel = $('.favoriteTeams-select');
-  if (!$sel.length) return;
-
-  $sel.select2({
-    placeholder: 'Favorite Teams',
-    allowClear: true,
-    width: '100%',
-    templateResult: formatTeam,
-    templateSelection: formatTeam,
-    escapeMarkup: m => m,
-    dropdownAutoWidth: true,
-    minimumResultsForSearch: 0 // always show a search field
-    // dropdownParent: $('.card') // <-- remove for now
-  });
-
-  // when the dropdown opens, focus the search box
-  $sel.on('select2:open', () => {
-    const input = document.querySelector('.select2-container .select2-search__field');
-    if (input) input.focus();
-  });
-});
-
-
-
         const fileInput = document.getElementById('profileImageInput');
         const fileLabel = document.getElementById('profileImageLabel');
         const imagePreview = document.getElementById('profileImagePreview');
