@@ -371,7 +371,9 @@ exports.apiCheckIn = async (req, res, next) => {
     const alreadyEntry = user.gameEntries.find(e => String(e.game?._id || e.game) === gameMongoId && e.checkedIn);
 
     const beforeGames = user.gameEntries
+
       .filter(e => e.checkedIn && e.game)
+
       .map(e => e.game);
     if (!alreadyEntry) {
       user.gameEntries.push({ game: gameDoc._id, checkedIn: true });
@@ -436,7 +438,9 @@ exports.checkIn = async (req, res, next) => {
     const hasEntry = user && user.gameEntries.some(e => String(e.game?._id || e.game) === String(gameDoc._id) && e.checkedIn);
     if (user && !hasEntry) {
       const beforeGames = user.gameEntries
+
         .filter(e => e.checkedIn && e.game)
+
         .map(e => e.game);
       user.gameEntries.push({ game: gameDoc._id, checkedIn: true });
       user.points = (user.points || 0) + 225;
