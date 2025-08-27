@@ -131,6 +131,47 @@ app.use((req, res, next) => {
     next();
 });
 
+// Middleware to find checked-in games that need ratings
+app.use(async (req, res, next) => {
+    if (!req.user) {
+        res.locals.pendingRatings = [];
+        return next();
+    }
+    try {
+        const user = await User.findById(req.user.id)
+            .select('gameEntries')
+            .populate({
+                path: 'gameEntries.game',
+                populate: ['homeTeam', 'awayTeam']
+            })
+            .lean();
+        const entries = (user?.gameEntries || []).filter(e => {
+            if (!e.checkedIn) return false;
+            if (e.elo || e.comment || e.image) return false;
+            if (e.ratingPrompted) return false;
+            const g = e.game;
+            if (!g) return false;
+            return g.homePoints != null && g.awayPoints != null;
+        }).map(e => ({
+            _id: String(e._id),
+            game: {
+                _id: String(e.game._id),
+                homeTeamName: e.game.homeTeamName || (e.game.homeTeam && e.game.homeTeam.teamName),
+                awayTeamName: e.game.awayTeamName || (e.game.awayTeam && e.game.awayTeam.teamName),
+                homePoints: e.game.homePoints,
+                awayPoints: e.game.awayPoints,
+                startDate: e.game.startDate,
+                homeLogo: e.game.homeTeam && e.game.homeTeam.logo,
+                awayLogo: e.game.awayTeam && e.game.awayTeam.logo
+            }
+        }));
+        res.locals.pendingRatings = entries;
+    } catch (err) {
+        res.locals.pendingRatings = [];
+    }
+    next();
+});
+
 const decodeToken = async (req, res, next) => {
     const token = req.cookies.token;
     if (!token) {
