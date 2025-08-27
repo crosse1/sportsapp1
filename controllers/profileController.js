@@ -113,8 +113,7 @@ function ratingToElo(rating){
 
 exports.getSignUp = async (req, res, next) => {
     try {
-        const teams = await Team.find();
-        res.render('contact', { layout: false, teams });
+        res.render('contact', { layout: false });
     } catch (err) {
         next(err);
     }
@@ -125,33 +124,26 @@ exports.getLogin = (req, res) => {
 };
 
 exports.saveUser = [uploadMemory.single('profileImage'), async (req, res, next) => {
-    const { username, email, phoneNumber, password, favoriteTeams } = req.body;
+    const { username, email, phoneNumber, password } = req.body;
     try {
         if(!req.file){
-            const teams = await Team.find();
-            return res.status(400).render('contact', { layout:false, teams, error:'Profile picture is required.' });
-        }
-        const fav = favoriteTeams ? (Array.isArray(favoriteTeams) ? favoriteTeams : [favoriteTeams]) : [];
-        if (fav.length === 0) {
-            const teams = await Team.find();
-            return res.status(400).render('contact', { layout: false, teams, error: 'Please select at least one favorite team.' });
+            return res.status(400).render('contact', { layout:false, error:'Profile picture is required.' });
         }
         const newUser = new User({
             username,
             email,
             phoneNumber,
             password,
-            favoriteTeams: fav,
+            favoriteTeams: [],
             profileImage:{ data:req.file.buffer, contentType:req.file.mimetype }
         });
         await newUser.save();
         const token = jwt.sign({ id: newUser._id, username: newUser.username, email: newUser.email, phoneNumber: newUser.phoneNumber }, 'secret');
         res.cookie('token', token, { httpOnly: true });
-        res.redirect('/');
+        res.redirect('/select-teams');
     } catch (error) {
         if (error.name === 'ValidationError') {
-            const teams = await Team.find();
-            return res.status(400).render('contact', { layout: false, teams, error: error.message });
+            return res.status(400).render('contact', { layout: false, error: error.message });
         }
         next(error);
     }
@@ -184,6 +176,30 @@ exports.checkUsername = async (req, res, next) => {
 
 
 
+
+exports.selectFavoriteTeams = async (req, res, next) => {
+    try {
+        const teams = await Team.find({ leagueId: { $in: [1,8] } });
+        res.render('selectTeams', { layout: false, teams });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.saveFavoriteTeams = async (req, res, next) => {
+    try {
+        const fav = req.body.favoriteTeams || [];
+        const favArray = Array.isArray(fav) ? fav : [fav];
+        if(favArray.length === 0){
+            return res.status(400).json({ error: 'Select at least one team' });
+        }
+        req.user.favoriteTeams = favArray;
+        await req.user.save();
+        res.json({ success: true });
+    } catch (err) {
+        next(err);
+    }
+};
 exports.getProfile = async (req, res, next) => {
     try {
         const user = await User.findById(req.user.id)

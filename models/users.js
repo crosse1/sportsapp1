@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema({
     email: String,
     phoneNumber: String,
     password: String,
-    favoriteTeams: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Team', required: true }],
+    favoriteTeams: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Team' }], default: [] },
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     newFollowers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
