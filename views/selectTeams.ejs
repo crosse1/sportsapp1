@@ -24,39 +24,39 @@
       background:white;
     }
     .team-card.selected { border-color: green; }
-    #selectedLogos img { max-height:40px; }
-    #selectedLogos { overflow-x:auto; }
+
+    #selectedLogos { overflow-x:auto; overflow-y:visible; }
     #teamSearch { background:#f0f0f0; font-weight:bold; }
+    .modal-header { overflow:visible; }
   </style>
 </head>
-<body>
-<div class="modal show d-block" tabindex="-1">
-  <div class="modal-dialog modal-fullscreen">
-    <div class="modal-content bg-white">
-      <div class="modal-header align-items-center">
-        <h1 class="modal-title gradient-text">Select Favorite Teams</h1>
-        <div id="selectedLogos" class="d-flex ms-3 flex-row"></div>
+<body class="bg-light">
+<div class="d-flex justify-content-center align-items-center min-vh-100">
+  <div class="modal-content bg-white w-100" style="max-width:768px;">
+    <div class="modal-header align-items-center">
+      <h1 class="modal-title gradient-text">Select Favorite Teams</h1>
+      <div id="selectedLogos" class="d-flex ms-3 flex-row"></div>
+    </div>
+    <div class="modal-body">
+      <div class="d-flex align-items-center mb-3">
+        <span class="me-2">ℹ️</span>
+        <small class="text-black">Users must select at least one favorite team. If you have no strong opinions, select the team you go to the most games of.</small>
       </div>
-      <div class="modal-body">
-        <div class="d-flex align-items-center mb-3">
-          <span class="me-2">ℹ️</span>
-          <small class="text-black">Users must select at least one favorite team. If you have no strong opinions, select the team you go to the most games of.</small>
-        </div>
-        <input type="text" id="teamSearch" class="form-control mb-3" placeholder="Search teams...">
-        <div id="teamsGrid" class="row row-cols-2 row-cols-md-3 g-3">
-          <% teams.forEach(t => { %>
-            <div class="col">
-              <div class="team-card text-center" data-id="<%= t._id %>" data-name="<%= (t.mascot + ' ' + t.school).toLowerCase() %>" data-logo="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>">
-                <img src="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>" class="img-fluid mb-2" style="max-height:80px" alt="<%= t.mascot %>">
-                <div class="fw-bold text-black"><%= t.mascot %></div>
-              </div>
+      <input type="text" id="teamSearch" class="form-control mb-3" placeholder="Search schools...">
+      <div id="teamsGrid" class="row row-cols-2 row-cols-md-3 g-3">
+        <% teams.forEach(t => { %>
+          <div class="col">
+            <div class="team-card text-center" data-id="<%= t._id %>" data-name="<%= t.school.toLowerCase() %>" data-logo="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>">
+              <img src="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>" class="img-fluid mb-2" style="max-height:80px" alt="<%= t.school %>">
+              <div class="fw-bold text-black"><%= t.school %></div>
             </div>
-          <% }) %>
-        </div>
+          </div>
+        <% }) %>
       </div>
-      <div class="modal-footer">
-        <button id="confirmTeams" class="btn btn-secondary" disabled>Confirm</button>
-      </div>
+    </div>
+    <div class="modal-footer">
+      <button id="confirmTeams" class="btn btn-secondary" disabled>Confirm</button>
+
     </div>
   </div>
 </div>
@@ -75,7 +75,9 @@ function renderSelected(){
   selected.forEach((logo,id)=>{
     const wrapper = $('<div class="me-2 position-relative">');
     wrapper.append(`<img src="${logo}" alt="sel">`);
-    wrapper.append(`<span data-id="${id}" class="remove-selected position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="cursor:pointer">✖</span>`);
+
+    wrapper.append(`<span data-id="${id}" class="remove-selected position-absolute top-0 start-100 translate-middle-x badge rounded-pill bg-danger" style="cursor:pointer">✖</span>`);
+
     cont.append(wrapper);
   });
 }
