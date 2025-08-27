@@ -26,7 +26,8 @@ const userSchema = new mongoose.Schema({
         elo: Number,
         comment: String,
         image: String,
-        checkedIn: { type: Boolean, default: false }
+        checkedIn: { type: Boolean, default: false },
+        ratingPrompted: { type: Boolean, default: false }
     }],
     profileImage: {
         data: Buffer,

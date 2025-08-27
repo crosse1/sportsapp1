@@ -38,3 +38,6 @@
 <script src="/js/inboxModal.js"></script>
 <script>window.loggedInUser = <%- JSON.stringify(loggedInUser || null) %>;</script>
 <script src="/js/nearbyCheckin.js"></script>
+<%- include('ratePromptModal') %>
+<script>window.pendingRatings = <%- JSON.stringify(pendingRatings || []) %>;</script>
+<script src="/js/pendingRatingModal.js"></script>

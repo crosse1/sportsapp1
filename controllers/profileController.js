@@ -1047,6 +1047,7 @@ exports.updateGameEntry = [uploadDisk.single('photo'), async (req, res, next) =>
 
         entry.elo = newElo;
         entry.comment = sanitizedComment || null;
+        entry.ratingPrompted = true;
         if(req.file){
             entry.image = '/uploads/' + req.file.filename;
         }
