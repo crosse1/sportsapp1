@@ -380,11 +380,13 @@ exports.apiCheckIn = async (req, res, next) => {
     if (!alreadyInGames) user.gamesList.push(gameIdStr);
 
     if (gameDoc.venueId != null) {
+
       const venueDoc = await Venue.findOne({ venueId: gameDoc.venueId }).select('_id');
       if (venueDoc) {
         const venueExists = user.venuesList.some(v => String(v) === String(venueDoc._id));
         if (!venueExists) user.venuesList.push(venueDoc._id);
       }
+
     }
     const homeId = gameDoc.homeTeam?._id;
     const awayId = gameDoc.awayTeam?._id;
@@ -462,6 +464,7 @@ exports.checkIn = async (req, res, next) => {
       const beforeIds = [...user.gamesList];
       if (!alreadyInGames) user.gamesList.push(gameIdStr);
 
+
       if (gameDoc.venueId != null) {
         const venueDoc = await Venue.findOne({ venueId: gameDoc.venueId }).select('_id');
         if (venueDoc) {
@@ -481,6 +484,7 @@ exports.checkIn = async (req, res, next) => {
 
       const beforeGames = await fetchGamesByIds(beforeIds);
       const afterGames = alreadyInGames ? beforeGames : [...beforeGames, gameDoc];
+
 
       user.badges = user.badges || [];
       const badges = await Badge.find().lean();
