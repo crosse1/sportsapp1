@@ -94,12 +94,30 @@
         .rating-wrapper:hover img { display: none; }
         .rating-wrapper:hover::after { opacity: 0; }
         .rating-wrapper:hover .rating-comment { display: block; }
+
+        /* Mobile-specific adjustments */
+        @media (max-width: 768px) {
+            #profileGamesWrapper .team-logo-container {
+                width: 30px;
+                height: 30px;
+            }
+            #profileGamesWrapper .team-logo-container img {
+                width: 26px;
+                height: 26px;
+            }
+            #profileGamesWrapper .score-text {
+                font-size: 1rem;
+            }
+            #profileGamesWrapper .game-card {
+                padding: 0.5rem;
+            }
+        }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
     <%- include('partials/header') %>
     <%- include('partials/profileHeader', { user, isCurrentUser, isFollowing, canMessage, viewer, activeTab: 'games' }) %>
-    <div class="container my-4 flex-grow-1">
+    <div id="profileGamesWrapper" class="container my-4 flex-grow-1">
         <% if(isCurrentUser){ %>
         <div class="info-banner d-flex flex-wrap align-items-center justify-content-between mb-3">
             <div class="d-flex align-items-center flex-grow-1 mb-2 mb-md-0">
