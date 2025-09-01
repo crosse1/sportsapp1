@@ -51,6 +51,13 @@ async function ensureIndexes(db) {
     console.warn('[indexes] Id unique index:', e.message);
   }
 
+  // Ensure new canonical gameId index exists
+  try {
+    await past.createIndex({ gameId: 1 }, { unique: true });
+  } catch (e) {
+    console.warn('[indexes] gameId unique index:', e.message);
+  }
+
   try {
     await games.createIndex({ startDate: 1 });
   } catch (e) {
@@ -64,7 +71,8 @@ async function ensureIndexes(db) {
  */
 function buildPastGameDoc(gameDoc, homeMeta, awayMeta) {
   return {
-    Id: numOrNull(gameDoc.gameId),                 // required & unique
+    gameId: numOrNull(gameDoc.gameId),             // permanent key
+    Id: numOrNull(gameDoc.gameId),                 // legacy key (kept for compat)
     Season: numOrNull(gameDoc.season),             // required
     Week: numOrNull(gameDoc.week),                 // required
     SeasonType: gameDoc.seasonType ?? null,        // required (string)

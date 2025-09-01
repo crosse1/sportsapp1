@@ -16,7 +16,10 @@ const userSchema = new mongoose.Schema({
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     newFollowers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Game' }],
-    gamesList: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Game' }], default: [] },
+    // Track game check-ins using the permanent gameId. Using strings allows us to
+    // reference games after they migrate from the `Game` collection to
+    // `PastGame` without losing the association.
+    gamesList: { type: [String], default: [] },
     teamsList: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Team' }], default: [] },
     venuesList: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Venue' }], default: [] },
     badges: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Badge' }],
