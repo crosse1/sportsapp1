@@ -44,6 +44,7 @@ const User = require('../models/users');
 const Team = require('../models/Team');
 const Game = require('../models/Game');
 const PastGame = require('../models/PastGame');
+const { fetchGamesByIds } = require('../lib/gameUtils');
 const Venue = require('../models/Venue');
 const Conference = require('../models/Conference');
 const GameComparison = require('../models/gameComparison');
@@ -107,6 +108,21 @@ async function enrichGameEntries(entries){
         entryObj.game = pgMap[String(e.game)] || null;
         return entryObj;
     });
+}
+
+// Returns an array of enriched game entry objects for a user, merging
+// traditional `gameEntries` with any additional `gameIds` stored in the new
+// `gamesList` array.
+async function mergeUserGames(user){
+    const gameEntriesRaw = user.gameEntries || [];
+    const enriched = gameEntriesRaw.length ? await enrichGameEntries(gameEntriesRaw) : [];
+    const existingIds = new Set(gameEntriesRaw.map(e => String(e.game)));
+    const extraIds = (user.gamesList || []).filter(id => !existingIds.has(String(id)));
+    if(extraIds.length){
+        const extraGames = await fetchGamesByIds(extraIds);
+        extraGames.forEach(g => enriched.push({ game: g, checkedIn: true }));
+    }
+    return enriched;
 }
 
 // Enriches an array of {game, elo} objects with full PastGame info
@@ -226,11 +242,8 @@ exports.getProfile = async (req, res, next) => {
         if (!user) return res.redirect('/login');
 
         const wishlistGames = user.wishlist || [];
-        const gameEntriesRaw = user.gameEntries || [];
-        let enrichedEntries = [];
-        if(gameEntriesRaw.length){
-            enrichedEntries = await enrichGameEntries(gameEntriesRaw);
-        }
+
+        const enrichedEntries = await mergeUserGames(user);
 
         res.render('profile', {
             user,
@@ -426,7 +439,7 @@ exports.profileStats = async (req, res, next) => {
             console.log(`[profileStats] Viewer follows user: ${isFollowing}, Follows back: ${followsBack}`);
         }
 
-        const enrichedEntries = await enrichGameEntries(profileUser.gameEntries || []);
+        const enrichedEntries = await mergeUserGames(profileUser);
         console.log(`[profileStats] Enriched gameEntries count: ${enrichedEntries.length}`);
 
         const topRatedGames = enrichedEntries
@@ -595,16 +608,12 @@ exports.profileGames = async (req, res, next) => {
         const profileUser = await User.findById(userId).populate('favoriteTeams');
         console.log('✅ user.favoriteTeams:', profileUser.favoriteTeams);
         if (!profileUser) return res.redirect('/profileGames/' + req.user.id);
-        const gameEntriesRaw = profileUser.gameEntries || [];
-        let enrichedEntries = [];
-        if (gameEntriesRaw.length) {
-            enrichedEntries = await enrichGameEntries(gameEntriesRaw);
-            enrichedEntries.sort((a, b) => {
-                const da = a.game && (a.game.startDate || a.game.StartDate);
-                const db = b.game && (b.game.startDate || b.game.StartDate);
-                return new Date(db) - new Date(da);
-            });
-        }
+        let enrichedEntries = await mergeUserGames(profileUser);
+        enrichedEntries.sort((a, b) => {
+            const da = a.game && (a.game.startDate || a.game.StartDate);
+            const db = b.game && (b.game.startDate || b.game.StartDate);
+            return new Date(db) - new Date(da);
+        });
         const isCurrentUser = req.user && req.user.id.toString() === profileUser._id.toString();
         let isFollowing = false, canMessage = false;
         if (req.user && !isCurrentUser) {
@@ -709,11 +718,7 @@ exports.viewUser = async (req, res, next) => {
         }
 
         const wishlistGames = user.wishlist || [];
-        const gameEntriesRaw = user.gameEntries || [];
-        let enrichedEntries = [];
-        if(gameEntriesRaw.length){
-            enrichedEntries = await enrichGameEntries(gameEntriesRaw);
-        }
+        let enrichedEntries = await mergeUserGames(user);
         const isCurrentUser = req.user && String(req.user.id) === String(user._id);
         let isFollowing = false, canMessage = false;
         if(req.user){
@@ -870,7 +875,7 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
 
         const alreadyExists = user.gameEntries.some(e => String(e.game) === String(gameId));
         if (alreadyExists) {
-            const enrichedEntries = await enrichGameEntries(user.gameEntries);
+            const enrichedEntries = await mergeUserGames(user);
             const eloGames = await enrichEloGames(user.gameElo || []);
             return res.status(400).render('profileGames', {
                 user,

@@ -6,6 +6,7 @@ const User = require('../models/users');
 const mongoose = require('mongoose');
 const Badge = require('../models/Badge');
 const { computeBadgeProgress, formatBadgeForClient } = require('../lib/badgeUtils');
+const { fetchGamesByIds } = require('../lib/gameUtils');
 
 function hexToRgb(hex) {
   if (!hex) return null;
@@ -366,20 +367,34 @@ exports.apiCheckIn = async (req, res, next) => {
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     user.badges = user.badges || [];
+    user.gamesList = user.gamesList || [];
 
     const gameMongoId = String(gameDoc._id);
+    const gameIdStr = String(gameDoc.gameId);
+
     const alreadyEntry = user.gameEntries.find(e => String(e.game?._id || e.game) === gameMongoId && e.checkedIn);
+    const alreadyInGames = user.gamesList.includes(gameIdStr);
 
-    const beforeGames = user.gameEntries
+    // Track games/venues/teams for profile and badge progress
+    const beforeIds = [...user.gamesList];
+    if (!alreadyInGames) user.gamesList.push(gameIdStr);
 
-      .filter(e => e.checkedIn && e.game)
+    if (gameDoc.venueId != null) {
+      const venueExists = user.venuesList.some(v => String(v) === String(gameDoc.venueId));
+      if (!venueExists) user.venuesList.push(gameDoc.venueId);
+    }
+    const homeId = gameDoc.homeTeam?._id;
+    const awayId = gameDoc.awayTeam?._id;
+    if (homeId && !user.teamsList.some(t => String(t) === String(homeId))) user.teamsList.push(homeId);
+    if (awayId && !user.teamsList.some(t => String(t) === String(awayId))) user.teamsList.push(awayId);
 
-      .map(e => e.game);
     if (!alreadyEntry) {
       user.gameEntries.push({ game: gameDoc._id, checkedIn: true });
       user.points = (user.points || 0) + 225;
     }
-    const afterGames = alreadyEntry ? beforeGames : [...beforeGames, gameDoc];
+
+    const beforeGames = await fetchGamesByIds(beforeIds);
+    const afterGames = alreadyInGames ? beforeGames : [...beforeGames, gameDoc];
 
     // Load badges (lean), convert buffer icons, attach style + progress
     const badges = await Badge.find().lean();
@@ -436,20 +451,36 @@ exports.checkIn = async (req, res, next) => {
     const user = await User.findById(req.user.id)
       .populate({ path: 'gameEntries.game', populate: [{ path: 'homeTeam' }, { path: 'awayTeam' }] });
     const hasEntry = user && user.gameEntries.some(e => String(e.game?._id || e.game) === String(gameDoc._id) && e.checkedIn);
-    if (user && !hasEntry) {
-      const beforeGames = user.gameEntries
 
-        .filter(e => e.checkedIn && e.game)
+    if (user) {
+      user.gamesList = user.gamesList || [];
+      const gameIdStr = String(gameDoc.gameId);
+      const alreadyInGames = user.gamesList.includes(gameIdStr);
+      const beforeIds = [...user.gamesList];
+      if (!alreadyInGames) user.gamesList.push(gameIdStr);
 
-        .map(e => e.game);
-      user.gameEntries.push({ game: gameDoc._id, checkedIn: true });
-      user.points = (user.points || 0) + 225;
+      if (gameDoc.venueId != null) {
+        const venueExists = user.venuesList.some(v => String(v) === String(gameDoc.venueId));
+        if (!venueExists) user.venuesList.push(gameDoc.venueId);
+      }
+      const homeId = gameDoc.homeTeam?._id;
+      const awayId = gameDoc.awayTeam?._id;
+      if (homeId && !user.teamsList.some(t => String(t) === String(homeId))) user.teamsList.push(homeId);
+      if (awayId && !user.teamsList.some(t => String(t) === String(awayId))) user.teamsList.push(awayId);
+
+      if (!hasEntry) {
+        user.gameEntries.push({ game: gameDoc._id, checkedIn: true });
+        user.points = (user.points || 0) + 225;
+      }
+
+      const beforeGames = await fetchGamesByIds(beforeIds);
+      const afterGames = alreadyInGames ? beforeGames : [...beforeGames, gameDoc];
+
       user.badges = user.badges || [];
-
       const badges = await Badge.find().lean();
       for (const badge of badges) {
         const progressBefore = computeBadgeProgress(badge, beforeGames);
-        const progressAfter = computeBadgeProgress(badge, [...beforeGames, gameDoc]);
+        const progressAfter = computeBadgeProgress(badge, afterGames);
         if (progressAfter > progressBefore && progressAfter >= (badge.reqGames || 0) && progressBefore < (badge.reqGames || 0)) {
           const alreadyEarned = user.badges.some(id => String(id) === String(badge._id));
           if (!alreadyEarned) {
@@ -460,6 +491,7 @@ exports.checkIn = async (req, res, next) => {
       }
       await user.save();
     }
+
     res.redirect(`/games/${gameDoc._id}`);
   } catch (err) {
     console.error('[checkin] checkIn error', err);
