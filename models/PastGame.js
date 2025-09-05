@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const pastGameSchema = new mongoose.Schema({
   // Preserve original `Id` but introduce `gameId` as the canonical key so
   // current and past games can be referenced uniformly.
-  gameId: { type: Number, required: true, unique: true },
+  gameId: { type: Number, required: true, unique: true, sparse: true },
   Id: { type: Number, required: true, unique: true },
   Season: { type: Number, required: true },
   Week: { type: Number, required: true },
