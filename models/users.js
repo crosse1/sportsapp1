@@ -29,7 +29,12 @@ const userSchema = new mongoose.Schema({
         comment: String,
         image: String,
         checkedIn: { type: Boolean, default: false },
-        ratingPrompted: { type: Boolean, default: false }
+        // Automatically flag entries as having been prompted for a rating
+        // whenever an initial elo value is present at creation time
+        ratingPrompted: {
+            type: Boolean,
+            default: function() { return this.elo != null; }
+        }
     }],
     profileImage: {
         data: Buffer,

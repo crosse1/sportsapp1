@@ -934,6 +934,9 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
         }
 
         entry.elo = finalElo;
+        if (entry.elo != null) {
+            entry.ratingPrompted = true;
+        }
 
         const newEloEntry = {
             game: newGameObjectId,
