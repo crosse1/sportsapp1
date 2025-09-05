@@ -19,13 +19,12 @@ const userSchema = new mongoose.Schema({
     // Track game check-ins using the permanent gameId. Using strings allows us to
     // reference games after they migrate from the `Game` collection to
     // `PastGame` without losing the association.
-    gamesList: { type: [String], default: [] },
     teamsList: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Team' }], default: [] },
     venuesList: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Venue' }], default: [] },
     badges: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Badge' }],
     points: { type: Number, default: 0 },
     gameEntries: [{
-        game: { type: mongoose.Schema.Types.ObjectId, ref: 'Game' },
+        gameId: String,
         elo: Number,
         comment: String,
         image: String,

@@ -263,7 +263,7 @@ exports.nearbyGameCheckin = async (req, res, next) => {
     const user = await User.findById(req.user.id).select('gameEntries').lean();
     const already = new Set((user?.gameEntries || [])
       .filter(e => e.checkedIn)
-      .map(e => String(e.game)));
+      .map(e => String(e.gameId)));
 
     // Compute distances; keep everything for logging
     const withDistances = [];
@@ -280,7 +280,7 @@ exports.nearbyGameCheckin = async (req, res, next) => {
         venue: { id: v.venueId, name: v.name },
         distMeters: dist,
         startDate: g.startDate,
-        checked: already.has(String(g._id))
+        checked: already.has(String(g.gameId))
       });
     }
 
@@ -362,22 +362,16 @@ exports.apiCheckIn = async (req, res, next) => {
     }
     if (!gameDoc) return res.status(404).json({ error: 'Game not found' });
 
-    const user = await User.findById(req.user.id)
-      .populate({ path: 'gameEntries.game', populate: [{ path: 'homeTeam' }, { path: 'awayTeam' }] });
+    const user = await User.findById(req.user.id).select('gameEntries badges points teamsList venuesList');
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     user.badges = user.badges || [];
-    user.gamesList = user.gamesList || [];
 
-    const gameMongoId = String(gameDoc._id);
     const gameIdStr = String(gameDoc.gameId);
 
-    const alreadyEntry = user.gameEntries.find(e => String(e.game?._id || e.game) === gameMongoId && e.checkedIn);
-    const alreadyInGames = user.gamesList.includes(gameIdStr);
-
-    // Track games/venues/teams for profile and badge progress
-    const beforeIds = [...user.gamesList];
-    if (!alreadyInGames) user.gamesList.push(gameIdStr);
+    const checkedEntries = (user.gameEntries || []).filter(e => e.checkedIn);
+    const beforeIds = checkedEntries.map(e => e.gameId);
+    const alreadyEntry = checkedEntries.some(e => String(e.gameId) === gameIdStr);
 
     if (gameDoc.venueId != null) {
 
@@ -394,12 +388,12 @@ exports.apiCheckIn = async (req, res, next) => {
     if (awayId && !user.teamsList.some(t => String(t) === String(awayId))) user.teamsList.push(awayId);
 
     if (!alreadyEntry) {
-      user.gameEntries.push({ game: gameDoc._id, checkedIn: true });
+      user.gameEntries.push({ gameId: gameIdStr, checkedIn: true, elo: null, comment: null });
       user.points = (user.points || 0) + 225;
     }
 
     const beforeGames = await fetchGamesByIds(beforeIds);
-    const afterGames = alreadyInGames ? beforeGames : [...beforeGames, gameDoc];
+    const afterGames = alreadyEntry ? beforeGames : [...beforeGames, gameDoc];
 
     // Load badges (lean), convert buffer icons, attach style + progress
     const badges = await Badge.find().lean();
@@ -453,17 +447,13 @@ exports.checkIn = async (req, res, next) => {
     }
     if (!gameDoc) return res.redirect('/games'); // or 404 if you prefer
 
-    const user = await User.findById(req.user.id)
-      .populate({ path: 'gameEntries.game', populate: [{ path: 'homeTeam' }, { path: 'awayTeam' }] });
-    const hasEntry = user && user.gameEntries.some(e => String(e.game?._id || e.game) === String(gameDoc._id) && e.checkedIn);
+    const user = await User.findById(req.user.id).select('gameEntries badges points teamsList venuesList');
+    const gameIdStr = String(gameDoc.gameId);
+    const checkedEntries = (user?.gameEntries || []).filter(e => e.checkedIn);
+    const hasEntry = checkedEntries.some(e => String(e.gameId) === gameIdStr);
 
     if (user) {
-      user.gamesList = user.gamesList || [];
-      const gameIdStr = String(gameDoc.gameId);
-      const alreadyInGames = user.gamesList.includes(gameIdStr);
-      const beforeIds = [...user.gamesList];
-      if (!alreadyInGames) user.gamesList.push(gameIdStr);
-
+      const beforeIds = checkedEntries.map(e => e.gameId);
 
       if (gameDoc.venueId != null) {
         const venueDoc = await Venue.findOne({ venueId: gameDoc.venueId }).select('_id');
@@ -478,13 +468,12 @@ exports.checkIn = async (req, res, next) => {
       if (awayId && !user.teamsList.some(t => String(t) === String(awayId))) user.teamsList.push(awayId);
 
       if (!hasEntry) {
-        user.gameEntries.push({ game: gameDoc._id, checkedIn: true });
+        user.gameEntries.push({ gameId: gameIdStr, checkedIn: true, elo: null, comment: null });
         user.points = (user.points || 0) + 225;
       }
 
       const beforeGames = await fetchGamesByIds(beforeIds);
-      const afterGames = alreadyInGames ? beforeGames : [...beforeGames, gameDoc];
-
+      const afterGames = hasEntry ? beforeGames : [...beforeGames, gameDoc];
 
       user.badges = user.badges || [];
       const badges = await Badge.find().lean();
@@ -536,14 +525,26 @@ exports.toggleGameList = async (req, res, next) => {
   try {
     const User = require('../models/users');
     const user = await User.findById(req.user.id);
-    const gameId = req.params.id;
-    const entry = user.gameEntries.find(e => String(e.game) === gameId);
+    const rawId = req.params.id;
+    let gameIdStr = null;
+    if (mongoose.isValidObjectId(rawId)) {
+      const g = await Game.findById(rawId).select('gameId').lean();
+      if (g) gameIdStr = String(g.gameId);
+      else {
+        const pg = await PastGame.findById(rawId).select('gameId').lean();
+        if (pg) gameIdStr = String(pg.gameId);
+      }
+    } else if (!Number.isNaN(Number(rawId))) {
+      gameIdStr = String(rawId);
+    }
+    if (!gameIdStr) return res.status(400).json({ error: 'Invalid game id' });
+    const entry = user.gameEntries.find(e => String(e.gameId) === gameIdStr);
     let action;
     if (entry) {
       entry.checkedIn = !entry.checkedIn;
       action = entry.checkedIn ? 'added' : 'removed';
     } else {
-      user.gameEntries.push({ game: gameId, checkedIn: true });
+      user.gameEntries.push({ gameId: gameIdStr, checkedIn: true, elo: null, comment: null });
       action = 'added';
     }
     await user.save();
@@ -689,7 +690,7 @@ exports.searchPastGames = async (req, res, next) => {
     const teamMap = {};
     teams.forEach(t => { teamMap[t.teamId] = t; });
     const results = games.map(g => ({
-      id: g._id,
+      id: g.gameId,
       homeTeamName: g.HomeTeam,
       awayTeamName: g.AwayTeam,
       homeLogo: teamMap[g.HomeId] && teamMap[g.HomeId].logos && teamMap[g.HomeId].logos[0],

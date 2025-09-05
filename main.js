@@ -18,6 +18,7 @@ const express = require("express"),
     PastGame = require('./models/PastGame'),
     Badge = require('./models/Badge'),
     layouts = require('express-ejs-layouts'),
+    { fetchGamesByIds } = require('./lib/gameUtils'),
     mongoose = require('mongoose'),
     { startPastGameScheduler, runPastGameMigrationOnce } = require('./pastGameScheduler'),
     cookieParser = require('cookie-parser'),
@@ -138,33 +139,35 @@ app.use(async (req, res, next) => {
         return next();
     }
     try {
-        const user = await User.findById(req.user.id)
-            .select('gameEntries')
-            .populate({
-                path: 'gameEntries.game',
-                populate: ['homeTeam', 'awayTeam']
-            })
-            .lean();
-        const entries = (user?.gameEntries || []).filter(e => {
+        const user = await User.findById(req.user.id).select('gameEntries').lean();
+        const pending = (user?.gameEntries || []).filter(e => {
             if (!e.checkedIn) return false;
             if (e.elo || e.comment || e.image) return false;
             if (e.ratingPrompted) return false;
-            const g = e.game;
-            if (!g) return false;
-            return g.homePoints != null && g.awayPoints != null;
-        }).map(e => ({
-            _id: String(e._id),
-            game: {
-                _id: String(e.game._id),
-                homeTeamName: e.game.homeTeamName || (e.game.homeTeam && e.game.homeTeam.teamName),
-                awayTeamName: e.game.awayTeamName || (e.game.awayTeam && e.game.awayTeam.teamName),
-                homePoints: e.game.homePoints,
-                awayPoints: e.game.awayPoints,
-                startDate: e.game.startDate,
-                homeLogo: e.game.homeTeam && e.game.homeTeam.logo,
-                awayLogo: e.game.awayTeam && e.game.awayTeam.logo
-            }
-        }));
+            return true;
+        });
+        const ids = pending.map(e => e.gameId);
+        const games = await fetchGamesByIds(ids);
+        const gameMap = {};
+        games.forEach(g => { gameMap[String(g.gameId)] = g; });
+        const entries = pending.map(e => {
+            const g = gameMap[String(e.gameId)];
+            if (!g) return null;
+            if (g.homePoints == null || g.awayPoints == null) return null;
+            return {
+                _id: String(e._id),
+                game: {
+                    _id: String(g._id || g.gameId),
+                    homeTeamName: g.homeTeamName || g.HomeTeam || (g.homeTeam && (g.homeTeam.teamName || g.homeTeam.school)),
+                    awayTeamName: g.awayTeamName || g.AwayTeam || (g.awayTeam && (g.awayTeam.teamName || g.awayTeam.school)),
+                    homePoints: g.homePoints ?? g.HomePoints,
+                    awayPoints: g.awayPoints ?? g.AwayPoints,
+                    startDate: g.startDate || g.StartDate,
+                    homeLogo: g.homeTeam && (g.homeTeam.logo || (g.homeTeam.logos && g.homeTeam.logos[0])) || null,
+                    awayLogo: g.awayTeam && (g.awayTeam.logo || (g.awayTeam.logos && g.awayTeam.logos[0])) || null
+                }
+            };
+        }).filter(Boolean);
         res.locals.pendingRatings = entries;
     } catch (err) {
         res.locals.pendingRatings = [];
@@ -322,9 +325,9 @@ app.get('/team/:id', async (req, res) => {
         }
     }
 
-    const gameIds = games.map(g => g._id);
+    const gameIds = games.map(g => String(g.gameId));
     const usersCheckedIn = await User.countDocuments({
-        gameEntries: { $elemMatch: { game: { $in: gameIds }, checkedIn: true } }
+        gameEntries: { $elemMatch: { gameId: { $in: gameIds }, checkedIn: true } }
     });
 
     const relevantBadges = await Badge.find({

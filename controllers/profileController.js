@@ -68,61 +68,21 @@ function sanitizeComment(text) {
 
 async function enrichGameEntries(entries){
     if(!entries || !entries.length) return [];
-    const ids = entries.map(e => e.game).filter(Boolean);
-    const pastGames = await PastGame.find({ _id: { $in: ids } }).lean();
-    const foundIds = new Set(pastGames.map(pg => String(pg._id)));
-    const remainingIds = ids.filter(id => !foundIds.has(String(id)));
-    let upcomingGames = [];
-    if (remainingIds.length) {
-        upcomingGames = await Game.find({ _id: { $in: remainingIds } })
-            .populate('homeTeam')
-            .populate('awayTeam')
-            .lean();
-    }
-
-    const teamIds = [...new Set(pastGames.flatMap(g => [g.HomeId, g.AwayId]))];
-    const teams = await Team.find({ teamId: { $in: teamIds } })
-        .select('teamId logos color alternateColor')
-        .lean();
-    const teamMap = {};
-    teams.forEach(t => { teamMap[t.teamId] = t; });
-
-    const venueIds = [...new Set(pastGames.map(g => g.VenueId).filter(v => v !== undefined))];
-    const venues = await Venue.find({ venueId: { $in: venueIds } }).lean();
-    const venueMap = {};
-    venues.forEach(v => { venueMap[v.venueId] = v; });
-
-    const pgMap = {};
-    pastGames.forEach(pg => {
-        pg.homeTeam = teamMap[pg.HomeId] || null;
-        pg.awayTeam = teamMap[pg.AwayId] || null;
-        pg.venue = venueMap[pg.VenueId] || null;
-        pgMap[String(pg._id)] = pg;
-    });
-    upcomingGames.forEach(g => {
-        pgMap[String(g._id)] = g;
-    });
-
+    const ids = entries.map(e => e.gameId).filter(Boolean);
+    const games = await fetchGamesByIds(ids);
+    const gameMap = {};
+    games.forEach(g => { gameMap[String(g.gameId)] = g; });
     return entries.map(e => {
         const entryObj = e.toObject ? e.toObject() : { ...e };
-        entryObj.game = pgMap[String(e.game)] || null;
+        entryObj.game = gameMap[String(e.gameId)] || null;
         return entryObj;
     });
 }
 
-// Returns an array of enriched game entry objects for a user, merging
-// traditional `gameEntries` with any additional `gameIds` stored in the new
-// `gamesList` array.
+// Returns an array of enriched game entry objects for a user.
 async function mergeUserGames(user){
     const gameEntriesRaw = user.gameEntries || [];
-    const enriched = gameEntriesRaw.length ? await enrichGameEntries(gameEntriesRaw) : [];
-    const existingIds = new Set(gameEntriesRaw.map(e => String(e.game)));
-    const extraIds = (user.gamesList || []).filter(id => !existingIds.has(String(id)));
-    if(extraIds.length){
-        const extraGames = await fetchGamesByIds(extraIds);
-        extraGames.forEach(g => enriched.push({ game: g, checkedIn: true }));
-    }
-    return enriched;
+    return gameEntriesRaw.length ? await enrichGameEntries(gameEntriesRaw) : [];
 }
 
 // Enriches an array of {game, elo} objects with full PastGame info
@@ -236,8 +196,7 @@ exports.getProfile = async (req, res, next) => {
             .populate({
                 path: 'wishlist',
                 populate: ['homeTeam', 'awayTeam']
-            })
-            .populate({ path: 'gameEntries.game', populate: ['homeTeam','awayTeam'] });
+            });
             
         if (!user) return res.redirect('/login');
 
@@ -332,8 +291,7 @@ exports.profileBadges = async (req, res, next) => {
     try {
         const userId = req.params.user || req.user.id;
         const profileUser = await User.findById(userId)
-            .populate('favoriteTeams')
-            .populate({ path: 'gameEntries.game', populate: ['homeTeam', 'awayTeam'] });
+            .populate('favoriteTeams');
         console.log('✅ user.favoriteTeams:', profileUser.favoriteTeams);
         if (!profileUser) return res.redirect('/profileBadges/' + req.user.id);
         const isCurrentUser = req.user && req.user.id.toString() === profileUser._id.toString();
@@ -371,10 +329,8 @@ exports.profileBadges = async (req, res, next) => {
             return b;
         });
 
-        // Gather all checked-in games using the permanent gameIds stored on
-        // the user. This allows badge progress to account for games that have
-        // moved from `Game` to `PastGame` collections.
-        const gameIds = profileUser.gamesList || [];
+        // Gather all checked-in games from the user's gameEntries
+        const gameIds = (profileUser.gameEntries || []).filter(e => e.checkedIn).map(e => e.gameId);
         const games = await fetchGamesByIds(gameIds);
 
         const userProgress = {};
@@ -707,8 +663,7 @@ exports.viewUser = async (req, res, next) => {
             .populate({
                 path: 'wishlist',
                 populate: ['homeTeam','awayTeam']
-            })
-            .populate({ path: 'gameEntries.game', populate: ['homeTeam','awayTeam'] });
+            });
         if (!user) return res.redirect('/profile');
 
         if(req.user){
@@ -867,14 +822,19 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
             return res.status(400).json({ error: 'Rating required for initial games' });
         }
 
+        const pastGameDoc = await PastGame.findOne({ gameId: Number(gameId) });
+        if(!pastGameDoc) {
+            return res.status(404).json({ error: 'Game not found' });
+        }
+
         const entry = {
-            game: gameId,
+            gameId: String(pastGameDoc.gameId),
             elo: finalElo,
             comment: sanitizedComment || null,
             image: req.file ? '/uploads/' + req.file.filename : null
         };
 
-        const alreadyExists = user.gameEntries.some(e => String(e.game) === String(gameId));
+        const alreadyExists = user.gameEntries.some(e => String(e.gameId) === String(pastGameDoc.gameId));
         if (alreadyExists) {
             const enrichedEntries = await mergeUserGames(user);
             const eloGames = await enrichEloGames(user.gameElo || []);
@@ -894,7 +854,7 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
 
         console.log(`Added game entry:`, entry);
 
-        const newGameObjectId = new mongoose.Types.ObjectId(gameId);
+        const newGameObjectId = pastGameDoc._id;
 
         const finalizedGames = (user.gameElo || []).filter(g => g.finalized);
         let minElo = 1000;
@@ -982,8 +942,6 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
             comparisonHistory: []
         };
 
-        const pastGameDoc = await PastGame.findById(gameId);
-
         if (pastGameDoc) {
             let updated = false;
             const reviewed = pastGameDoc.comments.some(c => String(c.userId) === String(user._id));
@@ -1058,7 +1016,7 @@ exports.updateGameEntry = [uploadDisk.single('photo'), async (req, res, next) =>
             entry.image = '/uploads/' + req.file.filename;
         }
 
-        const pastGameDoc = await PastGame.findById(entry.game);
+        const pastGameDoc = await PastGame.findOne({ gameId: entry.gameId });
         if(pastGameDoc){
             let updated = false;
             const commentObj = pastGameDoc.comments.find(c => String(c.userId) === String(user._id));
@@ -1074,7 +1032,7 @@ exports.updateGameEntry = [uploadDisk.single('photo'), async (req, res, next) =>
             }
         }
 
-        const eloEntry = user.gameElo.find(e => String(e.game) === String(entry.game));
+        const eloEntry = pastGameDoc ? user.gameElo.find(e => String(e.game) === String(pastGameDoc._id)) : null;
         if(eloEntry){
             eloEntry.elo = newElo;
         }
@@ -1098,7 +1056,7 @@ exports.deleteGameEntry = async (req, res, next) => {
         const entry = user.gameEntries.id(entryId);
         if(!entry) return res.status(404).json({ error:'Entry not found' });
 
-        const pastGameDoc = await PastGame.findById(entry.game);
+        const pastGameDoc = await PastGame.findOne({ gameId: entry.gameId });
 
         const teamsToRemove = [];
         const venuesToRemove = [];
@@ -1136,7 +1094,7 @@ exports.deleteGameEntry = async (req, res, next) => {
             if(idx >= 0) user.venuesList.splice(idx,1);
         });
 
-        const idx = user.gameElo.findIndex(e => String(e.game) === String(entry.game));
+        const idx = pastGameDoc ? user.gameElo.findIndex(e => String(e.game) === String(pastGameDoc._id)) : -1;
         if(idx >= 0){
             user.gameElo.splice(idx,1);
         }
