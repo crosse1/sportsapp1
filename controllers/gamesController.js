@@ -388,7 +388,9 @@ exports.apiCheckIn = async (req, res, next) => {
     if (awayId && !user.teamsList.some(t => String(t) === String(awayId))) user.teamsList.push(awayId);
 
     if (!alreadyEntry) {
-      user.gameEntries.push({ gameId: gameIdStr, checkedIn: true, elo: null, comment: null });
+      const newEntry = { gameId: gameIdStr, checkedIn: true, elo: null, comment: null };
+      if (newEntry.elo != null) newEntry.ratingPrompted = true;
+      user.gameEntries.push(newEntry);
       user.points = (user.points || 0) + 225;
     }
 
@@ -468,7 +470,9 @@ exports.checkIn = async (req, res, next) => {
       if (awayId && !user.teamsList.some(t => String(t) === String(awayId))) user.teamsList.push(awayId);
 
       if (!hasEntry) {
-        user.gameEntries.push({ gameId: gameIdStr, checkedIn: true, elo: null, comment: null });
+        const newEntry = { gameId: gameIdStr, checkedIn: true, elo: null, comment: null };
+        if (newEntry.elo != null) newEntry.ratingPrompted = true;
+        user.gameEntries.push(newEntry);
         user.points = (user.points || 0) + 225;
       }
 
@@ -544,7 +548,9 @@ exports.toggleGameList = async (req, res, next) => {
       entry.checkedIn = !entry.checkedIn;
       action = entry.checkedIn ? 'added' : 'removed';
     } else {
-      user.gameEntries.push({ gameId: gameIdStr, checkedIn: true, elo: null, comment: null });
+      const newEntry = { gameId: gameIdStr, checkedIn: true, elo: null, comment: null };
+      if (newEntry.elo != null) newEntry.ratingPrompted = true;
+      user.gameEntries.push(newEntry);
       action = 'added';
     }
     await user.save();
