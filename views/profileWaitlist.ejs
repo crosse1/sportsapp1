@@ -69,7 +69,7 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="/js/profileModals.js"></script>
     <script>
-        window.existingGameIds = <%- JSON.stringify((user.gameEntries || []).map(e => String(e.game))) %>;
+        window.existingGameIds = <%- JSON.stringify((user.gameEntries || []).map(e => String(e.gameId))) %>;
         window.gameEntryCount = <%- (user.gameEntries || []).length %>;
         window.eloGamesData = <%- JSON.stringify(eloGames || []) %>;
     </script>

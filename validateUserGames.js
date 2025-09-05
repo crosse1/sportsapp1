@@ -4,15 +4,15 @@ const Game = require('./models/Game');
 const PastGame = require('./models/PastGame');
 
 /**
- * Fallback validator that ensures every gameId in each user's gamesList exists
- * in either the `Game` or `PastGame` collections. Logs any missing ids so they
- * can be investigated separately.
+ * Fallback validator that ensures every gameId in each user's gameEntries
+ * exists in either the `Game` or `PastGame` collections. Logs any missing ids
+ * so they can be investigated separately.
  */
 async function validate() {
   try {
-    const users = await User.find({}).select('username gamesList').lean();
+    const users = await User.find({}).select('username gameEntries').lean();
     for (const u of users) {
-      const ids = (u.gamesList || []).map(id => Number(id)).filter(n => !isNaN(n));
+      const ids = (u.gameEntries || []).map(e => Number(e.gameId)).filter(n => !isNaN(n));
       if (!ids.length) continue;
 
       const [live, past] = await Promise.all([
