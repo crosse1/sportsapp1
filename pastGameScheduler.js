@@ -45,25 +45,68 @@ async function ensureIndexes(db) {
   const past = db.collection(PAST_GAMES_COLLECTION);
   const games = db.collection(GAMES_COLLECTION);
 
-  try {
-    await past.createIndex({ Id: 1 }, { unique: true });
-  } catch (e) {
-    console.warn('[indexes] Id unique index:', e.message);
+  // Desired specs
+  const desiredPastIndexes = [
+    {
+      name: 'Id_1',                  // keep deterministic names
+      keys: { Id: 1 },
+      opts: { unique: true }
+    },
+    {
+      name: 'gameId_1',
+      keys: { gameId: 1 },
+      // Match the existing partialFilterExpression so we don't fight it.
+      // This ignores docs without gameId or with null/undefined, and supports common numeric/string types.
+      opts: {
+        unique: true,
+        partialFilterExpression: {
+          gameId: { $exists: true, $type: ["string","int","long","double","decimal"] }
+        }
+      }
+    }
+  ];
+
+  // Helper to compare essential parts of an index spec
+  const normalize = (ix) => ({
+    name: ix.name,
+    key: ix.key,
+    unique: !!ix.unique,
+    partialFilterExpression: ix.partialFilterExpression || null
+  });
+
+  // Ensure pastgames indexes (create or reconcile)
+  const existingPast = await past.indexes();
+  const existingMap = new Map(existingPast.map(ix => [ix.name, normalize(ix)]));
+
+  for (const { name, keys, opts } of desiredPastIndexes) {
+    const desired = normalize({ name, key: keys, ...opts });
+
+    if (existingMap.has(name)) {
+      const current = existingMap.get(name);
+      const same =
+        JSON.stringify(current.key) === JSON.stringify(desired.key) &&
+        current.unique === desired.unique &&
+        JSON.stringify(current.partialFilterExpression) === JSON.stringify(desired.partialFilterExpression);
+
+      if (!same) {
+        console.warn(`[indexes] Recreating index "${name}" (spec changed).`);
+        try { await past.dropIndex(name); }
+        catch (e) { console.warn(`[indexes] dropIndex("${name}") warning: ${e.message}`); }
+        await past.createIndex(keys, { name, ...opts });
+      } // else: same spec, do nothing
+    } else {
+      await past.createIndex(keys, { name, ...opts });
+    }
   }
 
-  // Ensure new canonical gameId index exists
+  // Ensure games.startDate index (non-unique)
   try {
-    await past.createIndex({ gameId: 1 }, { unique: true });
-  } catch (e) {
-    console.warn('[indexes] gameId unique index:', e.message);
-  }
-
-  try {
-    await games.createIndex({ startDate: 1 });
+    await games.createIndex({ startDate: 1 }, { name: 'startDate_1' });
   } catch (e) {
     console.warn('[indexes] games.startDate index:', e.message);
   }
 }
+
 
 /**
  * Build a PastGame document from a Game doc + optional team meta.
