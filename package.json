@@ -4,7 +4,7 @@
   "description": "Interactive social sporting event app",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"No tests defined\" && exit 0",
+    "test": "node --test",
     "start": "nodemon main.js",
     "seed": "node importCsv.js"
   },
