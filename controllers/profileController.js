@@ -371,10 +371,11 @@ exports.profileBadges = async (req, res, next) => {
             return b;
         });
 
-        const games = (profileUser.gameEntries || [])
-            .filter(e => e.checkedIn)
-            .map(e => e.game)
-            .filter(Boolean);
+        // Gather all checked-in games using the permanent gameIds stored on
+        // the user. This allows badge progress to account for games that have
+        // moved from `Game` to `PastGame` collections.
+        const gameIds = profileUser.gamesList || [];
+        const games = await fetchGamesByIds(gameIds);
 
         const userProgress = {};
         badges.forEach(badge => {
