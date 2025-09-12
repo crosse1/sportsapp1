@@ -224,123 +224,6 @@
         </div>
     </div>
 
-    <% if (isCurrentUser) { %>
-    <div class="modal fade user-search-modal" id="userSearchModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content p-3">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title">Find Users</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="position-relative mb-3 profile-search-wrapper w-100">
-                        <i class="bi bi-search search-icon"></i>
-                        <input type="text" id="searchInput" class="form-control profile-search">
-                    </div>
-                    <div id="searchResults" class="row g-3" style="max-height:300px;overflow:auto;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <% } %>
-
-    <% if (isCurrentUser) { %>
-    <div class="modal fade user-search-modal" id="addGameModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content p-3">
-                <form action="/profile/games" method="post" enctype="multipart/form-data">
-                    <div class="modal-header border-0">
-                        <button type="button" id="backBtn" class="btn btn-link text-white p-0 me-2 d-none"><i class="bi bi-arrow-left"></i></button>
-                        <h5 class="modal-title flex-grow-1">Add Game</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div id="gameInfoStep">
-                        <div class="mb-3">
-                            <label class="form-label">Season</label>
-                            <select id="seasonSelect" class="form-select glass-control"></select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Game</label>
-                            <div class="d-flex align-items-center">
-                                <select id="gameSelect" name="gameId" class="form-select glass-control" required disabled></select>
-                                <div id="gameSpinner" class="spinner-border text-light ms-2" style="display:none;width:1.5rem;height:1.5rem;" role="status">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3 position-relative" id="ratingGroup">
-                            <label class="form-label d-flex justify-content-between">
-                                <span>Rating:</span>
-                                <span id="ratingValue" class="fw-bold text-white">5</span>
-                            </label>
-                            <div class="glass-range-wrapper">
-                                <input type="range" id="ratingRange" name="rating" class="form-range glass-control" min="1" max="10" step="0.1" value="5" required>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Photo</label>
-                            <input type="file" name="photo" class="form-control glass-control">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Comment</label>
-                            <textarea class="form-control glass-control" name="comment" rows="3"></textarea>
-                        </div>
-                        <input type="hidden" name="compareGameId1" id="compareGameId1">
-                        <input type="hidden" name="winner1" id="winnerInput1">
-                        <input type="hidden" name="compareGameId2" id="compareGameId2">
-                        <input type="hidden" name="winner2" id="winnerInput2">
-                        <input type="hidden" name="compareGameId3" id="compareGameId3">
-                        <input type="hidden" name="winner3" id="winnerInput3">
-                        <input type="hidden" name="teamsList" id="teamsListInput">
-                        <input type="hidden" name="venuesList" id="venuesListInput">
-                        </div>
-                        <div id="eloStep" style="display:none;">
-                            <div id="eloMatchup" class="mb-3">
-                                <p id="comparisonPrompt" class="mb-2 fw-bold text-center"></p>
-                                <div class="d-flex justify-content-between mb-3">
-                                    <div id="newGameCard" class="elo-game-card flex-fill me-2"></div>
-                                    <div id="existingGameCard" class="elo-game-card flex-fill ms-2"></div>
-                                </div>
-                                <div id="comparisonButtons" class="d-flex justify-content-around" style="display:none;">
-                                    <button type="button" id="betterBtn" class="btn btn-primary btn-sm">New Game</button>
-                                    <button type="button" id="worseBtn" class="btn btn-secondary btn-sm">Existing Game</button>
-                                </div>
-                                
-                                
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer border-0">
-                        <button type="button" id="nextBtn" class="btn btn-primary">Next</button>
-                    <button type="submit" id="submitGameBtn" class="btn btn-primary">Submit</button>
-                </div>
-            </form>
-            <div id="autoSubmitOverlay" class="loading-overlay" style="display:none;">
-                <div class="spinner-border text-light" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<div class="modal fade user-search-modal" id="gameAddedModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <button type="button" class="btn-close position-absolute top-0 start-0 m-2" data-bs-dismiss="modal" aria-label="Close" style="margin-top: 1.5rem; margin-bottom: 1rem;"></button>
-        <div class="modal-content p-3 position-relative">
-            
-            <div class="d-flex align-items-center">
-                <div id="addedGameCard" class="elo-game-card flex-fill me-2"></div>
-                <div class="flex-fill ms-2 d-flex flex-column justify-content-center align-items-center">
-                    <div class="rating-circle mb-2">
-                        <span id="addedGameRating"></span>
-                    </div>
-                    <h5 class="fw-bold text-white text-center">This game got rated a <span id="addedGameRatingText"></span>!</h5>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
     <% } %>
 
 
@@ -357,8 +240,6 @@
     </script>
     <script src="/js/addGameModal.js"></script>
     <script>
-        const searchInput = document.getElementById('searchInput');
-        const resultsEl = document.getElementById('searchResults');
         const followBtn = document.getElementById('followBtn');
 
         if(followBtn){
@@ -387,54 +268,6 @@
                 } finally {
                     this.disabled = false;
                 }
-            });
-        }
-
-        if(searchInput){
-            searchInput.addEventListener('input', async function(){
-                const q = this.value.trim();
-                if(!q){ resultsEl.innerHTML=''; return; }
-                const res = await fetch('/users/search?q='+encodeURIComponent(q));
-                if(!res.ok) return;
-                const data = await res.json();
-                const currentId = '<%= viewer ? viewer.id : "" %>';
-                resultsEl.innerHTML = data.map(u=>{
-                    const following = u.followers && u.followers.includes(currentId);
-                    const imgUrl = `/users/${u._id}/profile-image`;
-                    return `<div class="col-md-4"><div class="card p-2 d-flex flex-row align-items-center gap-2">`+
-                        `<img src="${imgUrl}" class="avatar avatar-sm">`+
-                        `<div class="flex-grow-1"><a href="/users/${u._id}" class="text-decoration-none">${u.username}</a></div>`+
-                        (currentId && u._id !== currentId ? `<button data-id="${u._id}" class="btn btn-${following?'secondary':'primary'} btn-sm follow-toggle">${following?'Following':'Follow'}</button>`:'')+
-                        `</div></div>`; }).join('');
-            });
-
-            resultsEl.addEventListener('click', async function(e){
-                const btn = e.target.closest('.follow-toggle');
-                if(!btn) return;
-                const targetId = btn.dataset.id;
-                const isFollowing = btn.classList.contains('btn-secondary');
-                const action = isFollowing ? 'unfollow' : 'follow';
-                btn.disabled = true;
-                try{
-                    const res = await fetch(`/users/${targetId}/${action}`, {method:'POST'});
-                    if(!res.ok) throw new Error();
-                    if(isFollowing){
-                        btn.classList.remove('btn-secondary');
-                        btn.classList.add('btn-primary');
-                        btn.textContent = 'Follow';
-                    }else{
-                        btn.classList.remove('btn-primary');
-                        btn.classList.add('btn-secondary');
-                        btn.textContent = 'Following';
-                    }
-                }catch(err){
-                    alert('Action failed');
-                }finally{
-                    btn.disabled = false;
-                }
-            });
-        }
-
             });
         }
 
