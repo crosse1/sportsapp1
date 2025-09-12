@@ -11,6 +11,7 @@ const express = require("express"),
     messagesController = require('./controllers/messagesController'),
     comparisonController = require('./controllers/comparisonController'),
     badgeController = require('./controllers/badgeController'),
+    socialController = require('./controllers/socialController'),
     Message = require('./models/Message'),
     User = require('./models/users'),
     Team = require('./models/Team'),
@@ -282,6 +283,7 @@ app.get('/about', requireAuth, homeController.showAbout);
 app.get('/projects', requireAuth, projectsController.getProjects);
 app.get('/newProject', requireAuth, projectsController.getNewProject);
 
+app.get('/social', socialController.showMostCheckedIn);
 app.get('/games', gamesController.listGames);
 app.get('/teams/search', gamesController.searchTeams);
 app.get('/games/searchGames', gamesController.searchGames);
