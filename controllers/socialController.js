@@ -2,6 +2,13 @@ const PastGame = require('../models/PastGame');
 const User = require('../models/users');
 const Team = require('../models/Team');
 
+// Helper to format ordinal numbers (1st, 2nd, 3rd, etc.)
+function formatOrdinal(n) {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
 exports.showMostCheckedIn = async (req, res, next) => {
   try {
     const now = new Date();
@@ -49,13 +56,128 @@ exports.showMostCheckedIn = async (req, res, next) => {
     const homeColor = homeTeam && homeTeam.color ? homeTeam.color : '#ffffff';
     const awayColor = awayTeam && awayTeam.color ? awayTeam.color : '#ffffff';
 
+    // --- Build social timeline events ---
+    const events = [];
+
+    if (req.user) {
+      // Aggregate total check-ins for all games once so we can
+      // compute milestones and ranking information.
+      const globalCheckins = await User.aggregate([
+        { $unwind: '$gameEntries' },
+        { $match: { 'gameEntries.checkedIn': true } },
+        { $group: { _id: '$gameEntries.gameId', users: { $addToSet: '$_id' } } },
+        { $project: { count: { $size: '$users' } } }
+      ]);
+
+      const countMapAll = {};
+      globalCheckins.forEach(c => { countMapAll[c._id] = c.count; });
+
+      // Preload past game documents for milestone calculations
+      const allGameIds = globalCheckins.map(g => Number(g._id));
+      const pastGameDocs = await PastGame.find({ gameId: { $in: allGameIds } }).lean();
+      const pastGameMap = {};
+      pastGameDocs.forEach(pg => { pastGameMap[String(pg.gameId)] = pg; });
+
+      // Group counts by date for ranking
+      const byDate = {};
+      pastGameDocs.forEach(pg => {
+        const key = pg.StartDate.toISOString().split('T')[0];
+        byDate[key] = byDate[key] || [];
+        const count = countMapAll[String(pg.gameId)] || 0;
+        byDate[key].push({ gameId: String(pg.gameId), count });
+      });
+      Object.values(byDate).forEach(list => list.sort((a, b) => b.count - a.count));
+
+      // Fetch followed users and their check-ins
+      const me = await User.findById(req.user.id).select('following').lean();
+      const followingIds = me?.following || [];
+      const followedUsers = await User.find({ _id: { $in: followingIds } })
+        .select('username gameEntries')
+        .lean();
+
+      for (const fu of followedUsers) {
+        const entries = (fu.gameEntries || []).filter(e => e.checkedIn);
+        for (const entry of entries) {
+          const game = pastGameMap[String(entry.gameId)];
+          if (!game) continue; // skip if we can't load game info
+
+          const [hTeam, aTeam] = await Promise.all([
+            Team.findOne({ teamId: game.HomeId }).lean(),
+            Team.findOne({ teamId: game.AwayId }).lean()
+          ]);
+
+          const hLogo = hTeam && hTeam.logos && hTeam.logos[0] ? hTeam.logos[0] : 'https://via.placeholder.com/60';
+          const aLogo = aTeam && aTeam.logos && aTeam.logos[0] ? aTeam.logos[0] : 'https://via.placeholder.com/60';
+
+          const timestamp = game.StartDate;
+          events.push({
+            type: 'checkin',
+            user: { _id: fu._id, username: fu.username },
+            game,
+            homeLogo: hLogo,
+            awayLogo: aLogo,
+            timestamp
+          });
+
+          const total = countMapAll[String(entry.gameId)] || 0;
+          const fanMilestones = [1, 100, 1000, 10000, 100000];
+          if (fanMilestones.includes(total)) {
+            events.push({
+              type: 'fanMilestone',
+              user: { _id: fu._id, username: fu.username },
+              game,
+              homeLogo: hLogo,
+              awayLogo: aLogo,
+              milestone: total,
+              ordinal: formatOrdinal(total),
+              timestamp
+            });
+          }
+        }
+      }
+
+      // Game milestone events (e.g. game surpasses 100, 500 fans, etc.)
+      const gameMilestones = [100, 500, 1000, 5000, 10000, 50000];
+      for (const gc of globalCheckins) {
+        const count = gc.count;
+        if (!gameMilestones.includes(count)) continue;
+        const game = pastGameMap[String(gc._id)];
+        if (!game) continue;
+        const dateKey = game.StartDate.toISOString().split('T')[0];
+        const list = byDate[dateKey] || [];
+        const rank = list.findIndex(g => g.gameId === String(gc._id)) + 1;
+
+        const [hTeam, aTeam] = await Promise.all([
+          Team.findOne({ teamId: game.HomeId }).lean(),
+          Team.findOne({ teamId: game.AwayId }).lean()
+        ]);
+
+        const hLogo = hTeam && hTeam.logos && hTeam.logos[0] ? hTeam.logos[0] : 'https://via.placeholder.com/60';
+        const aLogo = aTeam && aTeam.logos && aTeam.logos[0] ? aTeam.logos[0] : 'https://via.placeholder.com/60';
+
+        events.push({
+          type: 'gameMilestone',
+          game,
+          homeLogo: hLogo,
+          awayLogo: aLogo,
+          milestone: count,
+          rank,
+          timestamp: game.StartDate
+        });
+      }
+    }
+
+    // Order events from most recent to oldest
+    events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
     res.render('social', {
       pastgame: selected,
       count: max,
       homeLogo,
       awayLogo,
       homeColor,
-      awayColor
+      awayColor,
+      events
     });
   } catch (err) {
     next(err);
