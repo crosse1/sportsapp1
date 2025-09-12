@@ -76,6 +76,31 @@
 
 /* Make sure nothing on pages overrides these with different sizes */
 
+.search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 0.5rem;
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.suggestion-item {
+  padding: 0.5rem;
+  cursor: pointer;
+  font-weight: 700;
+  color: #fff;
+}
+
+.suggestion-item:hover {
+  background: linear-gradient(to right,#14b8a6,#7e22ce);
+}
+
 </style>
 <div class="profile-header pt-5 pb-0 text-white">
   <div class="container">
@@ -183,9 +208,12 @@
             <div class="modal-body">
                 <div class="position-relative mb-3 profile-search-wrapper w-100">
                     <i class="bi bi-search search-icon"></i>
-                    <input type="text" id="searchInput" class="form-control profile-search">
+                    <input type="text" id="searchInput" class="form-control profile-search" autocomplete="off">
+                    <div id="loadingSpinner" class="spinner-border spinner-border-sm text-light position-absolute end-0 top-50 translate-middle-y me-3 d-none" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div id="searchDropdown" class="search-dropdown d-none"></div>
                 </div>
-                <div id="searchResults" class="row g-3" style="max-height:300px;overflow:auto;"></div>
             </div>
         </div>
     </div>
@@ -292,6 +320,7 @@
             </div>
         </div>
     </div>
+    <script src="/js/userSearch.js"></script>
     <script>
 (function initChainLogos() {
   const wrapper = document.querySelector('.profile-avatar-wrapper');

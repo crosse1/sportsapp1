@@ -75,8 +75,6 @@
     </script>
     <script src="/js/addGameModal.js"></script>
     <script>
-        const searchInput = document.getElementById('searchInput');
-        const resultsEl = document.getElementById('searchResults');
         const followBtn = document.getElementById('followBtn');
         if(followBtn){
             followBtn.addEventListener('click', async function(){
@@ -106,51 +104,6 @@
                 }
             });
         }
-        if(searchInput){
-            searchInput.addEventListener('input', async function(){
-                const q = this.value.trim();
-                if(!q){ resultsEl.innerHTML=''; return; }
-                const res = await fetch('/users/search?q='+encodeURIComponent(q));
-                if(!res.ok) return;
-                const data = await res.json();
-                const currentId = '<%= viewer ? viewer.id : "" %>';
-                resultsEl.innerHTML = data.map(u=>{
-                    const following = u.followers && u.followers.includes(currentId);
-                    const imgUrl = `/users/${u._id}/profile-image`;
-                    return `<div class="col-md-4"><div class="card p-2 d-flex flex-row align-items-center gap-2">`+
-                        `<img src="${imgUrl}" class="avatar avatar-sm">`+
-                        `<div class="flex-grow-1"><a href="/users/${u._id}" class="text-decoration-none">${u.username}</a></div>`+
-                        (currentId && u._id !== currentId ? `<button data-id="${u._id}" class="btn btn-${following?'secondary':'primary'} btn-sm follow-toggle">${following?'Following':'Follow'}</button>`:'')+
-                        `</div></div>`; }).join('');
-            });
-            resultsEl.addEventListener('click', async function(e){
-                const btn = e.target.closest('.follow-toggle');
-                if(!btn) return;
-                const targetId = btn.dataset.id;
-                const isFollowing = btn.classList.contains('btn-secondary');
-                const action = isFollowing ? 'unfollow' : 'follow';
-                btn.disabled = true;
-                try{
-                    const res = await fetch(`/users/${targetId}/${action}`, {method:'POST'});
-                    if(!res.ok) throw new Error();
-                    if(isFollowing){
-                        btn.classList.remove('btn-secondary');
-                        btn.classList.add('btn-primary');
-                        btn.textContent = 'Follow';
-                    }else{
-                        btn.classList.remove('btn-primary');
-                        btn.classList.add('btn-secondary');
-                        btn.textContent = 'Following';
-                    }
-                }catch(err){
-                    alert('Action failed');
-                }finally{
-                    btn.disabled = false;
-                }
-            });
-        }
-            
-        
         const wrapper = document.querySelector('.profile-avatar-wrapper');
         if(wrapper){
             const logos = wrapper.querySelectorAll('.chain-logo');
@@ -168,8 +121,6 @@
                 });
             }
         }
-            
-        
         
     </script>
 </body>
