@@ -647,9 +647,21 @@ exports.searchUsers = async (req, res, next) => {
     try {
         const q = req.query.q || '';
         if (!q) return res.json([]);
-        const users = await User.find({ username: { $regex: q, $options: 'i' } })
-        .select('username profileImage followers followersCount followingCount');
-        res.json(users);
+
+        const viewer = await User.findById(req.user.id).select('following').lean();
+
+        const users = await User.find({
+            username: { $regex: q, $options: 'i' },
+            _id: { $ne: req.user.id }
+        }).select('username').lean();
+
+        const followingSet = new Set((viewer?.following || []).map(id => String(id)));
+
+        res.json(users.map(u => ({
+            _id: u._id,
+            username: u.username,
+            isFollowing: followingSet.has(String(u._id))
+        })));
     } catch (err) {
         next(err);
     }
