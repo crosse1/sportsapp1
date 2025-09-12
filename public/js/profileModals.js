@@ -23,12 +23,13 @@ document.addEventListener('DOMContentLoaded', function () {
   if (userSearchModal) {
     userSearchModal.addEventListener('hidden.bs.modal', function () {
       const searchInput = document.getElementById('searchInput');
-      const resultsEl = document.getElementById('searchResults');
+      const dropdown = document.getElementById('searchDropdown');
       if (searchInput) {
         searchInput.value = '';
       }
-      if (resultsEl) {
-        resultsEl.innerHTML = '';
+      if (dropdown) {
+        dropdown.classList.add('d-none');
+        dropdown.innerHTML = '';
       }
     });
   }

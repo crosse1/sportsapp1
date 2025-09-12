@@ -647,8 +647,15 @@ exports.searchUsers = async (req, res, next) => {
     try {
         const q = req.query.q || '';
         if (!q) return res.json([]);
-        const users = await User.find({ username: { $regex: q, $options: 'i' } })
-        .select('username profileImage followers followersCount followingCount');
+
+        const viewer = await User.findById(req.user.id).select('following');
+        const excludeIds = [req.user.id, ...(viewer?.following || [])];
+
+        const users = await User.find({
+            username: { $regex: q, $options: 'i' },
+            _id: { $nin: excludeIds }
+        }).select('username');
+
         res.json(users);
     } catch (err) {
         next(err);
