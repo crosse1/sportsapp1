@@ -384,6 +384,38 @@
     flex: 0 0 45%;
 }
 
+/* Social timeline */
+.timeline-wrapper {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.timeline-event {
+  border: 2px solid transparent;
+  border-radius: 0.75rem;
+  background:
+    linear-gradient(#ffffff,#ffffff) padding-box,
+    linear-gradient(to right,#14b8a6,#7e22ce) border-box;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: #fff;
+  font-weight: 700;
+}
+
+.timeline-event .timestamp {
+  font-size: 0.85rem;
+}
+
+.timeline-event .plain-card {
+  background: #ffffff;
+}
+
+.timeline-event .plain-card .game-date,
+.timeline-event .plain-card .team-name,
+.timeline-event .plain-card .at-symbol {
+  color: #000 !important;
+}
+
 /* Game detail page */
 .team-diagonal-square {
     position: relative;
