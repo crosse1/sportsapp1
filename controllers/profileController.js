@@ -648,6 +648,7 @@ exports.searchUsers = async (req, res, next) => {
         const q = req.query.q || '';
         if (!q) return res.json([]);
 
+
         const viewer = await User.findById(req.user.id).select('following').lean();
 
         const users = await User.find({
@@ -662,6 +663,7 @@ exports.searchUsers = async (req, res, next) => {
             username: u.username,
             isFollowing: followingSet.has(String(u._id))
         })));
+
     } catch (err) {
         next(err);
     }
