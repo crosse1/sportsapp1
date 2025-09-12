@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Social</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+<body class="d-flex flex-column min-vh-100 gradient-bg">
+  <%- include('partials/header') %>
+  <div class="container my-4 flex-grow-1">
+    <h1 class="text-center text-white fw-bold mb-4">Most Checked-In Game Yesterday</h1>
+    <% if (pastgame) { %>
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="position-relative">
+          <a href="/pastGames/<%= pastgame._id %>" class="game-link">
+            <div class="card shadow-sm h-100 game-card p-3 text-center position-relative" data-away-color="<%= awayColor %>" data-home-color="<%= homeColor %>" style="background: linear-gradient(to right, <%= awayColor %>, <%= homeColor %>);">
+              <div class="game-date mb-2" data-start="<%= pastgame.StartDate.toISOString() %>"></div>
+              <div class="d-flex justify-content-between align-items-center position-relative mb-2 px-3">
+                <div class="logo-wrapper me-3">
+                  <div class="team-logo-container">
+                    <img loading="lazy" src="<%= awayLogo %>" alt="<%= pastgame.AwayTeam %>">
+                  </div>
+                  <span class="team-name"><%= pastgame.AwayTeam %></span>
+                </div>
+                <div class="logo-wrapper ms-3">
+                  <div class="team-logo-container">
+                    <img loading="lazy" src="<%= homeLogo %>" alt="<%= pastgame.HomeTeam %>">
+                  </div>
+                  <span class="team-name"><%= pastgame.HomeTeam %></span>
+                </div>
+                <div class="position-absolute top-50 start-50 translate-middle fw-bold fs-4 at-symbol">@</div>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="text-center text-white fw-bold display-4 mt-4"><%= count %></div>
+    <p class="text-center text-white fs-5">users checked in to <%= pastgame.AwayTeam %> vs <%= pastgame.HomeTeam %></p>
+    <% } else { %>
+    <p class="text-center text-white fw-bold">No past games found for yesterday.</p>
+    <% } %>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function formatDates(){
+      document.querySelectorAll('.game-date[data-start]').forEach(function(el){
+        var date = new Date(el.dataset.start);
+        el.textContent = new Intl.DateTimeFormat(navigator.language, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+      });
+    }
+    function hexToRgb(hex){
+      if(!hex) return [255,255,255];
+      hex = hex.replace('#','');
+      if(hex.length===3) hex = hex.split('').map(c=>c+c).join('');
+      const num = parseInt(hex,16);
+      return [(num>>16)&255,(num>>8)&255,num&255];
+    }
+    function luminance(r,g,b){
+      const a=[r,g,b].map(v=>{
+        v/=255;
+        return v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4);
+      });
+      return 0.2126*a[0] + 0.7152*a[1] + 0.0722*a[2];
+    }
+    function chooseTextColor(colors){
+      const lums = colors.map(c=>{
+        const [r,g,b] = hexToRgb(c);
+        return luminance(r,g,b);
+      });
+      const avg = lums.reduce((a,b)=>a+b,0)/lums.length;
+      return avg > 0.5 ? '#333333' : '#ffffff';
+    }
+    function applyTextColors(){
+      document.querySelectorAll('.game-card').forEach(card=>{
+        const away = card.dataset.awayColor;
+        const home = card.dataset.homeColor;
+        const textColor = chooseTextColor([away, home]);
+        card.querySelectorAll('.game-date, .team-name').forEach(el=>{
+          el.style.color = textColor;
+        });
+      });
+    }
+    function adjustTeamNames(){
+      document.querySelectorAll('.team-name').forEach(el=>{
+        el.style.fontSize = '';
+        let size = parseFloat(getComputedStyle(el).fontSize);
+        while(el.scrollWidth > el.clientWidth && size > 10){
+          size -= 0.5;
+          el.style.fontSize = size + 'px';
+        }
+      });
+    }
+    formatDates();
+    applyTextColors();
+    adjustTeamNames();
+  </script>
+</body>
+</html>
