@@ -38,7 +38,10 @@
         </div>
       </div>
     </div>
-    <p class="text-center text-white fw-bold mt-4"><%= count %> users checked into <%= pastgame.AwayTeam %> vs <%= pastgame.HomeTeam %></p>
+
+    <div class="text-center text-white fw-bold display-4 mt-4"><%= count %></div>
+    <p class="text-center text-white fs-5">users checked in to <%= pastgame.AwayTeam %> vs <%= pastgame.HomeTeam %></p>
+
     <% } else { %>
     <p class="text-center text-white fw-bold">No past games found for yesterday.</p>
     <% } %>
