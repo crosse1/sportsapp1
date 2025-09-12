@@ -31,9 +31,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       dropdown.innerHTML = users.map(u => `
-        <div class="suggestion-item d-flex align-items-center" data-id="${u._id}">
-          <img src="/users/${u._id}/profile-image" class="avatar avatar-sm me-2" alt="${u.username}">
-          <span>@${u.username}</span>
+
+        <div class="suggestion-item d-flex align-items-center gap-2" data-id="${u._id}">
+          <img src="/users/${u._id}/profile-image" class="avatar avatar-sm" alt="${u.username}">
+          <span class="flex-grow-1">@${u.username}</span>
+          <button class="btn btn-sm glassy-btn follow-btn">Follow</button>
+
         </div>
       `).join('');
       dropdown.classList.remove('d-none');
@@ -45,10 +48,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   dropdown.addEventListener('click', async (e) => {
-    const item = e.target.closest('.suggestion-item');
+
+    const btn = e.target.closest('.follow-btn');
+    if (!btn) return;
+    const item = btn.closest('.suggestion-item');
     if (!item) return;
     const userId = item.dataset.id;
-    item.classList.add('disabled');
+    btn.disabled = true;
+
     try {
       const res = await fetch(`/users/${userId}/follow`, { method: 'POST' });
       if (res.ok) {
@@ -56,9 +63,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!dropdown.children.length) {
           hideDropdown();
         }
+
+      } else {
+        btn.disabled = false;
       }
     } catch (err) {
       console.error(err);
+      btn.disabled = false;
+
     }
   });
 
