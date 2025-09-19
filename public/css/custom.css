@@ -407,11 +407,15 @@
   background: #ffffff;
 }
 
-.timeline-event *:not(.game-card):not(img) {
+.timeline-event *:not(.game-card):not(img):not(.at-symbol) {
   background-image: linear-gradient(to right,#14b8a6,#7e22ce);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+.timeline-description {
+  font-size: 1.5em;
 }
 
 /* Game detail page */

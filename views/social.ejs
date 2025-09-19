@@ -57,7 +57,7 @@
                   <span class="me-auto"><%= ev.user.username %></span>
                   <span class="timestamp"><%= new Date(ev.timestamp).toLocaleString() %></span>
                 </div>
-                <div class="text-center mb-2">
+                <div class="text-center mb-2 timeline-description">
                   <% if(ev.type === 'checkin'){ %>
                     Has checked into a game
                   <% } else { %>
@@ -68,7 +68,7 @@
                 <div class="d-flex justify-content-end mb-2">
                   <span class="timestamp"><%= new Date(ev.timestamp).toLocaleString() %></span>
                 </div>
-                <div class="text-center mb-2">
+                <div class="text-center mb-2 timeline-description">
                   <%= ev.milestone %> fans have checked in, it ranks <%= ev.rank %> today
                 </div>
               <% } %>
