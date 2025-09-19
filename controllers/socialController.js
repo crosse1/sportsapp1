@@ -108,6 +108,8 @@ exports.showMostCheckedIn = async (req, res, next) => {
 
           const hLogo = hTeam && hTeam.logos && hTeam.logos[0] ? hTeam.logos[0] : 'https://via.placeholder.com/60';
           const aLogo = aTeam && aTeam.logos && aTeam.logos[0] ? aTeam.logos[0] : 'https://via.placeholder.com/60';
+          const hColor = hTeam && hTeam.color ? hTeam.color : '#ffffff';
+          const aColor = aTeam && aTeam.color ? aTeam.color : '#ffffff';
 
           const timestamp = game.StartDate;
           events.push({
@@ -116,6 +118,8 @@ exports.showMostCheckedIn = async (req, res, next) => {
             game,
             homeLogo: hLogo,
             awayLogo: aLogo,
+            homeColor: hColor,
+            awayColor: aColor,
             timestamp
           });
 
@@ -128,6 +132,8 @@ exports.showMostCheckedIn = async (req, res, next) => {
               game,
               homeLogo: hLogo,
               awayLogo: aLogo,
+              homeColor: hColor,
+              awayColor: aColor,
               milestone: total,
               ordinal: formatOrdinal(total),
               timestamp
@@ -154,12 +160,16 @@ exports.showMostCheckedIn = async (req, res, next) => {
 
         const hLogo = hTeam && hTeam.logos && hTeam.logos[0] ? hTeam.logos[0] : 'https://via.placeholder.com/60';
         const aLogo = aTeam && aTeam.logos && aTeam.logos[0] ? aTeam.logos[0] : 'https://via.placeholder.com/60';
+        const hColor = hTeam && hTeam.color ? hTeam.color : '#ffffff';
+        const aColor = aTeam && aTeam.color ? aTeam.color : '#ffffff';
 
         events.push({
           type: 'gameMilestone',
           game,
           homeLogo: hLogo,
           awayLogo: aLogo,
+          homeColor: hColor,
+          awayColor: aColor,
           milestone: count,
           rank,
           timestamp: game.StartDate
