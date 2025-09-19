@@ -359,6 +359,78 @@ exports.profileBadges = async (req, res, next) => {
             userProgress[badge.badgeID] = computeBadgeProgress(badge, games);
         });
 
+        const favoriteTeamIds = (profileUser.favoriteTeams || [])
+            .map(team => {
+                if (team && team._id) return team._id.toString();
+                if (team) return String(team);
+                return null;
+            })
+            .filter(Boolean);
+
+        const shuffleInPlace = arr => {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        };
+
+        const completedBadges = [];
+        const inProgressBadges = [];
+        const favoriteUnstartedBadges = [];
+        const otherBadges = [];
+
+        badges.forEach(badge => {
+            const progress = userProgress[badge.badgeID] || 0;
+            const requirement = Number(badge.reqGames) || 0;
+
+            if (progress >= requirement) {
+                completedBadges.push(badge);
+                return;
+            }
+
+            if (progress > 0 && progress < requirement) {
+                inProgressBadges.push(badge);
+                return;
+            }
+
+            const teamConstraints = (badge.teamConstraints || [])
+                .map(t => {
+                    if (!t) return null;
+                    if (typeof t === 'string') return t;
+                    if (t.toString) return t.toString();
+                    return null;
+                })
+                .filter(Boolean);
+            const matchesFavorite = teamConstraints.length && teamConstraints.some(tc => favoriteTeamIds.includes(tc));
+
+            if (matchesFavorite) {
+                favoriteUnstartedBadges.push(badge);
+            } else {
+                otherBadges.push(badge);
+            }
+        });
+
+        completedBadges.sort((a, b) => (b.pointValue || 0) - (a.pointValue || 0));
+        inProgressBadges.sort((a, b) => {
+            const progressA = userProgress[a.badgeID] || 0;
+            const progressB = userProgress[b.badgeID] || 0;
+            const reqA = Number(a.reqGames) || 0;
+            const reqB = Number(b.reqGames) || 0;
+            const percentA = reqA ? progressA / reqA : 0;
+            const percentB = reqB ? progressB / reqB : 0;
+            return percentB - percentA;
+        });
+
+        shuffleInPlace(favoriteUnstartedBadges);
+        shuffleInPlace(otherBadges);
+
+        const sortedBadges = [
+            ...completedBadges,
+            ...inProgressBadges,
+            ...favoriteUnstartedBadges,
+            ...otherBadges
+        ];
+
         res.render('profileBadges', {
             user: profileUser,
             isCurrentUser,
@@ -370,7 +442,12 @@ exports.profileBadges = async (req, res, next) => {
             badges,
             userProgress,
             teamsData,
-            conferences
+            conferences,
+            completedBadges,
+            inProgressBadges,
+            favoriteUnstartedBadges,
+            otherBadges,
+            sortedBadges
         });
     } catch (err) {
         next(err);
