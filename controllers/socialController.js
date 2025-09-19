@@ -167,8 +167,34 @@ exports.showMostCheckedIn = async (req, res, next) => {
       }
     }
 
+    // Deduplicate events before rendering so each action only appears once.
+    const seen = new Set();
+    const uniqueEvents = [];
+    for (const ev of events) {
+      let key = ev.type || 'event';
+      if (ev.type === 'checkin') {
+        const userId = ev.user && ev.user._id ? String(ev.user._id) : 'unknown';
+        const gameId = ev.game && (ev.game._id || ev.game.gameId) ? String(ev.game._id || ev.game.gameId) : 'unknown';
+        key += `:${userId}:${gameId}`;
+      } else if (ev.type === 'fanMilestone') {
+        const userId = ev.user && ev.user._id ? String(ev.user._id) : 'unknown';
+        const gameId = ev.game && (ev.game._id || ev.game.gameId) ? String(ev.game._id || ev.game.gameId) : 'unknown';
+        key += `:${userId}:${gameId}:${ev.milestone}`;
+      } else if (ev.type === 'gameMilestone') {
+        const gameId = ev.game && (ev.game._id || ev.game.gameId) ? String(ev.game._id || ev.game.gameId) : 'unknown';
+        key += `:${gameId}:${ev.milestone}`;
+      } else {
+        key += `:${JSON.stringify(ev)}`;
+      }
+
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueEvents.push(ev);
+      }
+    }
+
     // Order events from most recent to oldest
-    events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    uniqueEvents.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     res.render('social', {
       pastgame: selected,
@@ -177,7 +203,7 @@ exports.showMostCheckedIn = async (req, res, next) => {
       awayLogo,
       homeColor,
       awayColor,
-      events
+      events: uniqueEvents
     });
   } catch (err) {
     next(err);
