@@ -102,7 +102,7 @@ function ratingToElo(rating){
 
 exports.getSignUp = async (req, res, next) => {
     try {
-        res.render('contact', { layout: false });
+        res.render('contact', { layout: false, formData: {} });
     } catch (err) {
         next(err);
     }
@@ -113,15 +113,36 @@ exports.getLogin = (req, res) => {
 };
 
 exports.saveUser = [uploadMemory.single('profileImage'), async (req, res, next) => {
-    const { username, email, phoneNumber, password } = req.body;
+    const { username, email, phoneNumber, password, passwordConfirm } = req.body;
+    const trimmedUsername = username ? username.trim() : '';
+    const trimmedEmail = email ? email.trim() : '';
+    const rawPhone = phoneNumber ? phoneNumber.trim() : '';
+    const formData = {
+        username: trimmedUsername,
+        email: trimmedEmail,
+        phoneNumber: rawPhone
+    };
     try {
-        if(!req.file){
-            return res.status(400).render('contact', { layout:false, error:'Profile picture is required.' });
+        if (password !== passwordConfirm) {
+            return res.status(400).render('contact', { layout: false, error: 'Passwords do not match.', formData });
+        }
+
+        const digitsOnlyPhone = rawPhone.replace(/\D/g, '');
+        const normalizedPhone = digitsOnlyPhone ? `+${digitsOnlyPhone}` : '';
+        const phonePattern = /^\+\d{6,15}$/;
+        if (!phonePattern.test(normalizedPhone)) {
+            return res.status(400).render('contact', { layout: false, error: 'Please provide a valid phone number.', formData });
+        }
+
+        formData.phoneNumber = normalizedPhone;
+
+        if (!req.file) {
+            return res.status(400).render('contact', { layout: false, error: 'Profile picture is required.', formData });
         }
         const newUser = new User({
-            username,
-            email,
-            phoneNumber,
+            username: trimmedUsername,
+            email: trimmedEmail,
+            phoneNumber: normalizedPhone,
             password,
             favoriteTeams: [],
             profileImage:{ data:req.file.buffer, contentType:req.file.mimetype }
@@ -132,7 +153,7 @@ exports.saveUser = [uploadMemory.single('profileImage'), async (req, res, next) 
         res.redirect('/select-teams');
     } catch (error) {
         if (error.name === 'ValidationError') {
-            return res.status(400).render('contact', { layout: false, error: error.message });
+            return res.status(400).render('contact', { layout: false, error: error.message, formData });
         }
         next(error);
     }
