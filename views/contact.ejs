@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.2.1/css/intlTelInput.css" />
     <link rel="stylesheet" href="/css/custom.css">
     <style>
         body {
@@ -12,24 +14,56 @@
         }
 
         .gradient-text {
-    background: linear-gradient(to right, #14b8a6, #7e22ce);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text; /* for Firefox */
-    color: transparent;
-    font-weight: bold;
-}
+            background: linear-gradient(to right, #14b8a6, #7e22ce);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text; /* for Firefox */
+            color: transparent;
+            font-weight: bold;
+        }
 
-/* Profile image preview */
-.profile-image-preview {
-    width: 8rem;
-    height: 8rem;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid rgba(255,255,255,0.8);
-    display: block;
-    margin: 0 auto 1rem auto;
-}
+        /* Profile image preview */
+        .profile-image-preview {
+            width: 8rem;
+            height: 8rem;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255,255,255,0.8);
+            display: block;
+            margin: 0 auto 1rem auto;
+        }
+
+        .iti {
+            width: 100%;
+        }
+
+        .password-status {
+            position: absolute;
+            top: 50%;
+            right: 2.75rem;
+            transform: translateY(-50%);
+            font-size: 1.25rem;
+        }
+
+        .toggle-password {
+            position: absolute;
+            top: 50%;
+            right: 0.75rem;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+        }
+
+        .toggle-password:focus {
+            outline: none;
+            box-shadow: none;
+        }
+
+        #phoneError {
+            min-height: 1.25rem;
+        }
 
 
     </style>
@@ -37,27 +71,44 @@
 <body class="d-flex justify-content-center align-items-center min-vh-100">
     <div class="card shadow p-4" style="max-width: 450px; width: 100%;">
         <h1 class="text-center mb-4 gradient-text">Create Account</h1>
-        <form action="/signup" method="post" enctype="multipart/form-data">
+        <form action="/signup" method="post" enctype="multipart/form-data" novalidate>
             <% if (typeof error !== 'undefined') { %>
                 <div class="alert alert-danger"><%= error %></div>
             <% } %>
             <div class="position-relative mb-3">
-            <input type="text" id="username" name="username" placeholder="Username" class="form-control gradient-input pe-5" maxlength="20" pattern="^[a-zA-Z0-9_]+$" required>
-            <span id="usernameStatus" class="username-status"></span>
-        </div>
-            <input type="email" name="email" placeholder="Email" class="form-control gradient-input mb-3" required>
-            <input type="password" name="password" placeholder="Password" class="form-control gradient-input mb-3" required>
-            <input type="text" id="phoneNumber" name="phoneNumber" placeholder="Phone Number" pattern="\d{3}-\d{3}-\d{4}" class="form-control gradient-input mb-3" required>
+                <input type="text" id="username" name="username" placeholder="Username" class="form-control gradient-input pe-5" maxlength="20" pattern="^[a-zA-Z0-9_]+$" value="<%= formData && formData.username ? formData.username : '' %>" required>
+                <span id="usernameStatus" class="username-status"></span>
+            </div>
+            <input type="email" name="email" placeholder="Email" class="form-control gradient-input mb-3" value="<%= formData && formData.email ? formData.email : '' %>" required>
+            <div class="position-relative mb-3">
+                <input type="password" id="password" name="password" placeholder="Password" class="form-control gradient-input pe-5" autocomplete="new-password" required>
+                <button type="button" class="toggle-password" data-target="password" aria-label="Toggle password visibility" aria-pressed="false">
+                    <i class="bi bi-eye"></i>
+                </button>
+            </div>
+            <div class="position-relative mb-3">
+                <input type="password" id="confirmPassword" name="passwordConfirm" placeholder="Confirm Password" class="form-control gradient-input pe-5" autocomplete="new-password" required aria-describedby="passwordMismatch">
+                <span id="passwordMatchIcon" class="password-status" aria-hidden="true"></span>
+                <button type="button" class="toggle-password" data-target="confirmPassword" aria-label="Toggle password visibility" aria-pressed="false">
+                    <i class="bi bi-eye"></i>
+                </button>
+                <div id="passwordMismatch" class="invalid-feedback d-block small mt-1" role="alert" aria-live="polite"></div>
+            </div>
+            <div class="mb-3">
+                <input type="tel" id="phoneNumber" name="phoneNumber" placeholder="Phone Number" class="form-control gradient-input" value="<%= formData && formData.phoneNumber ? formData.phoneNumber : '' %>" required aria-describedby="phoneError">
+                <div id="phoneError" class="invalid-feedback d-block small" role="alert" aria-live="polite"></div>
+            </div>
             <input type="file" name="profileImage" id="profileImageInput" accept="image/*" class="d-none" required>
             <label for="profileImageInput" id="profileImageLabel" class="gradient-input file-input-label mb-3  d-block">Click to add Profile Image</label>
             <img id="profileImagePreview" class="profile-image-preview d-none" alt="Profile Preview">
-            <button type="submit" class="btn w-100 text-white gradient-glass-btn">Sign Up</button>
+            <button type="submit" id="createAccountBtn" class="btn w-100 text-white gradient-glass-btn" disabled>Create Account</button>
         </form>
         <div class="text-center mt-3">
             <a href="/login" class="text-decoration-none">Already have an account? Sign in</a>
         </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.2.1/js/intlTelInput.min.js"></script>
     <script>
         const fileInput = document.getElementById('profileImageInput');
         const fileLabel = document.getElementById('profileImageLabel');
@@ -75,16 +126,6 @@
                 imagePreview.src = '';
                 imagePreview.classList.add('d-none');
             }
-        });
-        const phoneInput = document.getElementById('phoneNumber');
-        phoneInput.addEventListener('input', () => {
-            let val = phoneInput.value.replace(/\D/g, '').substring(0,10);
-            if (val.length > 6) {
-                val = `${val.slice(0,3)}-${val.slice(3,6)}-${val.slice(6)}`;
-            } else if (val.length > 3) {
-                val = `${val.slice(0,3)}-${val.slice(3)}`;
-            }
-            phoneInput.value = val;
         });
         const usernameInput = document.getElementById("username");
         const usernameStatus = document.getElementById("usernameStatus");
@@ -112,6 +153,149 @@
                 }
             }, 300);
         });
+
+        const phoneInputField = document.getElementById('phoneNumber');
+        const phoneError = document.getElementById('phoneError');
+        const createAccountBtn = document.getElementById('createAccountBtn');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const passwordMatchIcon = document.getElementById('passwordMatchIcon');
+        const passwordMismatchMessage = document.getElementById('passwordMismatch');
+        let phoneTouched = false;
+
+        const iti = window.intlTelInput(phoneInputField, {
+            initialCountry: 'auto',
+            geoIpLookup: function(callback) {
+                fetch('https://ipapi.co/json/')
+                    .then(response => response.ok ? response.json() : Promise.reject())
+                    .then(data => callback(data && data.country_code ? data.country_code : 'us'))
+                    .catch(() => callback('us'));
+            },
+            utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.2.1/js/utils.js'
+        });
+
+        function passwordsMatch() {
+            return passwordInput.value && confirmPasswordInput.value && passwordInput.value === confirmPasswordInput.value;
+        }
+
+        function updatePasswordFeedback() {
+            if (!confirmPasswordInput.value) {
+                passwordMatchIcon.innerHTML = '';
+                passwordMatchIcon.classList.remove('text-success', 'text-danger');
+                passwordMismatchMessage.textContent = '';
+                return;
+            }
+
+            if (passwordsMatch()) {
+                passwordMatchIcon.innerHTML = '<i class="bi bi-check-circle-fill"></i>';
+                passwordMatchIcon.classList.add('text-success');
+                passwordMatchIcon.classList.remove('text-danger');
+                passwordMismatchMessage.textContent = '';
+            } else {
+                passwordMatchIcon.innerHTML = '<i class="bi bi-x-circle-fill"></i>';
+                passwordMatchIcon.classList.add('text-danger');
+                passwordMatchIcon.classList.remove('text-success');
+                passwordMismatchMessage.textContent = 'Passwords do not match.';
+            }
+        }
+
+        function isPhoneValid() {
+            return phoneInputField.value.trim() !== '' && iti.isValidNumber();
+        }
+
+        function updatePhoneFeedback() {
+            if (!phoneTouched) {
+                phoneError.textContent = '';
+                phoneInputField.classList.remove('is-invalid', 'is-valid');
+                return;
+            }
+
+            if (!phoneInputField.value.trim()) {
+                phoneError.textContent = 'Phone number is required.';
+                phoneInputField.classList.add('is-invalid');
+                phoneInputField.classList.remove('is-valid');
+            } else if (!iti.isValidNumber()) {
+                phoneError.textContent = 'Enter a valid phone number.';
+                phoneInputField.classList.add('is-invalid');
+                phoneInputField.classList.remove('is-valid');
+            } else {
+                phoneError.textContent = '';
+                phoneInputField.classList.remove('is-invalid');
+                phoneInputField.classList.add('is-valid');
+            }
+        }
+
+        function updateSubmitState() {
+            const canSubmit = passwordsMatch() && isPhoneValid();
+            createAccountBtn.disabled = !canSubmit;
+        }
+
+        passwordInput.addEventListener('input', () => {
+            updatePasswordFeedback();
+            updateSubmitState();
+        });
+
+        confirmPasswordInput.addEventListener('input', () => {
+            updatePasswordFeedback();
+            updateSubmitState();
+        });
+
+        phoneInputField.addEventListener('blur', () => {
+            phoneTouched = true;
+            updatePhoneFeedback();
+            updateSubmitState();
+        });
+
+        ['input', 'countrychange'].forEach(eventName => {
+            phoneInputField.addEventListener(eventName, () => {
+                if (phoneTouched) {
+                    updatePhoneFeedback();
+                }
+                updateSubmitState();
+            });
+        });
+
+        document.querySelectorAll('.toggle-password').forEach(button => {
+            button.addEventListener('click', () => {
+                const target = document.getElementById(button.dataset.target);
+                const icon = button.querySelector('i');
+                const isHidden = target.type === 'password';
+                target.type = isHidden ? 'text' : 'password';
+                icon.classList.toggle('bi-eye');
+                icon.classList.toggle('bi-eye-slash');
+                button.setAttribute('aria-pressed', String(target.type === 'text'));
+            });
+        });
+
+        const signupForm = document.querySelector('form');
+        signupForm.addEventListener('submit', (event) => {
+            if (!passwordsMatch()) {
+                event.preventDefault();
+                updatePasswordFeedback();
+                updateSubmitState();
+                return;
+            }
+
+            phoneTouched = true;
+            updatePhoneFeedback();
+            if (!isPhoneValid()) {
+                event.preventDefault();
+                updateSubmitState();
+                return;
+            }
+
+            const e164Number = iti.getNumber();
+            if (e164Number) {
+                phoneInputField.value = e164Number;
+            }
+        });
+
+        if (phoneInputField.value) {
+            phoneTouched = true;
+            iti.setNumber(phoneInputField.value);
+            updatePhoneFeedback();
+        }
+        updateSubmitState();
     </script>
 </body>
 </html>
