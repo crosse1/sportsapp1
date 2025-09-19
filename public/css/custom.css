@@ -197,6 +197,27 @@
     color: inherit;
     text-decoration: none;
   }
+
+.game-container {
+    border-radius: 0.75rem;
+    padding: 0.5rem;
+}
+
+.checked-in-border {
+    border: 3px solid;
+    border-image: linear-gradient(45deg, gold, #ffecb3, #ffd700, gold) 1;
+    animation: glitter 1.5s infinite alternate;
+    border-radius: 0.75rem;
+}
+
+@keyframes glitter {
+    0% {
+        box-shadow: 0 0 5px gold;
+    }
+    100% {
+        box-shadow: 0 0 20px #ffd700, 0 0 10px #ffecb3 inset;
+    }
+}
   
   
 
