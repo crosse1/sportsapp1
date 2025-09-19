@@ -212,6 +212,17 @@
     animation: metallic-glimmer 2s ease-in-out infinite;
 }
 
+
+.checked-in-status {
+    display: inline-flex;
+    align-items: center;
+}
+
+.checked-in-status i {
+    font-size: 1.1rem;
+}
+
+
 @keyframes metallic-glimmer {
     0% {
         box-shadow: 0 0 6px rgba(249, 240, 145, 0.25), 0 0 0 3px rgba(215, 170, 57, 0.18) inset;

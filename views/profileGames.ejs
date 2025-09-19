@@ -149,10 +149,16 @@
             <div class="col">
 
                 <div class="game-container">
-
                     <div class="game-date-banner mb-1 d-flex align-items-center">
                         <% const dateObj = new Date(game.startDate || game.StartDate); %>
                         <span><%= (dateObj.getMonth() + 1).toString().padStart(2, '0') %>/<%= dateObj.getDate().toString().padStart(2, '0') %>/<%= dateObj.getFullYear() %></span>
+                        <% if (entry.checkedIn) { %>
+                            <span class="checked-in-status ms-2" title="Checked in">
+                                <i class="bi bi-check-circle-fill text-black" aria-hidden="true"></i>
+                                <span class="visually-hidden">Checked in</span>
+                            </span>
+                        <% } %>
+
                         <% if(isCurrentUser){ %>
                             <i class="bi bi-pencil-square ms-2 text-black edit-entry-icon" role="button" data-entry-id="<%= entry._id %>"></i>
                             <i class="bi bi-trash ms-2 text-black delete-entry-icon" role="button" data-entry-id="<%= entry._id %>"></i>
@@ -163,7 +169,8 @@
                             <a href="<%= usePastGameLinks ? '/pastGames/' + game._id : '/games/' + game._id %>" class="game-link d-block">
 
                                 <div class="card shadow-sm h-100 game-card p-3 text-center position-relative <%= entry.checkedIn ? 'checked-in-border' : '' %>" data-away-color="<%= awayColor %>" data-home-color="<%= homeColor %>" style="background: linear-gradient(to right, <%= awayColor %>, <%= homeColor %>);">
-                       <div class="venue-overlay"><%= game.Venue || game.venue %></div>
+                                    <div class="venue-overlay"><%= game.Venue || game.venue %></div>
+
                                     <div class="d-flex justify-content-between align-items-center position-relative mb-2 px-3">
                                         <div class="logo-wrapper me-3">
                                             <div class="team-logo-container">
