@@ -227,17 +227,7 @@
         </div>
     </div>
 
-    <% if (badges && badges.length) { 
-        const completed = [], inProgress = [], untouched = [];
-        badges.forEach(b => {
-            const progress = userProgress[b.badgeID] || 0;
-            if (progress >= b.reqGames) completed.push(b);
-            else if (progress > 0) inProgress.push(b);
-            else untouched.push(b);
-        });
-        untouched.sort(() => Math.random() - 0.5);
-        const sortedBadges = [...completed, ...inProgress, ...untouched];
-    %>
+    <% if (sortedBadges && sortedBadges.length) { %>
 
     <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4" id="badgeGrid">
         <% sortedBadges.forEach(function(badge, index) {
