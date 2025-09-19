@@ -108,6 +108,8 @@ exports.showMostCheckedIn = async (req, res, next) => {
 
           const hLogo = hTeam && hTeam.logos && hTeam.logos[0] ? hTeam.logos[0] : 'https://via.placeholder.com/60';
           const aLogo = aTeam && aTeam.logos && aTeam.logos[0] ? aTeam.logos[0] : 'https://via.placeholder.com/60';
+          const hColor = hTeam && hTeam.color ? hTeam.color : '#ffffff';
+          const aColor = aTeam && aTeam.color ? aTeam.color : '#ffffff';
 
           const timestamp = game.StartDate;
           events.push({
@@ -116,6 +118,8 @@ exports.showMostCheckedIn = async (req, res, next) => {
             game,
             homeLogo: hLogo,
             awayLogo: aLogo,
+            homeColor: hColor,
+            awayColor: aColor,
             timestamp
           });
 
@@ -128,6 +132,8 @@ exports.showMostCheckedIn = async (req, res, next) => {
               game,
               homeLogo: hLogo,
               awayLogo: aLogo,
+              homeColor: hColor,
+              awayColor: aColor,
               milestone: total,
               ordinal: formatOrdinal(total),
               timestamp
@@ -154,12 +160,16 @@ exports.showMostCheckedIn = async (req, res, next) => {
 
         const hLogo = hTeam && hTeam.logos && hTeam.logos[0] ? hTeam.logos[0] : 'https://via.placeholder.com/60';
         const aLogo = aTeam && aTeam.logos && aTeam.logos[0] ? aTeam.logos[0] : 'https://via.placeholder.com/60';
+        const hColor = hTeam && hTeam.color ? hTeam.color : '#ffffff';
+        const aColor = aTeam && aTeam.color ? aTeam.color : '#ffffff';
 
         events.push({
           type: 'gameMilestone',
           game,
           homeLogo: hLogo,
           awayLogo: aLogo,
+          homeColor: hColor,
+          awayColor: aColor,
           milestone: count,
           rank,
           timestamp: game.StartDate
@@ -167,8 +177,34 @@ exports.showMostCheckedIn = async (req, res, next) => {
       }
     }
 
+    // Deduplicate events before rendering so each action only appears once.
+    const seen = new Set();
+    const uniqueEvents = [];
+    for (const ev of events) {
+      let key = ev.type || 'event';
+      if (ev.type === 'checkin') {
+        const userId = ev.user && ev.user._id ? String(ev.user._id) : 'unknown';
+        const gameId = ev.game && (ev.game._id || ev.game.gameId) ? String(ev.game._id || ev.game.gameId) : 'unknown';
+        key += `:${userId}:${gameId}`;
+      } else if (ev.type === 'fanMilestone') {
+        const userId = ev.user && ev.user._id ? String(ev.user._id) : 'unknown';
+        const gameId = ev.game && (ev.game._id || ev.game.gameId) ? String(ev.game._id || ev.game.gameId) : 'unknown';
+        key += `:${userId}:${gameId}:${ev.milestone}`;
+      } else if (ev.type === 'gameMilestone') {
+        const gameId = ev.game && (ev.game._id || ev.game.gameId) ? String(ev.game._id || ev.game.gameId) : 'unknown';
+        key += `:${gameId}:${ev.milestone}`;
+      } else {
+        key += `:${JSON.stringify(ev)}`;
+      }
+
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueEvents.push(ev);
+      }
+    }
+
     // Order events from most recent to oldest
-    events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    uniqueEvents.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     res.render('social', {
       pastgame: selected,
@@ -177,7 +213,7 @@ exports.showMostCheckedIn = async (req, res, next) => {
       awayLogo,
       homeColor,
       awayColor,
-      events
+      events: uniqueEvents
     });
   } catch (err) {
     next(err);

@@ -57,7 +57,7 @@
                   <span class="me-auto"><%= ev.user.username %></span>
                   <span class="timestamp"><%= new Date(ev.timestamp).toLocaleString() %></span>
                 </div>
-                <div class="text-center mb-2">
+                <div class="text-center mb-2 timeline-description">
                   <% if(ev.type === 'checkin'){ %>
                     Has checked into a game
                   <% } else { %>
@@ -68,13 +68,13 @@
                 <div class="d-flex justify-content-end mb-2">
                   <span class="timestamp"><%= new Date(ev.timestamp).toLocaleString() %></span>
                 </div>
-                <div class="text-center mb-2">
+                <div class="text-center mb-2 timeline-description">
                   <%= ev.milestone %> fans have checked in, it ranks <%= ev.rank %> today
                 </div>
               <% } %>
-              <div>
+              <div class="position-relative">
                 <a href="/pastGames/<%= ev.game._id %>" class="game-link">
-                  <div class="card shadow-sm h-100 game-card plain-card p-3 text-center position-relative">
+                  <div class="card shadow-sm h-100 game-card p-3 text-center position-relative" data-away-color="<%= ev.awayColor %>" data-home-color="<%= ev.homeColor %>" style="background: linear-gradient(to right, <%= ev.awayColor %>, <%= ev.homeColor %>);">
                     <div class="game-date mb-2" data-start="<%= ev.game.StartDate.toISOString() %>"></div>
                     <div class="d-flex justify-content-between align-items-center position-relative mb-2 px-3">
                       <div class="logo-wrapper me-3">
