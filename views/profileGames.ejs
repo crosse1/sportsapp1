@@ -147,57 +147,59 @@
                  const awayColor = game.awayTeam && game.awayTeam.color ? game.awayTeam.color : '#ffffff';
                  const homeColor = game.homeTeam && game.homeTeam.color ? game.homeTeam.color : '#ffffff'; %>
             <div class="col">
-                <div class="game-date-banner mb-1 d-flex align-items-center">
-                    <% const dateObj = new Date(game.startDate || game.StartDate); %>
-                    <span><%= (dateObj.getMonth() + 1).toString().padStart(2, '0') %>/<%= dateObj.getDate().toString().padStart(2, '0') %>/<%= dateObj.getFullYear() %></span>
-                    <% if(isCurrentUser){ %>
-                        <i class="bi bi-pencil-square ms-2 text-black edit-entry-icon" role="button" data-entry-id="<%= entry._id %>"></i>
-                        <i class="bi bi-trash ms-2 text-black delete-entry-icon" role="button" data-entry-id="<%= entry._id %>"></i>
-                    <% } %>
-                </div>
-                <div class="d-flex align-items-center">
-                    <div class="position-relative flex-grow-1">
-                        <a href="<%= usePastGameLinks ? '/pastGames/' + game._id : '/games/' + game._id %>" class="game-link d-block">
-                            <div class="card shadow-sm h-100 game-card p-3 text-center position-relative" data-away-color="<%= awayColor %>" data-home-color="<%= homeColor %>" style="background: linear-gradient(to right, <%= awayColor %>, <%= homeColor %>);">
-                                <div class="venue-overlay"><%= game.Venue || game.venue %></div>
-                                <div class="d-flex justify-content-between align-items-center position-relative mb-2 px-3">
-                                    <div class="logo-wrapper me-3">
-                                        <div class="team-logo-container">
-                                            <img loading="lazy" src="<%= game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0] ? game.awayTeam.logos[0] : '/images/placeholder.jpg' %>" alt="<%= game.awayTeamName %>">
-                                        </div>
-                                        <span class="team-name"><%= game.awayTeamName %></span>
-                                    </div>
-                                    <div class="logo-wrapper ms-3">
-                                        <div class="team-logo-container">
-                                            <img loading="lazy" src="<%= game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0] ? game.homeTeam.logos[0] : '/images/placeholder.jpg' %>" alt="<%= game.homeTeamName %>">
-                                        </div>
-                                        <span class="team-name"><%= game.homeTeamName %></span>
-                                    </div>
-                                    <div class="position-absolute top-50 start-50 translate-middle fw-bold score-text text-white"><%= game.AwayPoints %> – <%= game.HomePoints %></div>
-                                </div>
-                            </div>
-                        </a>
+                <div class="game-container <%= entry.checkedIn ? 'checked-in-border' : '' %>">
+                    <div class="game-date-banner mb-1 d-flex align-items-center">
+                        <% const dateObj = new Date(game.startDate || game.StartDate); %>
+                        <span><%= (dateObj.getMonth() + 1).toString().padStart(2, '0') %>/<%= dateObj.getDate().toString().padStart(2, '0') %>/<%= dateObj.getFullYear() %></span>
+                        <% if(isCurrentUser){ %>
+                            <i class="bi bi-pencil-square ms-2 text-black edit-entry-icon" role="button" data-entry-id="<%= entry._id %>"></i>
+                            <i class="bi bi-trash ms-2 text-black delete-entry-icon" role="button" data-entry-id="<%= entry._id %>"></i>
+                        <% } %>
                     </div>
-                    <%
-  const gameId = String(game._id);
-  const eloEntry = (eloGames || []).find(e => {
-    const entryId = String(e.game && (e.game._id || e.game)); // Handle ObjectId vs populated object
-    return entryId === gameId;
-  });
-
-  
-
-  if (eloEntry && typeof eloEntry.elo === 'number') {
-    const elo = eloEntry.elo;
-    const rawScore = ((elo - 1000) / 1000) * 9 + 1;
-    const normalizedRating = Math.max(1.0, Math.min(10.0, Math.round(rawScore * 10) / 10));
-%>
-                        <div class="rating-wrapper gradient-overlay" data-entry-id="<%= entry._id %>">
-                            <img class="bw-img" src="<%= game.venue && game.venue.imgUrl ? game.venue.imgUrl : '/images/stadium.png' %>" alt="<%= game.Venue || game.venue %>">
-                            <span class="rating-number"><%= normalizedRating %>/10</span>
-                            <% if(entry.comment){ %><span class="rating-comment"><%= entry.comment %></span><% } %>
+                    <div class="d-flex align-items-center">
+                        <div class="position-relative flex-grow-1">
+                            <a href="<%= usePastGameLinks ? '/pastGames/' + game._id : '/games/' + game._id %>" class="game-link d-block">
+                                <div class="card shadow-sm h-100 game-card p-3 text-center position-relative" data-away-color="<%= awayColor %>" data-home-color="<%= homeColor %>" style="background: linear-gradient(to right, <%= awayColor %>, <%= homeColor %>);">
+                                    <div class="venue-overlay"><%= game.Venue || game.venue %></div>
+                                    <div class="d-flex justify-content-between align-items-center position-relative mb-2 px-3">
+                                        <div class="logo-wrapper me-3">
+                                            <div class="team-logo-container">
+                                                <img loading="lazy" src="<%= game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0] ? game.awayTeam.logos[0] : '/images/placeholder.jpg' %>" alt="<%= game.awayTeamName %>">
+                                            </div>
+                                            <span class="team-name"><%= game.awayTeamName %></span>
+                                        </div>
+                                        <div class="logo-wrapper ms-3">
+                                            <div class="team-logo-container">
+                                                <img loading="lazy" src="<%= game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0] ? game.homeTeam.logos[0] : '/images/placeholder.jpg' %>" alt="<%= game.homeTeamName %>">
+                                            </div>
+                                            <span class="team-name"><%= game.homeTeamName %></span>
+                                        </div>
+                                        <div class="position-absolute top-50 start-50 translate-middle fw-bold score-text text-white"><%= game.AwayPoints %> – <%= game.HomePoints %></div>
+                                    </div>
+                                </div>
+                            </a>
                         </div>
-                    <% } %>
+                        <%
+      const gameId = String(game._id);
+      const eloEntry = (eloGames || []).find(e => {
+        const entryId = String(e.game && (e.game._id || e.game)); // Handle ObjectId vs populated object
+        return entryId === gameId;
+      });
+    
+      
+    
+      if (eloEntry && typeof eloEntry.elo === 'number') {
+        const elo = eloEntry.elo;
+        const rawScore = ((elo - 1000) / 1000) * 9 + 1;
+        const normalizedRating = Math.max(1.0, Math.min(10.0, Math.round(rawScore * 10) / 10));
+    %>
+                            <div class="rating-wrapper gradient-overlay" data-entry-id="<%= entry._id %>">
+                                <img class="bw-img" src="<%= game.venue && game.venue.imgUrl ? game.venue.imgUrl : '/images/stadium.png' %>" alt="<%= game.Venue || game.venue %>">
+                                <span class="rating-number"><%= normalizedRating %>/10</span>
+                                <% if(entry.comment){ %><span class="rating-comment"><%= entry.comment %></span><% } %>
+                            </div>
+                        <% } %>
+                    </div>
                 </div>
             </div>
             <% }); %>
