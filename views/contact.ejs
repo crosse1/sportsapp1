@@ -117,8 +117,9 @@
         const fileInput = document.getElementById('profileImageInput');
         const fileLabel = document.getElementById('profileImageLabel');
         const imagePreview = document.getElementById('profileImagePreview');
+        const defaultFileLabel = 'Click to add Profile Image';
         fileInput.addEventListener('change', function(){
-            fileLabel.textContent = this.files[0] ? this.files[0].name : 'Profile Image';
+            fileLabel.textContent = this.files[0] ? 'Change Picture' : defaultFileLabel;
             if (this.files && this.files[0]) {
                 const reader = new FileReader();
                 reader.onload = e => {
@@ -129,6 +130,7 @@
             } else {
                 imagePreview.src = '';
                 imagePreview.classList.add('d-none');
+                fileLabel.textContent = defaultFileLabel;
             }
         });
         const usernameInput = document.getElementById("username");
