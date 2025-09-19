@@ -54,7 +54,9 @@
               <% if(ev.type === 'checkin' || ev.type === 'fanMilestone'){ %>
                 <div class="d-flex align-items-center mb-2">
                   <img src="/users/<%= ev.user._id %>/profile-image" alt="<%= ev.user.username %>" class="avatar avatar-sm me-2">
-                  <a href="/user/<%= ev.user.venmo %>" class="me-auto username-link">@<%= ev.user.username %></a>
+
+                  <a href="/users/<%= ev.user._id %>" class="me-auto username-link">@<%= ev.user.username %></a>
+
                   <span class="timestamp"><%= new Date(ev.timestamp).toLocaleString() %></span>
                 </div>
                 <div class="text-center mb-2 timeline-description">
