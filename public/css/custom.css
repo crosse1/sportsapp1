@@ -6,6 +6,18 @@
     display: block;
 }
 
+.username-link {
+    color: transparent;
+    background: linear-gradient(to right, #7e22ce, #14b8a6);
+    -webkit-background-clip: text;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.username-link:hover {
+    text-decoration: underline;
+}
+
 /* profile icon in navigation bar */
 .nav-profile-icon {
     border-radius: 50%;
