@@ -198,7 +198,22 @@ exports.showGame = async (req, res, next) => {
       followerWishers = (viewer.followers || []).filter(u => (u.wishlist || []).some(w => String(w) === String(game._id)));
     }
 
-    res.render('game', { game, homeBgColor, awayBgColor, followerWishers, venue });
+    const gameIdCandidates = [];
+    if (game.gameId != null) {
+      gameIdCandidates.push(String(game.gameId));
+    }
+    gameIdCandidates.push(String(game._id));
+
+    const usersCheckedIn = await User.countDocuments({
+      gameEntries: {
+        $elemMatch: {
+          checkedIn: true,
+          gameId: gameIdCandidates.length === 1 ? gameIdCandidates[0] : { $in: gameIdCandidates }
+        }
+      }
+    });
+
+    res.render('game', { game, homeBgColor, awayBgColor, followerWishers, venue, usersCheckedIn });
   } catch (err) {
     next(err);
   }

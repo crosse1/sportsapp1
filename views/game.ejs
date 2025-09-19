@@ -51,6 +51,9 @@
         <h3 class="mb-3"><%= game.awayTeamName %> @ <%= game.homeTeamName %></h3>
         <p class="mb-1">(<%= game.awayRecord || '0-0' %>) vs (<%= game.homeRecord || '0-0' %>)</p>
         <p class="mb-3"><%= game.venue %> - <%= venue && venue.city ? venue.city : '' %></p>
+        <div class="checked-in-count badge bg-light text-dark fs-6 px-3 py-2">
+          <%= usersCheckedIn %> <%= usersCheckedIn === 1 ? 'User' : 'Users' %> Checked In
+        </div>
       </div>
     </div>
   </div>
