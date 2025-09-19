@@ -847,6 +847,14 @@
   width:100%;
   display:block;
 }
+.iti input.gradient-input,
+.gradient-input.is-valid,
+.gradient-input.is-invalid,
+.was-validated .gradient-input:valid,
+.was-validated .gradient-input:invalid{
+  background:linear-gradient(to right,#14b8a6,#7e22ce);
+  color:#fff;
+}
 .file-input-label{
   cursor:pointer;
 }
