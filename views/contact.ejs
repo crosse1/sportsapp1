@@ -207,6 +207,37 @@
             return phoneInputField.value.trim() !== '' && iti.isValidNumber();
         }
 
+
+        function formatPhoneNumberForDisplay() {
+            if (!window.intlTelInputUtils) {
+                return;
+            }
+
+            const selectedCountry = iti.getSelectedCountryData();
+            const e164Value = iti.getNumber();
+
+            if (!selectedCountry || !selectedCountry.iso2 || !e164Value) {
+                return;
+            }
+
+            const numericValue = e164Value.replace(/\D/g, '');
+
+            if (!numericValue) {
+                return;
+            }
+
+            const formatted = window.intlTelInputUtils.formatNumber(
+                e164Value,
+                selectedCountry.iso2.toUpperCase(),
+                window.intlTelInputUtils.numberFormat.NATIONAL
+            );
+
+            if (formatted && phoneInputField.value !== formatted) {
+                phoneInputField.value = formatted;
+            }
+        }
+
+
         function updatePhoneFeedback() {
             if (!phoneTouched) {
                 phoneError.textContent = '';
@@ -248,6 +279,9 @@
             phoneTouched = true;
             updatePhoneFeedback();
             updateSubmitState();
+
+            formatPhoneNumberForDisplay();
+
         });
 
         ['input', 'countrychange'].forEach(eventName => {
@@ -255,6 +289,14 @@
                 if (phoneTouched) {
                     updatePhoneFeedback();
                 }
+
+                if (eventName === 'input' && iti.isValidNumber()) {
+                    formatPhoneNumberForDisplay();
+                }
+                if (eventName === 'countrychange') {
+                    formatPhoneNumberForDisplay();
+                }
+
                 updateSubmitState();
             });
         });
@@ -297,8 +339,21 @@
         if (phoneInputField.value) {
             phoneTouched = true;
             iti.setNumber(phoneInputField.value);
-            updatePhoneFeedback();
+
+            const finalizeInitialPhone = () => {
+                updatePhoneFeedback();
+                formatPhoneNumberForDisplay();
+                updateSubmitState();
+            };
+
+            if (iti.promise) {
+                iti.promise.then(finalizeInitialPhone);
+            } else {
+                finalizeInitialPhone();
+            }
         }
+
+
         updateSubmitState();
     </script>
 </body>
