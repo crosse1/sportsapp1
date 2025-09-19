@@ -204,6 +204,7 @@
 }
 
 .checked-in-border {
+
     border: 3px solid transparent;
     border-radius: 0.75rem;
     border-image: linear-gradient(130deg, #8a6d1d, #f6e27a, #cfa12f, #fff3b0, #8a6d1d) 1;
@@ -220,6 +221,7 @@
     }
     100% {
         box-shadow: 0 0 6px rgba(249, 240, 145, 0.25), 0 0 0 3px rgba(215, 170, 57, 0.18) inset;
+
     }
 }
   

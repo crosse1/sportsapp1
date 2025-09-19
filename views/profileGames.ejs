@@ -147,7 +147,9 @@
                  const awayColor = game.awayTeam && game.awayTeam.color ? game.awayTeam.color : '#ffffff';
                  const homeColor = game.homeTeam && game.homeTeam.color ? game.homeTeam.color : '#ffffff'; %>
             <div class="col">
+
                 <div class="game-container">
+
                     <div class="game-date-banner mb-1 d-flex align-items-center">
                         <% const dateObj = new Date(game.startDate || game.StartDate); %>
                         <span><%= (dateObj.getMonth() + 1).toString().padStart(2, '0') %>/<%= dateObj.getDate().toString().padStart(2, '0') %>/<%= dateObj.getFullYear() %></span>
@@ -159,8 +161,9 @@
                     <div class="d-flex align-items-center">
                         <div class="position-relative flex-grow-1">
                             <a href="<%= usePastGameLinks ? '/pastGames/' + game._id : '/games/' + game._id %>" class="game-link d-block">
+
                                 <div class="card shadow-sm h-100 game-card p-3 text-center position-relative <%= entry.checkedIn ? 'checked-in-border' : '' %>" data-away-color="<%= awayColor %>" data-home-color="<%= homeColor %>" style="background: linear-gradient(to right, <%= awayColor %>, <%= homeColor %>);">
-                                    <div class="venue-overlay"><%= game.Venue || game.venue %></div>
+                       <div class="venue-overlay"><%= game.Venue || game.venue %></div>
                                     <div class="d-flex justify-content-between align-items-center position-relative mb-2 px-3">
                                         <div class="logo-wrapper me-3">
                                             <div class="team-logo-container">
