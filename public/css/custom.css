@@ -204,18 +204,24 @@
 }
 
 .checked-in-border {
-    border: 3px solid;
-    border-image: linear-gradient(45deg, gold, #ffecb3, #ffd700, gold) 1;
-    animation: glitter 1.5s infinite alternate;
+
+    border: 3px solid transparent;
     border-radius: 0.75rem;
+    border-image: linear-gradient(130deg, #8a6d1d, #f6e27a, #cfa12f, #fff3b0, #8a6d1d) 1;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.35), 0 0 0 3px rgba(249, 242, 149, 0.25) inset;
+    animation: metallic-glimmer 2s ease-in-out infinite;
 }
 
-@keyframes glitter {
+@keyframes metallic-glimmer {
     0% {
-        box-shadow: 0 0 5px gold;
+        box-shadow: 0 0 6px rgba(249, 240, 145, 0.25), 0 0 0 3px rgba(215, 170, 57, 0.18) inset;
+    }
+    50% {
+        box-shadow: 0 0 16px rgba(249, 240, 145, 0.55), 0 0 0 3px rgba(215, 170, 57, 0.32) inset;
     }
     100% {
-        box-shadow: 0 0 20px #ffd700, 0 0 10px #ffecb3 inset;
+        box-shadow: 0 0 6px rgba(249, 240, 145, 0.25), 0 0 0 3px rgba(215, 170, 57, 0.18) inset;
+
     }
 }
   
