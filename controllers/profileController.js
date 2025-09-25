@@ -100,6 +100,12 @@ function ratingToElo(rating){
     return Math.round(1000 + ((val - 1) / 9) * 1000);
 }
 
+function eloToRating(elo){
+    if (typeof elo !== 'number' || Number.isNaN(elo)) return null;
+    const rawScore = ((elo - 1000) / 1000) * 9 + 1;
+    return Math.max(1.0, Math.min(10.0, Math.round(rawScore * 10) / 10));
+}
+
 exports.getSignUp = async (req, res, next) => {
     try {
         res.render('contact', { layout: false, formData: {} });
@@ -688,6 +694,67 @@ exports.profileGames = async (req, res, next) => {
             gameEntries: enrichedEntries,
             usePastGameLinks: true,
             eloGames
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.profileGameShowcase = async (req, res, next) => {
+    try {
+        const { user: userIdentifier, gameEntry } = req.params;
+        if (!userIdentifier || !gameEntry) {
+            return res.status(404).render('gameEntryShowcase', {
+                user: null,
+                entry: null,
+                profileImageUrl: null,
+                gameDetails: null,
+                normalizedEloRating: null
+            });
+        }
+
+        let targetUser = await User.findOne({ venmo: userIdentifier });
+        if (!targetUser) {
+            targetUser = await User.findById(userIdentifier);
+        }
+
+        if (!targetUser) {
+            return res.status(404).render('gameEntryShowcase', {
+                user: null,
+                entry: null,
+                profileImageUrl: null,
+                gameDetails: null,
+                normalizedEloRating: null
+            });
+        }
+
+        const enrichedEntries = await mergeUserGames(targetUser);
+        const entry = enrichedEntries.find(e => {
+            const entryId = e._id ? String(e._id) : null;
+            const entryGameId = e.gameId ? String(e.gameId) : null;
+            return entryId === gameEntry || entryGameId === gameEntry;
+        }) || null;
+
+        const profileImageUrl = (targetUser.profileImage && targetUser.profileImage.data)
+            ? `/users/${targetUser._id}/profile-image`
+            : null;
+
+        if (!entry) {
+            return res.status(404).render('gameEntryShowcase', {
+                user: targetUser,
+                entry: null,
+                profileImageUrl,
+                gameDetails: null,
+                normalizedEloRating: null
+            });
+        }
+
+        res.render('gameEntryShowcase', {
+            user: targetUser,
+            entry,
+            profileImageUrl,
+            gameDetails: entry.game || null,
+            normalizedEloRating: eloToRating(entry.elo)
         });
     } catch (err) {
         next(err);
