@@ -42,6 +42,7 @@
     }
 
     .frame-container {
+
       width: min(88vw, 430px);
       aspect-ratio: 9 / 16;
       position: relative;
@@ -82,6 +83,7 @@
       align-items: center;
       gap: 1.25rem;
       text-align: center;
+
       z-index: 1;
     }
 
@@ -135,6 +137,7 @@
 
     .game-title {
       font-size: clamp(1.4rem, 3.5vw, 2.1rem);
+
       color: #0f172a;
       margin: 0;
       font-weight: 800;
@@ -146,6 +149,7 @@
       line-height: 1.6;
       max-width: 32rem;
     }
+
 
     .matchup-card {
       width: 100%;
@@ -204,6 +208,7 @@
       color: rgba(15, 23, 42, 0.18);
     }
 
+
     .empty-state {
       background: rgba(15, 23, 42, 0.18);
       border: 1px solid rgba(255, 255, 255, 0.35);
@@ -227,6 +232,7 @@
     }
 
     @media (max-width: 768px) {
+
       .frame-container {
         width: min(92vw, 360px);
       }
@@ -234,12 +240,15 @@
       .info-box {
         width: calc(100% - 2.5rem);
         padding: 1.75rem 1.35rem 1.85rem;
+
       }
 
       .user-logo,
       .elo-circle {
         position: static;
+
         align-self: center;
+
       }
     }
   </style>
@@ -258,6 +267,7 @@
         <a class="back-link" href="<%= backHref %>">Return to profile</a>
       </div>
     <% } else { %>
+
       <div class="frame-container">
         <img class="entry-image" src="<%= entry && entry.image ? entry.image : '/images/placeholder.jpg' %>" alt="Game highlight image">
         <div class="frame-overlay"></div>
@@ -302,6 +312,7 @@
             <p class="comment">“<%= entry.comment %>”</p>
           <% } %>
         </div>
+
       </div>
     <% } %>
   </div>
