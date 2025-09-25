@@ -42,6 +42,7 @@
     }
 
     .frame-container {
+
       width: min(88vw, 430px);
       aspect-ratio: 9 / 16;
       position: relative;
@@ -50,7 +51,9 @@
       box-shadow: 0 22px 48px rgba(15, 23, 42, 0.45);
       display: flex;
       justify-content: center;
+
       align-items: center;
+
     }
 
     .entry-image {
@@ -71,16 +74,19 @@
 
     .info-box {
       position: relative;
+
       width: 90%;
       height: 50%;
       padding: 1.75rem 1.5rem;
       background: white;
       border-radius: 0;
       box-sizing: border-box;
+
       box-shadow: 0 18px 40px rgba(15, 23, 42, 0.4);
       display: flex;
       flex-direction: column;
       align-items: center;
+
       justify-content: flex-start;
       gap: 1.1rem;
       text-align: center;
@@ -96,11 +102,13 @@
     }
 
     .user-logo {
+
       height: 3.4rem;
       width: 3.4rem;
       border-radius: 50%;
       object-fit: cover;
       border: 2px solid rgba(20, 184, 166, 0.6);
+
       flex-shrink: 0;
     }
 
@@ -116,6 +124,7 @@
     }
 
     .elo-circle {
+
       height: clamp(3.75rem, 10vw, 4.5rem);
       width: clamp(3.75rem, 10vw, 4.5rem);
       border-radius: 50%;
@@ -133,6 +142,7 @@
       background-image: linear-gradient(135deg, #14b8a6, #7e22ce);
       background-clip: text;
       -webkit-background-clip: text;
+
       margin-left: auto;
     }
 
@@ -152,15 +162,18 @@
 
     .score-value {
       font-size: clamp(2rem, 5vw, 2.8rem);
+
       font-weight: 800;
       color: transparent;
       background: linear-gradient(to right, #14b8a6, #7e22ce);
       -webkit-background-clip: text;
       background-clip: text;
+
       letter-spacing: 0.15em;
     }
 
     .comment {
+
       font-weight: 700;
       font-size: 1rem;
       line-height: 1.6;
@@ -169,7 +182,9 @@
       background: linear-gradient(to right, #14b8a6, #7e22ce);
       -webkit-background-clip: text;
       background-clip: text;
+
       margin: 0;
+
     }
 
     .matchup-card {
@@ -267,6 +282,7 @@
         <a class="back-link" href="<%= backHref %>">Return to profile</a>
       </div>
     <% } else { %>
+
       <div class="frame-container">
         <img class="entry-image" src="<%= entry && entry.image ? entry.image : '/images/placeholder.jpg' %>" alt="Game highlight image">
         <div class="frame-overlay"></div>
@@ -311,6 +327,7 @@
           const fallbackInitials = buildInitials((user && user.username) || (user && user.venmo) || '');
         %>
         <div class="info-box">
+
           <% if (gameDetails) { %>
             <div class="matchup-card">
               <div class="logo-wrapper matchup-away">
@@ -328,6 +345,7 @@
               </div>
             </div>
           <% } %>
+
 
           <div class="score-display">
             <span class="score-value"><%= formattedAwayScore %>-<%= formattedHomeScore %></span>
@@ -355,6 +373,7 @@
             <p class="comment"><%= entry.comment %></p>
           <% } %>
         </div>
+
       </div>
     <% } %>
   </div>
