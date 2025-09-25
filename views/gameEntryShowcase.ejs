@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Entry Showcase</title>
+  <style>
+    body {
+      background: linear-gradient(to right, #14b8a6, #7e22ce);
+      color: white;
+      font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 2rem 1rem;
+    }
+
+    .showcase-wrapper {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .back-link {
+      align-self: flex-start;
+      color: #f8fafc;
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: opacity 0.2s ease;
+    }
+
+    .back-link:hover {
+      opacity: 0.8;
+    }
+
+    .frame-container {
+      width: min(88vw, 430px);
+      aspect-ratio: 9 / 16;
+      position: relative;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 22px 48px rgba(15, 23, 42, 0.45);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .entry-image {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: grayscale(100%);
+      transform: scale(1.05);
+    }
+
+    .frame-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(20, 184, 166, 0.25) 0%, rgba(15, 23, 42, 0.65) 100%);
+    }
+
+    .info-box {
+      position: relative;
+      width: 90%;
+      height: 50%;
+      padding: 1.5rem;
+      background: white;
+      border-radius: 0;
+      box-sizing: border-box;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      text-align: center;
+      z-index: 1;
+    }
+
+    .user-logo {
+      position: absolute;
+      top: 1.5rem;
+      left: 1.5rem;
+      height: 3.4rem;
+      width: 3.4rem;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(20, 184, 166, 0.6);
+    }
+
+    .elo-circle {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      height: 3.4rem;
+      width: 3.4rem;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      background: linear-gradient(#fff, #fff) padding-box,
+                  linear-gradient(135deg, #14b8a6, #7e22ce) border-box;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 800;
+      font-size: 1.25rem;
+      color: transparent;
+      background-clip: text;
+      -webkit-background-clip: text;
+    }
+
+    .rating-line {
+      height: 3px;
+      width: 100%;
+      background: linear-gradient(to right, #14b8a6, #7e22ce);
+      border-radius: 999px;
+      opacity: 0.85;
+    }
+
+    .rating-number {
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      font-weight: 800;
+      color: transparent;
+      background: linear-gradient(to right, #14b8a6, #7e22ce);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    .game-title {
+      font-size: clamp(1.4rem, 3.5vw, 2.1rem);
+      color: #0f172a;
+      margin: 0;
+      font-weight: 800;
+    }
+
+    .comment {
+      font-weight: 700;
+      font-size: 1rem;
+      line-height: 1.6;
+      max-width: 32rem;
+      color: transparent;
+      background: linear-gradient(to right, #14b8a6, #7e22ce);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    .matchup-card {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      gap: 0.75rem;
+    }
+
+    .team-logo-container {
+      width: clamp(56px, 16vw, 72px);
+      height: clamp(56px, 16vw, 72px);
+      border-radius: 50%;
+      background: rgba(15, 23, 42, 0.06);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      margin: 0 auto 0.5rem auto;
+    }
+
+    .team-logo-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .logo-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      color: #0f172a;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: clamp(0.7rem, 2vw, 0.85rem);
+      min-width: 0;
+    }
+
+    .team-name {
+      display: block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .matchup-at {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(1.8rem, 5vw, 2.4rem);
+      font-weight: 800;
+      color: rgba(15, 23, 42, 0.18);
+    }
+
+    .empty-state {
+      background: rgba(15, 23, 42, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 1rem;
+      padding: 2rem;
+      text-align: center;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.25);
+    }
+
+    .empty-state h2 {
+      margin-bottom: 0.75rem;
+      font-size: 1.9rem;
+      letter-spacing: 0.04em;
+    }
+
+    .empty-state p {
+      margin: 0 0 1.25rem;
+      color: rgba(241, 245, 249, 0.85);
+      font-size: 1.05rem;
+    }
+
+  </style>
+</head>
+<body>
+  <% const profileSlug = user ? (user.venmo || user._id) : null; %>
+  <% const backHref = profileSlug ? `/profileGames/${profileSlug}` : '/profileGames'; %>
+
+  <div class="showcase-wrapper">
+    <a class="back-link" href="<%= backHref %>">← Back to profile games</a>
+
+    <% if (!entry) { %>
+      <div class="empty-state">
+        <h2>Game entry not found</h2>
+        <p>The showcase you're looking for doesn't exist or may have been removed.</p>
+        <a class="back-link" href="<%= backHref %>">Return to profile</a>
+      </div>
+    <% } else { %>
+      <div class="frame-container">
+        <img class="entry-image" src="<%= entry && entry.image ? entry.image : '/images/placeholder.jpg' %>" alt="Game highlight image">
+        <div class="frame-overlay"></div>
+        <% const entryTitle = entry.title || entry.gameTitle; %>
+        <div class="info-box">
+          <% if (profileImageUrl) { %>
+            <img src="<%= profileImageUrl %>" alt="User avatar" class="user-logo">
+          <% } %>
+
+          <% if (normalizedEloRating != null) { %>
+            <div class="elo-circle"><%= normalizedEloRating %></div>
+          <% } else { %>
+            <div class="elo-circle">?</div>
+          <% } %>
+
+          <% if (gameDetails) { %>
+            <div class="matchup-card">
+              <div class="logo-wrapper matchup-away">
+                <div class="team-logo-container">
+                  <img loading="lazy" src="<%= gameDetails.awayTeam && gameDetails.awayTeam.logos && gameDetails.awayTeam.logos[0] ? gameDetails.awayTeam.logos[0] : '/images/placeholder.jpg' %>" alt="<%= gameDetails.awayTeamName || 'Away Team' %>">
+                </div>
+                <span class="team-name"><%= gameDetails.awayTeamName || 'Away Team' %></span>
+              </div>
+              <div class="matchup-at">@</div>
+              <div class="logo-wrapper matchup-home">
+                <div class="team-logo-container">
+                  <img loading="lazy" src="<%= gameDetails.homeTeam && gameDetails.homeTeam.logos && gameDetails.homeTeam.logos[0] ? gameDetails.homeTeam.logos[0] : '/images/placeholder.jpg' %>" alt="<%= gameDetails.homeTeamName || 'Home Team' %>">
+                </div>
+                <span class="team-name"><%= gameDetails.homeTeamName || 'Home Team' %></span>
+              </div>
+            </div>
+          <% } %>
+
+          <% if (entryTitle) { %>
+            <h1 class="game-title"><%= entryTitle %></h1>
+          <% } %>
+
+          <div class="rating-line"></div>
+
+          <div class="rating-number">
+            <%= normalizedEloRating != null ? normalizedEloRating + '/10' : 'No Rating Yet' %>
+          </div>
+
+          <% if (entry.comment) { %>
+            <p class="comment">“<%= entry.comment %>”</p>
+          <% } %>
+        </div>
+      </div>
+    <% } %>
+  </div>
+</body>
+</html>
