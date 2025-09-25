@@ -269,8 +269,9 @@
             <img src="<%= profileImageUrl %>" alt="User avatar" class="user-logo">
           <% } %>
 
-          <% if (entry.elo != null) { %>
-            <div class="elo-circle"><%= Math.round(entry.elo / 150) %></div>
+          <% if (normalizedEloRating != null) { %>
+            <div class="elo-circle"><%= normalizedEloRating %></div>
+
           <% } else { %>
             <div class="elo-circle">?</div>
           <% } %>
@@ -302,7 +303,8 @@
           <div class="rating-line"></div>
 
           <div class="rating-number">
-            <%= entry.rating != null ? entry.rating : 'No Rating Yet' %>
+            <%= normalizedEloRating != null ? normalizedEloRating + '/10' : 'No Rating Yet' %>
+
           </div>
 
           <% if (entry.comment) { %>

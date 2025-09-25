@@ -100,6 +100,12 @@ function ratingToElo(rating){
     return Math.round(1000 + ((val - 1) / 9) * 1000);
 }
 
+function eloToRating(elo){
+    if (typeof elo !== 'number' || Number.isNaN(elo)) return null;
+    const rawScore = ((elo - 1000) / 1000) * 9 + 1;
+    return Math.max(1.0, Math.min(10.0, Math.round(rawScore * 10) / 10));
+}
+
 exports.getSignUp = async (req, res, next) => {
     try {
         res.render('contact', { layout: false, formData: {} });
@@ -702,7 +708,10 @@ exports.profileGameShowcase = async (req, res, next) => {
                 user: null,
                 entry: null,
                 profileImageUrl: null,
-                gameDetails: null
+
+                gameDetails: null,
+                normalizedEloRating: null
+
             });
         }
 
@@ -716,7 +725,10 @@ exports.profileGameShowcase = async (req, res, next) => {
                 user: null,
                 entry: null,
                 profileImageUrl: null,
-                gameDetails: null
+
+                gameDetails: null,
+                normalizedEloRating: null
+
             });
         }
 
@@ -736,7 +748,10 @@ exports.profileGameShowcase = async (req, res, next) => {
                 user: targetUser,
                 entry: null,
                 profileImageUrl,
-                gameDetails: null
+
+                gameDetails: null,
+                normalizedEloRating: null
+
             });
         }
 
@@ -744,7 +759,10 @@ exports.profileGameShowcase = async (req, res, next) => {
             user: targetUser,
             entry,
             profileImageUrl,
-            gameDetails: entry.game || null
+
+            gameDetails: entry.game || null,
+            normalizedEloRating: eloToRating(entry.elo)
+
         });
     } catch (err) {
         next(err);
