@@ -125,18 +125,21 @@
 
     .elo-circle {
 
-      height: 3.4rem;
-      width: 3.4rem;
+      height: clamp(3.75rem, 10vw, 4.5rem);
+      width: clamp(3.75rem, 10vw, 4.5rem);
       border-radius: 50%;
-      border: 3px solid transparent;
-      background: linear-gradient(#fff, #fff) padding-box,
-                  linear-gradient(135deg, #14b8a6, #7e22ce) border-box;
+      border: 4px solid transparent;
+      background:
+        linear-gradient(#fff, #fff) padding-box,
+        linear-gradient(135deg, #14b8a6, #7e22ce) border-box;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-weight: 800;
-      font-size: 1.25rem;
+      font-weight: 900;
+      font-size: clamp(1.6rem, 4vw, 2.1rem);
+      letter-spacing: 0.04em;
       color: transparent;
+      background-image: linear-gradient(135deg, #14b8a6, #7e22ce);
       background-clip: text;
       -webkit-background-clip: text;
 
@@ -262,7 +265,6 @@
       color: rgba(241, 245, 249, 0.85);
       font-size: 1.05rem;
     }
-
 
   </style>
 </head>

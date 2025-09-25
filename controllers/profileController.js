@@ -708,7 +708,6 @@ exports.profileGameShowcase = async (req, res, next) => {
                 user: null,
                 entry: null,
                 profileImageUrl: null,
-
                 gameDetails: null,
                 normalizedEloRating: null
 
