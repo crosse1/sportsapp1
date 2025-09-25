@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 // ==== CONFIG (edit these) ====
 const MONGODB_URI = "mongodb+srv://crosse:Zack0018@christiancluster.0ejv5.mongodb.net/appUsers?retryWrites=true&w=majority&appName=ChristianCluster";
 const COLLECTION = "games";
-const CSV_PATH = "public/files/GamesDate1.csv";
+const CSV_PATH = "public/files/GamesDate2.csv";
 const DRY_RUN = false; // true = log only, don't write
 // Which document fields might hold your external game id?
 const ID_FIELDS = ['gameId', 'id', 'espnId', 'Id']; // add/remove as needed
