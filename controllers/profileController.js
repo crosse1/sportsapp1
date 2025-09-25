@@ -708,8 +708,10 @@ exports.profileGameShowcase = async (req, res, next) => {
                 user: null,
                 entry: null,
                 profileImageUrl: null,
+
                 gameDetails: null,
                 normalizedEloRating: null
+
             });
         }
 
@@ -723,8 +725,10 @@ exports.profileGameShowcase = async (req, res, next) => {
                 user: null,
                 entry: null,
                 profileImageUrl: null,
+
                 gameDetails: null,
                 normalizedEloRating: null
+
             });
         }
 
@@ -744,8 +748,10 @@ exports.profileGameShowcase = async (req, res, next) => {
                 user: targetUser,
                 entry: null,
                 profileImageUrl,
+
                 gameDetails: null,
                 normalizedEloRating: null
+
             });
         }
 
@@ -753,8 +759,10 @@ exports.profileGameShowcase = async (req, res, next) => {
             user: targetUser,
             entry,
             profileImageUrl,
+
             gameDetails: entry.game || null,
             normalizedEloRating: eloToRating(entry.elo)
+
         });
     } catch (err) {
         next(err);
