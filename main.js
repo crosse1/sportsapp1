@@ -241,6 +241,7 @@ app.get('/logout', (req, res) => {
 app.get('/thanks', requireAuth, (req, res) => { res.redirect('/profileBadges/' + req.user.id); });
 app.get('/profile', requireAuth, (req, res) => { res.redirect('/profileBadges/' + req.user.id); });
 app.get('/profileBadges/:user?', requireAuth, profileController.profileBadges);
+app.get('/profileGames/:user/:gameEntry', requireAuth, profileController.profileGameShowcase);
 app.get('/profileGames/:user?', requireAuth, profileController.profileGames);
 app.get('/profileStats/:user?', requireAuth, profileController.profileStats);
 app.get('/profileWaitlist/:user?', requireAuth, profileController.profileWaitlist);
