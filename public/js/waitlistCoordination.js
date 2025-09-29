@@ -8,6 +8,9 @@
 
     const pollers = new Map();
 
+    let cachedInviteSuggestions = null;
+
+
     const responseLabels = {
         yes: 'Going',
         no: 'Not going',
@@ -243,25 +246,103 @@
         }
     }
 
-    function setupInviteSelect(container){
+
+    async function setupInviteSelect(container){
+
         const select = container.querySelector('.invite-select');
         if(!select || typeof $ === 'undefined' || !$.fn.select2) return;
         const gameId = container.dataset.gameId;
         const ownerId = container.dataset.ownerId;
+
+
+        if(!Array.isArray(cachedInviteSuggestions)){
+            try {
+                const suggestionResponse = await fetch('/users/search');
+                if(suggestionResponse.ok){
+                    cachedInviteSuggestions = await suggestionResponse.json();
+                } else {
+                    cachedInviteSuggestions = [];
+                }
+            } catch (err){
+                console.error('Failed to preload invite suggestions', err);
+                cachedInviteSuggestions = [];
+            }
+        }
+
+        if(Array.isArray(cachedInviteSuggestions) && cachedInviteSuggestions.length && !select.options.length){
+            cachedInviteSuggestions.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user._id;
+                option.textContent = user.username;
+                option.dataset.profileImageUrl = user.profileImageUrl || `/users/${user._id}/profile-image`;
+                option.dataset.isFollowing = user.isFollowing ? 'true' : 'false';
+                select.appendChild(option);
+            });
+        }
+
+        const extractMeta = (data) => {
+            const element = data.element || null;
+            return {
+                username: data.text || data.username || (element ? element.textContent : ''),
+                profileImageUrl: data.profileImageUrl || (element && element.dataset.profileImageUrl) || '/images/placeholder.jpg',
+                isFollowing: typeof data.isFollowing === 'boolean' ? data.isFollowing : (element ? element.dataset.isFollowing === 'true' : false)
+            };
+        };
+
+        const renderOption = (data) => {
+            if(data.loading){
+                return data.text;
+            }
+            const meta = extractMeta(data);
+            const wrapper = document.createElement('div');
+            wrapper.className = 'invite-option';
+            const avatar = document.createElement('span');
+            avatar.className = 'invite-option-avatar';
+            const img = document.createElement('img');
+            img.src = meta.profileImageUrl;
+            img.alt = meta.username || 'User';
+            avatar.appendChild(img);
+            const name = document.createElement('span');
+            name.className = 'invite-option-name';
+            name.textContent = meta.username || 'User';
+            wrapper.appendChild(avatar);
+            wrapper.appendChild(name);
+            if(meta.isFollowing){
+                const badge = document.createElement('span');
+                badge.className = 'invite-option-follow';
+                badge.textContent = 'Following';
+                wrapper.appendChild(badge);
+            }
+            return $(wrapper);
+        };
+
+        const renderSelection = (data) => data.text || data.username || '';
+
         $(select).select2({
             placeholder: select.dataset.placeholder || 'Invite by username',
-            dropdownParent: $(select).closest('.waitlist-coordination'),
+            dropdownParent: $(select).closest('.invite-area'),
             width: '100%',
+            minimumInputLength: 0,
+
             ajax: {
                 url: '/users/search',
                 dataType: 'json',
                 delay: 200,
                 data: params => ({ q: params.term || '' }),
                 processResults: data => ({
-                    results: data.map(user => ({ id: user._id, text: user.username }))
+
+                    results: data.map(user => ({
+                        id: user._id,
+                        text: user.username,
+                        profileImageUrl: user.profileImageUrl,
+                        isFollowing: !!user.isFollowing
+                    }))
                 })
             },
-            minimumInputLength: 1
+            templateResult: renderOption,
+            templateSelection: renderSelection,
+            escapeMarkup: markup => markup
+
         });
 
         $(select).on('select2:select', async (event) => {
@@ -288,6 +369,15 @@
                 $(select).prop('disabled', false);
             }
         });
+
+
+        $(select).on('select2:open', () => {
+            const searchField = document.querySelector('.select2-container--open .select2-search__field');
+            if(searchField){
+                searchField.placeholder = 'Search by username';
+            }
+        });
+
     }
 
     async function loadCoordination(container){

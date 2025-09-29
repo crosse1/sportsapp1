@@ -923,24 +923,75 @@ exports.getAllUsers = async (req, res, next) => {
 // Search users by username
 exports.searchUsers = async (req, res, next) => {
     try {
-        const q = req.query.q || '';
-        if (!q) return res.json([]);
-
+        const q = (req.query.q || '').trim();
+        const MAX_RESULTS = 12;
 
         const viewer = await User.findById(req.user.id).select('following').lean();
+        const followingIds = viewer?.following || [];
+        const followingSet = new Set(followingIds.map(id => String(id)));
 
-        const users = await User.find({
-            username: { $regex: q, $options: 'i' },
-            _id: { $ne: req.user.id }
-        }).select('username').lean();
-
-        const followingSet = new Set((viewer?.following || []).map(id => String(id)));
-
-        res.json(users.map(u => ({
+        const formatResults = (list) => list.map(u => ({
             _id: u._id,
             username: u.username,
-            isFollowing: followingSet.has(String(u._id))
-        })));
+            isFollowing: followingSet.has(String(u._id)),
+            profileImageUrl: `/users/${u._id}/profile-image`
+        }));
+
+        if (!q) {
+            if (!followingIds.length) {
+                return res.json([]);
+            }
+
+            const suggestions = await User.find({
+                _id: { $in: followingIds, $ne: req.user.id }
+            })
+                .select('username')
+                .sort({ username: 1 })
+                .limit(MAX_RESULTS)
+                .lean();
+
+            return res.json(formatResults(suggestions));
+        }
+
+        const escapeRegex = (value) => value.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const regex = new RegExp(escapeRegex(q), 'i');
+
+        const followingQuery = followingIds.length ? User.find({
+            _id: { $in: followingIds },
+            username: regex
+        })
+            .select('username')
+            .sort({ username: 1 })
+            .limit(MAX_RESULTS)
+            .lean() : Promise.resolve([]);
+
+        const nonFollowingQuery = User.find({
+            username: regex,
+            _id: {
+                $ne: req.user.id,
+                ...(followingIds.length ? { $nin: followingIds } : {})
+            }
+        })
+            .select('username')
+            .sort({ username: 1 })
+            .limit(MAX_RESULTS)
+            .lean();
+
+        const [followingMatches, otherMatches] = await Promise.all([followingQuery, nonFollowingQuery]);
+
+        const ordered = [];
+        const seen = new Set();
+        [...followingMatches, ...otherMatches].some(user => {
+            const key = String(user._id);
+            if (seen.has(key)) {
+                return false;
+            }
+            ordered.push(user);
+            seen.add(key);
+            return ordered.length >= MAX_RESULTS;
+        });
+
+        res.json(formatResults(ordered));
 
     } catch (err) {
         next(err);
