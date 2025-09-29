@@ -308,16 +308,22 @@ app.get('/team/:id', async (req, res) => {
 
     const pastGames = await PastGame.find({
         $or: [{ HomeId: team.teamId }, { AwayId: team.teamId }]
-    }).select('_id');
-    const pastGameIds = pastGames.map(pg => pg._id);
+    }).select('_id gameId Id');
+    const pastGameIds = pastGames
+        .map(pg => Number(pg.gameId ?? pg.Id))
+        .filter(Number.isFinite);
+    const pastGameObjectIds = pastGames.map(pg => pg._id);
     let averageElo = 'N/A';
     if (pastGameIds.length) {
         const eloAgg = await User.aggregate([
             { $unwind: '$gameElo' },
             {
                 $match: {
-                    'gameElo.game': { $in: pastGameIds },
-                    'gameElo.elo': { $ne: null }
+                    'gameElo.elo': { $ne: null },
+                    $or: [
+                        { 'gameElo.gameId': { $in: pastGameIds } },
+                        { 'gameElo.game': { $in: pastGameObjectIds } }
+                    ]
                 }
             },
             { $group: { _id: null, avgElo: { $avg: '$gameElo.elo' } } }

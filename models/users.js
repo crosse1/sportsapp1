@@ -57,6 +57,7 @@ const userSchema = new mongoose.Schema({
     gameElo: {
         type: [{
           game: { type: mongoose.Schema.Types.ObjectId, ref: 'PastGame' },
+          gameId: { type: Number, index: true },
           elo: Number,
           comparisonHistory: [{
             againstGame: { type: mongoose.Schema.Types.ObjectId, ref: 'PastGame' },
