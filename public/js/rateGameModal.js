@@ -74,29 +74,37 @@
     }
 
     function getEloEntryId(entry){
-      if(!entry) return null;
-      if(entry.gameId != null){
-        const num = parseNumericId(entry.gameId);
-        if(num != null) return String(num);
-      }
-      const game = entry.game;
-      if(game && typeof game === 'object'){
-        if(game.gameId != null){
-          const num = parseNumericId(game.gameId);
-          if(num != null) return String(num);
-        }
-        if(game.Id != null){
-          const num = parseNumericId(game.Id);
-          if(num != null) return String(num);
-        }
-        if(game._id != null){
-          return normalizeId(game._id);
-        }
-      } else if(game != null){
-        return normalizeId(game);
-      }
-      return null;
+  if (!entry) return null;
+
+  if (entry.gameId != null) {
+    const num = parseNumericId(entry.gameId);
+    if (num != null) return String(num);
+  }
+
+  const game = entry.game;
+  if (typeof game === 'string' || typeof game === 'number') {
+    return normalizeId(game);
+  }
+
+
+
+  if (game && typeof game === 'object') {
+    if (game.gameId != null) {
+      const num = parseNumericId(game.gameId);
+      if (num != null) return String(num);
     }
+    if (game.Id != null) {
+      const num = parseNumericId(game.Id);
+      if (num != null) return String(num);
+    }
+    if (game._id != null) {
+      return normalizeId(game._id);
+    }
+  }
+
+  return null;
+}
+
 
     function updateRatingDisplay(){
       if(!ratingRange || !ratingValue) return;
@@ -148,29 +156,25 @@
     }
 
     function pickComparisonCandidate(excludeIds){
-      const exclude = new Set((excludeIds || []).map(String));
-      const eligible = finalizedGames.filter(g => {
-        const id = getEloEntryId(g);
-        if(!id || exclude.has(id)) return false;
-        const elo = g.elo;
-        if(typeof elo !== 'number' || Number.isNaN(elo)) return false;
-        if(elo < minRange || elo > maxRange) return false;
-        return true;
-      });
-      if(!eligible.length) return null;
-      const midpoint = Math.floor((minRange + maxRange) / 2);
-      let best = eligible[0];
-      let bestDist = Math.abs((best.elo || 0) - midpoint);
-      for(let i=1;i<eligible.length;i++){
-        const candidate = eligible[i];
-        const dist = Math.abs((candidate.elo || 0) - midpoint);
-        if(dist < bestDist){
-          best = candidate;
-          bestDist = dist;
-        }
-      }
-      return best;
-    }
+  const exclude = new Set((excludeIds || []).map(String));
+  const eligible = finalizedGames.filter(g => {
+    const id = getEloEntryId(g);
+    if (!id || exclude.has(id)) return false;   // ✅ must have a real ID
+    const elo = g.elo;
+    if (typeof elo !== 'number' || Number.isNaN(elo)) return false;
+    if (elo < minRange || elo > maxRange) return false;
+    return true;
+  });
+  if (!eligible.length) return null;
+
+  const midpoint = Math.floor((minRange + maxRange) / 2);
+  return eligible.reduce((best, candidate) => {
+    const dist = Math.abs((candidate.elo || 0) - midpoint);
+    const bestDist = Math.abs((best.elo || 0) - midpoint);
+    return dist < bestDist ? candidate : best;
+  });
+}
+
 
     function startComparisons(){
       resetHiddenFields();
@@ -184,11 +188,13 @@
       if(comparisonButtons) comparisonButtons.style.display = 'none';
       comparisonPrompt && (comparisonPrompt.textContent = '');
 
-      const exclude = [currentEntryGameId];
-      randomComparisons.forEach(item => {
-        const id = item ? getEloEntryId(item) : null;
-        if(id) exclude.push(id);
-      });
+      const exclude = [];
+if (currentEntryGameId) exclude.push(String(currentEntryGameId));
+
+randomComparisons.forEach(item => {
+  const id = item ? getEloEntryId(item) : null;
+  if (id) exclude.push(id);
+});
 
       const nextSlot = randomComparisons.findIndex(item => !item);
       if(nextSlot === -1){
@@ -208,14 +214,16 @@
         compareInput.value = getEloEntryId(candidate) || '';
       }
 
-      const compGame = candidate.game || {};
-      const compData = {
-        awayLogo: compGame.awayTeam && compGame.awayTeam.logos ? compGame.awayTeam.logos[0] : compGame.awayLogo,
-        homeLogo: compGame.homeTeam && compGame.homeTeam.logos ? compGame.homeTeam.logos[0] : compGame.homeLogo,
-        awayPoints: compGame.AwayPoints ?? compGame.awayPoints,
-        homePoints: compGame.HomePoints ?? compGame.homePoints,
-        gameDate: compGame.StartDate || compGame.startDate
-      };
+      const compGame = candidate.game || candidate;
+
+const compData = {
+  awayLogo: compGame.awayTeam?.logos?.[0] || compGame.awayLogo || '/images/placeholder.jpg',
+  homeLogo: compGame.homeTeam?.logos?.[0] || compGame.homeLogo || '/images/placeholder.jpg',
+  awayPoints: compGame.AwayPoints ?? compGame.awayPoints ?? '',
+  homePoints: compGame.HomePoints ?? compGame.homePoints ?? '',
+  gameDate: compGame.StartDate || compGame.startDate || compGame.gameDate
+};
+
 
       renderCard(newGameCard, currentEntry);
       renderCard(existingGameCard, compData);
@@ -242,11 +250,11 @@
       const target = randomComparisons[idx];
       if(!target) return;
       const elo = target.elo;
-      if(result === 'new' && typeof elo === 'number'){
-        minRange = elo;
-      } else if(result === 'existing' && typeof elo === 'number'){
-        maxRange = elo;
-      }
+      if (result === 'new' && typeof elo === 'number'){
+  minRange = elo + 1;  // ✅ push up one
+} else if (result === 'existing' && typeof elo === 'number'){
+  maxRange = elo - 1;  // ✅ push down one
+}
       const winnerInput = winnerInputs[idx];
       if(winnerInput){
         winnerInput.value = result;
