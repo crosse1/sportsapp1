@@ -66,15 +66,51 @@ function sanitizeComment(text) {
     return result;
 }
 
+function resolveEntryGameId(entry){
+    if(!entry) return null;
+    const source = entry.toObject ? entry.toObject() : entry;
+
+    const normalize = value => {
+        if(value === undefined || value === null || value === '') return null;
+        const numeric = Number(value);
+        if(Number.isFinite(numeric)) return numeric;
+        return null;
+    };
+
+    const direct = normalize(source.gameId);
+    if(direct != null) return direct;
+
+    const rawGame = source.game;
+    if(rawGame && typeof rawGame === 'object'){
+        const byGameId = normalize(rawGame.gameId);
+        if(byGameId != null) return byGameId;
+        const byId = normalize(rawGame.Id);
+        if(byId != null) return byId;
+    } else {
+        const fallback = normalize(rawGame);
+        if(fallback != null) return fallback;
+    }
+
+    return null;
+}
+
 async function enrichGameEntries(entries){
     if(!entries || !entries.length) return [];
-    const ids = entries.map(e => e.gameId).filter(Boolean);
+    const ids = entries
+        .map(resolveEntryGameId)
+        .filter((id, index, arr) => id != null && arr.indexOf(id) === index);
     const games = await fetchGamesByIds(ids);
     const gameMap = {};
-    games.forEach(g => { gameMap[String(g.gameId)] = g; });
+    games.forEach(g => {
+        const key = g && (g.gameId ?? g.Id ?? g._id);
+        if(key != null){
+            gameMap[String(key)] = g;
+        }
+    });
     return entries.map(e => {
         const entryObj = e.toObject ? e.toObject() : { ...e };
-        entryObj.game = gameMap[String(e.gameId)] || null;
+        const entryKey = resolveEntryGameId(entryObj);
+        entryObj.game = entryKey != null ? gameMap[String(entryKey)] || null : null;
         return entryObj;
     });
 }
