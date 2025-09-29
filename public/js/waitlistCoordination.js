@@ -243,50 +243,258 @@
         }
     }
 
-    function setupInviteSelect(container){
-        const select = container.querySelector('.invite-select');
-        if(!select || typeof $ === 'undefined' || !$.fn.select2) return;
+    function setupInviteSearch(container){
+        const wrapper = container.querySelector('.invite-search-wrapper');
+        if(!wrapper || wrapper.dataset.bound === 'true') return;
+        wrapper.dataset.bound = 'true';
+
+        const input = wrapper.querySelector('.invite-search-input');
+        const dropdown = wrapper.querySelector('.invite-search-dropdown');
+        const spinner = wrapper.querySelector('.invite-loading');
+        if(!input || !dropdown) return;
+
         const gameId = container.dataset.gameId;
         const ownerId = container.dataset.ownerId;
-        $(select).select2({
-            placeholder: select.dataset.placeholder || 'Invite by username',
-            dropdownParent: $(select).closest('.waitlist-coordination'),
-            width: '100%',
-            ajax: {
-                url: '/users/search',
-                dataType: 'json',
-                delay: 200,
-                data: params => ({ q: params.term || '' }),
-                processResults: data => ({
-                    results: data.map(user => ({ id: user._id, text: user.username }))
-                })
-            },
-            minimumInputLength: 1
-        });
+        let results = [];
+        let activeIndex = -1;
+        let searchTimer = null;
+        let searchController = null;
+        let loadingCount = 0;
 
-        $(select).on('select2:select', async (event) => {
-            const userId = event.params.data.id;
+        const pushLoading = () => {
+            loadingCount += 1;
+            if(spinner){
+                spinner.classList.remove('d-none');
+            }
+        };
+
+        const popLoading = () => {
+            loadingCount = Math.max(0, loadingCount - 1);
+            if(spinner && loadingCount === 0){
+                spinner.classList.add('d-none');
+            }
+        };
+
+        const hideDropdown = () => {
+            dropdown.classList.add('d-none');
+            dropdown.innerHTML = '';
+            activeIndex = -1;
+            results = [];
+        };
+
+        const renderResults = (users) => {
+            dropdown.innerHTML = '';
+            if(!users.length){
+                hideDropdown();
+                return;
+            }
+            const fragment = document.createDocumentFragment();
+            users.forEach((user, index) => {
+                const item = document.createElement('div');
+                item.className = 'invite-suggestion';
+                item.dataset.index = String(index);
+                item.dataset.userId = user.id;
+
+                const avatar = document.createElement('img');
+                avatar.className = 'invite-suggestion-avatar';
+                avatar.src = user.profileImageUrl;
+                avatar.alt = user.username ? `@${user.username}` : 'User avatar';
+                avatar.loading = 'lazy';
+
+                const text = document.createElement('div');
+                text.className = 'invite-suggestion-text';
+
+                const handle = document.createElement('span');
+                handle.className = 'invite-suggestion-handle';
+                handle.textContent = user.username ? `@${user.username}` : (user.displayName || 'User');
+                text.appendChild(handle);
+
+                if(user.displayName && user.displayName !== user.username){
+                    const name = document.createElement('span');
+                    name.className = 'invite-suggestion-name';
+                    name.textContent = user.displayName;
+                    text.appendChild(name);
+                }
+
+                item.appendChild(avatar);
+                item.appendChild(text);
+                fragment.appendChild(item);
+            });
+            dropdown.appendChild(fragment);
+            dropdown.classList.remove('d-none');
+            activeIndex = -1;
+        };
+
+        const highlightIndex = (index) => {
+            const items = dropdown.querySelectorAll('.invite-suggestion');
+            items.forEach((item, idx) => {
+                if(idx === index){
+                    item.classList.add('active');
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+            activeIndex = index;
+        };
+
+        const cancelPendingSearch = () => {
+            if(searchTimer){
+                clearTimeout(searchTimer);
+                searchTimer = null;
+            }
+            if(searchController){
+                searchController.abort();
+                searchController = null;
+            }
+        };
+
+        const performSearch = async (query) => {
+            if(searchController){
+                searchController.abort();
+            }
+            const controller = new AbortController();
+            searchController = controller;
+            pushLoading();
             try {
-                $(select).prop('disabled', true);
+                const res = await fetch(`/users/search?q=${encodeURIComponent(query)}`, { signal: controller.signal });
+                if(!res.ok){
+                    hideDropdown();
+                    return;
+                }
+                const data = await res.json();
+                const users = Array.isArray(data) ? data : [];
+                results = users.map(user => ({
+                    id: user && user._id ? user._id : '',
+                    username: user && user.username ? user.username : '',
+                    displayName: user && user.displayName ? user.displayName : '',
+                    profileImageUrl: user && user._id ? `/users/${user._id}/profile-image` : '/images/placeholder.jpg'
+                })).filter(user => user.id);
+                if(!results.length){
+                    hideDropdown();
+                    return;
+                }
+                dropdown.innerHTML = '';
+                renderResults(results);
+            } catch (err){
+                if(err.name !== 'AbortError'){
+                    console.error('Failed to search users for invite', err);
+                    hideDropdown();
+                }
+            } finally {
+                if(searchController === controller){
+                    searchController = null;
+                }
+                popLoading();
+            }
+        };
+
+        const inviteUser = async (user) => {
+            if(!user || !user.id) return;
+            cancelPendingSearch();
+            hideDropdown();
+            const previousValue = input.value;
+            input.value = '';
+            input.disabled = true;
+            pushLoading();
+            let restoreQuery = false;
+            try {
                 const res = await fetch(`/games/${gameId}/invite`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ownerId, userId })
+                    body: JSON.stringify({ ownerId, userId: user.id })
                 });
                 if(res.ok){
                     await loadCoordination(container);
                 } else if(res.status === 409){
                     alert('That user has already been invited.');
+                    input.value = previousValue;
+                    restoreQuery = true;
                 } else {
                     alert('Unable to invite that user right now.');
+                    input.value = previousValue;
+                    restoreQuery = true;
                 }
             } catch (err){
-                console.error(err);
+                console.error('Failed to invite user', err);
                 alert('Unable to invite that user right now.');
+                input.value = previousValue;
+                restoreQuery = true;
             } finally {
-                $(select).val(null).trigger('change');
-                $(select).prop('disabled', false);
+                input.disabled = false;
+                input.focus();
+                popLoading();
+                if(restoreQuery){
+                    input.dispatchEvent(new Event('input'));
+                }
             }
+        };
+
+        input.addEventListener('input', () => {
+            if(input.disabled) return;
+            const query = input.value.trim();
+            if(searchTimer){
+                clearTimeout(searchTimer);
+                searchTimer = null;
+            }
+            if(!query){
+                cancelPendingSearch();
+                hideDropdown();
+                return;
+            }
+            searchTimer = setTimeout(() => {
+                performSearch(query);
+                searchTimer = null;
+            }, 180);
+        });
+
+        input.addEventListener('keydown', (event) => {
+            if(dropdown.classList.contains('d-none')) return;
+            if(event.key === 'ArrowDown'){
+                event.preventDefault();
+                if(!results.length) return;
+                const next = activeIndex + 1 >= results.length ? 0 : activeIndex + 1;
+                highlightIndex(next);
+            } else if(event.key === 'ArrowUp'){
+                event.preventDefault();
+                if(!results.length) return;
+                const prev = activeIndex <= 0 ? results.length - 1 : activeIndex - 1;
+                highlightIndex(prev);
+            } else if(event.key === 'Enter'){
+                if(activeIndex >= 0 && activeIndex < results.length){
+                    event.preventDefault();
+                    inviteUser(results[activeIndex]);
+                }
+            } else if(event.key === 'Escape'){
+                hideDropdown();
+            }
+        });
+
+        input.addEventListener('focus', () => {
+            if(results.length){
+                dropdown.classList.remove('d-none');
+            }
+        });
+
+        input.addEventListener('blur', () => {
+            setTimeout(() => hideDropdown(), 120);
+        });
+
+        dropdown.addEventListener('mousedown', (event) => {
+            const item = event.target.closest('.invite-suggestion');
+            if(!item) return;
+            event.preventDefault();
+            const index = Number(item.dataset.index);
+            if(Number.isNaN(index)) return;
+            inviteUser(results[index]);
+        });
+
+        dropdown.addEventListener('mouseover', (event) => {
+            const item = event.target.closest('.invite-suggestion');
+            if(!item) return;
+            const index = Number(item.dataset.index);
+            if(Number.isNaN(index)) return;
+            highlightIndex(index);
         });
     }
 
@@ -310,7 +518,7 @@
 
     coordinationBlocks.forEach(container => {
         container.dataset.gameId = container.dataset.gameId || container.closest('[data-game-id]')?.dataset.gameId || '';
-        setupInviteSelect(container);
+        setupInviteSearch(container);
         loadCoordination(container);
     });
 })();
