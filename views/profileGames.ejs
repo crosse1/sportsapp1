@@ -95,6 +95,12 @@
         .rating-wrapper:hover::after { opacity: 0; }
         .rating-wrapper:hover .rating-comment { display: block; }
 
+        .unrated-icon {
+            color: red;
+            margin-left: 0.25rem;
+            cursor: pointer;
+        }
+
         /* Mobile-specific adjustments */
         @media (max-width: 768px) {
             #profileGamesWrapper .team-logo-container {
@@ -158,6 +164,12 @@
                                 <i class="bi bi-check-circle-fill text-black" aria-hidden="true"></i>
                                 <span class="visually-hidden">Checked in</span>
                             </span>
+                        <% } %>
+
+                        <% if (isCurrentUser && (entry.elo === null || entry.elo === undefined)) { %>
+                            <i class="bi bi-exclamation-circle-fill unrated-icon"
+                               data-bs-toggle="tooltip"
+                               title="This game is unrated, click the game to rate it"></i>
                         <% } %>
 
                         <% if(isCurrentUser){ %>
@@ -342,6 +354,17 @@
             const color=chooseTextColor([away,home]);
             card.querySelectorAll('.team-name, .score-text, .text-white').forEach(e=>{e.style.color=color;});
         });
+
+        const initTooltips = () => {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initTooltips);
+        } else {
+            initTooltips();
+        }
     </script>
 </body>
 </html>
