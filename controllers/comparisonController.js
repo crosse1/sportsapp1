@@ -23,21 +23,45 @@ exports.submit = async (req, res) => {
 
     const { gameA, gameB, winner } = req.body;
 
-    const newGameId = [gameA, gameB].find(id => !user.gameElo.some(e => e.game.equals(id)));
-    const existingGameId = [gameA, gameB].find(id => id !== newGameId);
+    const normalizeId = value => {
+      if (value === undefined || value === null) return null;
+      const numeric = Number(value);
+      if (Number.isFinite(numeric)) return String(numeric);
+      return String(value);
+    };
+
+    const entryGameId = entry => {
+      if (!entry) return null;
+      if (entry.gameId != null) {
+        const numeric = Number(entry.gameId);
+        if (Number.isFinite(numeric)) return String(numeric);
+      }
+      if (entry.game != null) return String(entry.game);
+      return null;
+    };
+
+    const providedIds = [normalizeId(gameA), normalizeId(gameB)];
+    const newGameId = providedIds.find(id => id && !user.gameElo.some(e => entryGameId(e) === id));
+    const existingGameId = providedIds.find(id => id && id !== newGameId);
 
     if (!newGameId || !existingGameId) {
       return res.status(400).json({ error: 'Both a new and existing game must be provided' });
     }
 
-    const newGameEntry = user.gameElo.find(e => e.game.equals(newGameId));
-    const existingGameEntry = user.gameElo.find(e => e.game.equals(existingGameId));
+    const newGameEntry = user.gameElo.find(e => entryGameId(e) === newGameId);
+    const existingGameEntry = user.gameElo.find(e => entryGameId(e) === existingGameId);
 
     if (!existingGameEntry || !existingGameEntry.finalized) {
       return res.status(400).json({ error: 'Existing game must have finalized Elo' });
     }
 
-    const result = winner === newGameId ? 'new' : 'existing';
+    let result;
+    if (winner === 'new' || winner === 'existing') {
+      result = winner;
+    } else {
+      const normalizedWinner = normalizeId(winner);
+      result = normalizedWinner === newGameId ? 'new' : 'existing';
+    }
     const min = newGameEntry.minElo ?? getEloBounds().minElo;
     const max = newGameEntry.maxElo ?? getEloBounds().maxElo;
 
@@ -45,7 +69,12 @@ exports.submit = async (req, res) => {
     console.log(`[ELO] Bounds updated — min: ${minElo}, max: ${maxElo}`);
 
     // Save comparison result
-    await GameComparison.create({ userId: user._id, gameA, gameB, winner });
+    await GameComparison.create({
+      userId: user._id,
+      gameA: newGameEntry.game,
+      gameB: existingGameEntry.game,
+      winner: result === 'new' ? newGameEntry.game : existingGameEntry.game
+    });
 
     // Update new game entry
     newGameEntry.minElo = minElo;
@@ -97,8 +126,8 @@ exports.getNextComparisonCandidate = async (req, res) => {
     if (!candidate) return res.status(204).json({ message: 'No eligible comparisons left' });
 
     res.status(200).json({
-      gameA: newGame.game,
-      gameB: candidate.game
+      gameA: newGame.gameId ?? newGame.game,
+      gameB: candidate.gameId ?? candidate.game
     });
   } catch (err) {
     console.error('[getNextComparisonCandidate ERROR]', err);
