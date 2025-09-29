@@ -33,67 +33,52 @@
         @media (min-width: 768px) { .profile-avatar { margin-left: 0; margin-right: 0; } }
         .avatar-lg { width: clamp(80px, 20vw, 300px); height: clamp(80px, 20vw, 300px); }
         .avatar-sm { width: clamp(40px, 10vw, 60px); height: clamp(40px, 10vw, 60px); }
-        .rating-wrapper {
-            margin-left: 1rem;
-            width: 10rem;
-            height: 6.5rem;
-            position: relative;
-            border-radius: 20%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            margin-left: -1rem;
-            margin-right: 8rem;
-        }
-        .rating-wrapper img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 0;
-        }
-        .rating-wrapper::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to right, #14b8a6, #7e22ce);
-            mix-blend-mode: multiply;
-            opacity: 0.8;
-            z-index: 1;
-        }
-        .rating-number {
-            position: relative;
-            z-index: 2;
+        .text-gradient {
+            background: linear-gradient(135deg, #14b8a6, #7e22ce);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
             display: inline-block;
-            transform: scaleY(1.3);
-            font-size: 2.6rem;
-            font-weight: 800;
-            line-height: 1;
-            color: #fff;
         }
-        .rating-comment {
-            display: none;
-            max-width: 100%;
-            
-            
-            font-size: clamp(0.75rem, 2vw, 1rem);
+        .followed-attendees {
+            margin-top: 1rem;
+        }
+        .followed-attendees-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+        .attendee-avatar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.75rem;
+            min-width: 48px;
+        }
+        .attendee-avatar img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+        .attendee-check-icon {
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+        .attendee-check-placeholder {
+            display: block;
+            height: 1.1rem;
+            margin-top: 0.25rem;
+        }
+        .attendee-more {
             font-weight: 700;
-            background: linear-gradient(to right, #7e22ce, #14b8a6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text; /* For Firefox */
-  color: transparent;
+            font-size: 0.95rem;
+            align-self: center;
         }
-        .rating-wrapper:hover .rating-number { display: none; }
-        .rating-wrapper:hover img { display: none; }
-        .rating-wrapper:hover::after { opacity: 0; }
-        .rating-wrapper:hover .rating-comment { display: block; }
 
         .unrated-icon {
             color: red;
@@ -165,7 +150,7 @@
                         <span><%= (dateObj.getMonth() + 1).toString().padStart(2, '0') %>/<%= dateObj.getDate().toString().padStart(2, '0') %>/<%= dateObj.getFullYear() %></span>
                         <% if (entry.checkedIn) { %>
                             <span class="checked-in-status ms-2" title="Checked in">
-                                <i class="bi bi-check-circle-fill text-black" aria-hidden="true"></i>
+                                <i class="bi bi-check-circle-fill text-gradient" aria-hidden="true"></i>
                                 <span class="visually-hidden">Checked in</span>
                             </span>
                         <% } %>
@@ -181,7 +166,7 @@
                             <i class="bi bi-trash ms-2 text-black delete-entry-icon" role="button" data-entry-id="<%= entry._id %>"></i>
                         <% } %>
                     </div>
-                    <div class="d-flex align-items-center">
+                    <div class="d-flex flex-column gap-2">
                         <div class="position-relative flex-grow-1">
                             <a href="/profileGames/<%= profileIdentifier %>/<%= entryKey %>"
                                class="game-link d-block <%= canRate ? 'game-link-unrated' : '' %>"
@@ -220,27 +205,32 @@
                             </a>
                         </div>
                         <%
-      const targetGameId = String(game.gameId ?? game.Id ?? game._id);
-      const eloEntry = (eloGames || []).find(e => {
-        if (e.gameId != null) return String(e.gameId) === targetGameId;
-        const g = e.game || {};
-        if (g.gameId != null) return String(g.gameId) === targetGameId;
-        if (g.Id != null) return String(g.Id) === targetGameId;
-        return String(g._id || e.game) === targetGameId;
-      });
-    
-      
-    
-      if (eloEntry && typeof eloEntry.elo === 'number') {
-        const elo = eloEntry.elo;
-        const rawScore = ((elo - 1000) / 1000) * 9 + 1;
-        const normalizedRating = Math.max(1.0, Math.min(10.0, Math.round(rawScore * 10) / 10));
+      const rawTargetGameId = game.gameId ?? game.Id ?? game._id ?? entry.gameId;
+      const targetGameId = rawTargetGameId != null ? String(rawTargetGameId) : null;
+      const followedUsers = (targetGameId && followedUsersByGame && followedUsersByGame[targetGameId]) || [];
+      const displayedFollowers = followedUsers.slice(0, 4);
+      const remainingFollowers = followedUsers.length - displayedFollowers.length;
     %>
-                            <div class="rating-wrapper gradient-overlay" data-entry-id="<%= entry._id %>">
-                                <img class="bw-img" src="<%= game.venue && game.venue.imgUrl ? game.venue.imgUrl : '/images/stadium.png' %>" alt="<%= game.Venue || game.venue %>">
-                                <span class="rating-number"><%= normalizedRating %>/10</span>
-                                <% if(entry.comment){ %><span class="rating-comment"><%= entry.comment %></span><% } %>
+                        <% if (followedUsers.length) { %>
+                        <div class="followed-attendees">
+                            <div class="followed-attendees-list">
+                                <% displayedFollowers.forEach(function(attendee){ %>
+                                    <div class="attendee-avatar text-center">
+                                        <a href="/profile/<%= attendee.username %>" class="d-inline-block">
+                                            <img src="<%= attendee.profileImg %>" alt="<%= attendee.username %>'s profile picture">
+                                        </a>
+                                        <% if (attendee.checkedIn) { %>
+                                            <i class="bi bi-check-circle-fill attendee-check-icon text-gradient"></i>
+                                        <% } else { %>
+                                            <span class="attendee-check-placeholder"></span>
+                                        <% } %>
+                                    </div>
+                                <% }); %>
+                                <% if (remainingFollowers > 0) { %>
+                                    <div class="attendee-more text-gradient">+<%= remainingFollowers %></div>
+                                <% } %>
                             </div>
+                        </div>
                         <% } %>
                     </div>
                 </div>
