@@ -255,6 +255,7 @@
 
         const gameId = container.dataset.gameId;
         const ownerId = container.dataset.ownerId;
+
         let results = [];
         let activeIndex = -1;
         let searchTimer = null;
@@ -388,6 +389,7 @@
                 popLoading();
             }
         };
+
 
         const inviteUser = async (user) => {
             if(!user || !user.id) return;
