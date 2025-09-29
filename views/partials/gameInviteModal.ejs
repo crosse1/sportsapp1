@@ -1,0 +1,44 @@
+<div class="modal fade game-invite-modal" id="gameInviteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content invite-modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title invite-modal-title w-100 text-center text-white fw-bold"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="invite-game-card glassy-card">
+          <div class="invite-teams d-flex align-items-center justify-content-between">
+            <div class="invite-team text-center">
+              <div class="invite-team-logo">
+                <img src="/images/placeholder.jpg" alt="Away team logo" class="img-fluid">
+              </div>
+              <div class="invite-team-name text-truncate"></div>
+            </div>
+            <div class="invite-at-symbol">@</div>
+            <div class="invite-team text-center">
+              <div class="invite-team-logo">
+                <img src="/images/placeholder.jpg" alt="Home team logo" class="img-fluid">
+              </div>
+              <div class="invite-team-name text-truncate"></div>
+            </div>
+          </div>
+          <div class="invite-game-meta text-center mt-3">
+            <div class="invite-game-datetime fw-semibold"></div>
+            <div class="invite-game-venue text-muted"></div>
+          </div>
+        </div>
+        <div class="invite-response-group mt-4">
+          <div class="invite-options d-flex justify-content-center gap-3 mb-3">
+            <button type="button" class="btn invite-option" data-response="yes">Yes</button>
+            <button type="button" class="btn invite-option" data-response="maybe">Maybe</button>
+            <button type="button" class="btn invite-option" data-response="no">No</button>
+          </div>
+          <div class="text-center">
+            <button type="button" class="btn invite-submit-btn" disabled>Submit</button>
+          </div>
+          <div class="invite-feedback text-center small text-danger mt-3 d-none"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

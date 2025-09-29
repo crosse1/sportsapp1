@@ -1613,3 +1613,119 @@
     box-shadow: 0 0 0 3px rgba(204, 204, 204, 0.5) !important;
     border-color: #bbb !important;
 }
+
+.game-invite-modal .invite-modal-content{
+  background:#fff;
+  border-radius:1.25rem;
+  border:2px solid transparent;
+  background-image:linear-gradient(#ffffff,#ffffff),linear-gradient(135deg,#14b8a6,#7e22ce);
+  background-origin:border-box;
+  background-clip:padding-box,border-box;
+  box-shadow:0 24px 48px rgba(15,23,42,0.2);
+  overflow:hidden;
+}
+
+.game-invite-modal .modal-header{
+  background:linear-gradient(135deg,#0f172a,#1e293b);
+}
+
+.game-invite-modal .invite-modal-title{
+  color:#fff;
+  letter-spacing:0.04em;
+}
+
+.game-invite-modal .invite-game-card{
+  background:rgba(15,23,42,0.04);
+  border-radius:1rem;
+  border:1px solid rgba(20,184,166,0.2);
+  padding:1.25rem;
+}
+
+.game-invite-modal .invite-team-logo{
+  width:84px;
+  height:84px;
+  border-radius:50%;
+  border:2px solid rgba(20,184,166,0.35);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg,rgba(20,184,166,0.15),rgba(126,34,206,0.15));
+  margin:0 auto 0.75rem;
+}
+
+.game-invite-modal .invite-team-logo img{
+  max-width:66px;
+  max-height:66px;
+  object-fit:contain;
+}
+
+.game-invite-modal .invite-team-name{
+  font-weight:600;
+  color:#0f172a;
+}
+
+.game-invite-modal .invite-at-symbol{
+  font-size:2.5rem;
+  font-weight:700;
+  color:rgba(79,70,229,0.75);
+}
+
+.game-invite-modal .invite-game-datetime{
+  color:#0f172a;
+  font-size:1rem;
+}
+
+.game-invite-modal .invite-game-venue{
+  color:#475569;
+  font-size:0.95rem;
+}
+
+.game-invite-modal .invite-option{
+  min-width:96px;
+  padding:0.6rem 1.5rem;
+  border-radius:999px;
+  border:2px solid rgba(15,23,42,0.12);
+  background:#f8fafc;
+  font-weight:700;
+  color:#0f172a;
+  transition:all 0.2s ease;
+  text-transform:uppercase;
+}
+
+.game-invite-modal .invite-option:hover{
+  border-color:rgba(20,184,166,0.35);
+  color:#0f172a;
+}
+
+.game-invite-modal .invite-option.active{
+  border-image:linear-gradient(135deg,#14b8a6,#7e22ce) 1;
+  background:#fff;
+  color:#111827;
+  box-shadow:0 10px 20px rgba(20,184,166,0.15);
+}
+
+.game-invite-modal .invite-submit-btn{
+  min-width:160px;
+  padding:0.75rem 2rem;
+  border-radius:999px;
+  border:0;
+  background:rgba(15,23,42,0.1);
+  color:#fff;
+  font-weight:700;
+  text-transform:uppercase;
+  transition:all 0.2s ease;
+}
+
+.game-invite-modal .invite-submit-btn.enabled{
+  background:linear-gradient(135deg,#14b8a6,#7e22ce);
+  box-shadow:0 16px 32px rgba(126,34,206,0.25);
+}
+
+.game-invite-modal .invite-submit-btn.enabled:hover{
+  filter:brightness(1.05);
+}
+
+.game-invite-modal .invite-feedback{
+  min-height:1.5rem;
+}
+
