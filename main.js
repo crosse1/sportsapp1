@@ -91,14 +91,18 @@ app.use(async (req, res, next) => {
             const decoded = jwt.verify(token, 'secret');
             const userDoc = await User.findById(decoded.id).lean();
             if (userDoc) {
+                const invites = Array.isArray(userDoc.invites) ? userDoc.invites : [];
+                const hasQueuedInvites = invites.some(invite => invite && invite.modalQueued);
                 req.user = {
                     id: String(userDoc._id),
                     username: userDoc.username,
                     email: userDoc.email,
                     phoneNumber: userDoc.phoneNumber,
                     profileImage: userDoc.profileImage,
-                    newFollowers: userDoc.newFollowers || []
+                    newFollowers: userDoc.newFollowers || [],
+                    hasQueuedGameInvites: hasQueuedInvites
                 };
+                res.locals.hasQueuedGameInvites = hasQueuedInvites;
             } else {
                 req.user = null;
             }
@@ -110,6 +114,9 @@ app.use(async (req, res, next) => {
     }
     res.locals.loggedInUser = req.user;
     res.locals.currentPath = req.path;
+    if (!res.locals.hasQueuedGameInvites) {
+        res.locals.hasQueuedGameInvites = false;
+    }
     if (req.user) {
         const hasUnread = await Message.exists({ participants: req.user.id, unreadBy: req.user.id });
         res.locals.hasUnreadMessages = !!hasUnread;
@@ -119,6 +126,7 @@ app.use(async (req, res, next) => {
         res.locals.hasUnreadMessages = false;
         res.locals.hasNewFollowers = false;
         res.locals.newFollowers = [];
+        res.locals.hasQueuedGameInvites = false;
     }
     next();
 });
@@ -221,6 +229,13 @@ const requireAuth = async (req, res, next) => {
     }
   };
 
+const requireAuthJson = (req, res, next) => {
+    if (!req.user) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    next();
+};
+
 // Public landing page
 app.get('/', (req, res) => {
     if (req.user) {
@@ -298,6 +313,7 @@ app.get('/pastGames/search', gamesController.searchPastGames);
 app.get('/games/:gameId/coordination', requireAuth, coordinationController.getCoordination);
 app.post('/games/:gameId/invite', requireAuth, coordinationController.inviteUser);
 app.post('/games/:gameId/respond', requireAuth, coordinationController.respondToInvite);
+app.get('/users/invites/queued', requireAuthJson, coordinationController.getQueuedInvites);
 app.get('/games/:gameId/chat', requireAuth, coordinationController.getChatMessages);
 app.post('/games/:gameId/chat', requireAuth, coordinationController.postChatMessage);
 app.get('/pastGames/:id', gamesController.showPastGame);

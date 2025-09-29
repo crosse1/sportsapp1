@@ -37,9 +37,12 @@
 </div>
 <script src="/js/inboxModal.js"></script>
 <script>window.loggedInUser = <%- JSON.stringify(loggedInUser || null) %>;</script>
+<script>window.hasQueuedGameInvites = <%= JSON.stringify(!!hasQueuedGameInvites) %>;</script>
 <script src="/js/nearbyCheckin.js"></script>
 
 <%- include('ratePromptModal') %>
+<%- include('gameInviteModal') %>
 
 <script>window.pendingRatings = <%- JSON.stringify(pendingRatings || []) %>;</script>
 <script src="/js/pendingRatingModal.js"></script>
+<script src="/js/gameInviteModal.js"></script>

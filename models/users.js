@@ -1,6 +1,17 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+const userInviteSchema = new mongoose.Schema({
+    fromUser: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    game: { type: mongoose.Schema.Types.ObjectId, ref: 'Game' },
+    pastGame: { type: mongoose.Schema.Types.ObjectId, ref: 'PastGame' },
+    gameId: { type: Number },
+    invitedAt: { type: Date, default: Date.now },
+    respondedAt: { type: Date },
+    response: { type: String, enum: ['yes', 'no', 'maybe', null], default: null },
+    modalQueued: { type: Boolean, default: true }
+});
+
 const userSchema = new mongoose.Schema({
     username: {
         type: String,
@@ -71,7 +82,8 @@ const userSchema = new mongoose.Schema({
           updatedAt: { type: Date }
         }],
         default: []
-      }
+      },
+    invites: { type: [userInviteSchema], default: [] }
 });
 
 // Automatically hash a password before saving
