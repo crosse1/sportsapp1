@@ -1090,6 +1090,7 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
         const entry = {
             gameId: String(canonicalGameId),
             elo: finalElo,
+            rating: null,
             comment: sanitizedComment || null,
             image: req.file ? '/uploads/' + req.file.filename : null
         };
@@ -1228,6 +1229,24 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
             finalElo = Math.floor((minElo + maxElo) / 2);
         }
 
+        if(isInitial){
+            const parsed = parseFloat(rating);
+            entry.rating = Number.isFinite(parsed) ? parsed : null;
+        } else {
+            const comparisons = [
+                parseGameId(compareGameId1) != null && (winner1 === 'new' || winner1 === 'existing')
+                    ? { compareGameId: parseGameId(compareGameId1), winner: winner1 }
+                    : null,
+                parseGameId(compareGameId2) != null && (winner2 === 'new' || winner2 === 'existing')
+                    ? { compareGameId: parseGameId(compareGameId2), winner: winner2 }
+                    : null,
+                parseGameId(compareGameId3) != null && (winner3 === 'new' || winner3 === 'existing')
+                    ? { compareGameId: parseGameId(compareGameId3), winner: winner3 }
+                    : null
+            ].filter(Boolean);
+            entry.rating = comparisons.length ? comparisons : null;
+        }
+
         entry.elo = finalElo;
         if (entry.elo != null) {
             entry.ratingPrompted = true;
@@ -1293,6 +1312,241 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
     }
 }];
 
+
+
+exports.rateExistingGame = [uploadDisk.single('photo'), async (req, res, next) => {
+    try {
+        const entryId = req.params.id;
+        const {
+            rating,
+            comment,
+            compareGameId1,
+            winner1,
+            compareGameId2,
+            winner2,
+            compareGameId3,
+            winner3
+        } = req.body;
+
+        const sanitizedComment = sanitizeComment(comment || '');
+
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+        const entry = user.gameEntries.id(entryId);
+        if (!entry) return res.status(404).json({ error: 'Entry not found' });
+
+        const entryGameIdNumeric = resolveEntryGameId(entry);
+        if (entryGameIdNumeric == null) {
+            return res.status(400).json({ error: 'Game identifier missing' });
+        }
+
+        const ratedCount = (user.gameEntries || []).reduce((sum, current) => {
+            if (String(current._id) === String(entryId)) return sum;
+            return current.elo != null ? sum + 1 : sum;
+        }, 0);
+
+        let finalElo = null;
+        let ratingPayload = null;
+        let minElo = 1000;
+        let maxElo = 2000;
+
+        const parseGameId = value => {
+            if (value === undefined || value === null || value === '') return null;
+            const num = Number(value);
+            return Number.isFinite(num) ? num : null;
+        };
+
+        const comparisonsRaw = [
+            { id: compareGameId1, winner: winner1 },
+            { id: compareGameId2, winner: winner2 },
+            { id: compareGameId3, winner: winner3 }
+        ];
+
+        const pastGameDoc = await (async () => {
+            let doc = await PastGame.findOne({ gameId: entryGameIdNumeric });
+            if (!doc) {
+                doc = await PastGame.findOne({ Id: entryGameIdNumeric });
+            }
+            return doc;
+        })();
+
+        const userEloEntries = user.gameElo || [];
+        const finalizedGames = userEloEntries.filter(g => g.finalized);
+
+        if (finalizedGames.length) {
+            const missingGameRefs = finalizedGames
+                .filter(g => g.gameId == null && g.game)
+                .map(g => g.game);
+            if (missingGameRefs.length) {
+                const pastGameDocs = await PastGame.find({ _id: { $in: missingGameRefs } })
+                    .select('_id gameId Id')
+                    .lean();
+                const pastGameMap = {};
+                pastGameDocs.forEach(doc => { pastGameMap[String(doc._id)] = doc; });
+                finalizedGames.forEach(g => {
+                    if (g.gameId == null) {
+                        const pg = pastGameMap[String(g.game)];
+                        if (pg) {
+                            const derivedId = Number(pg.gameId ?? pg.Id);
+                            if (Number.isFinite(derivedId)) {
+                                g.gameId = derivedId;
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        const existingEloRecord = userEloEntries.find(e => {
+            const numeric = parseGameId(e.gameId);
+            if (numeric != null && numeric === entryGameIdNumeric) return true;
+            if (!pastGameDoc) return false;
+            return e.game && String(e.game) === String(pastGameDoc._id);
+        });
+
+        if (existingEloRecord) {
+            if (Number.isFinite(existingEloRecord.minElo)) minElo = existingEloRecord.minElo;
+            if (Number.isFinite(existingEloRecord.maxElo)) maxElo = existingEloRecord.maxElo;
+        }
+
+        if (ratedCount < 5) {
+            const parsedRating = parseFloat(rating);
+            if (Number.isNaN(parsedRating)) {
+                return res.status(400).json({ error: 'Rating required for manual scoring' });
+            }
+            ratingPayload = Number(parsedRating.toFixed(1));
+            finalElo = ratingToElo(parsedRating);
+        } else {
+            const validComparisons = comparisonsRaw
+                .map(item => {
+                    const numericId = parseGameId(item.id);
+                    if (numericId == null) return null;
+                    if (item.winner !== 'new' && item.winner !== 'existing') return null;
+                    return { compareGameId: numericId, winner: item.winner };
+                })
+                .filter(Boolean);
+
+            ratingPayload = validComparisons.length ? validComparisons : null;
+
+            const findComparisonEntry = id => finalizedGames.find(g => parseGameId(g.gameId) === id);
+
+            const comparisonDocs = [];
+            validComparisons.forEach(({ compareGameId, winner }) => {
+                const comparisonEntry = findComparisonEntry(compareGameId);
+                if (!comparisonEntry || !Number.isFinite(comparisonEntry.elo)) return;
+                if (winner === 'new') {
+                    minElo = comparisonEntry.elo;
+                } else if (winner === 'existing') {
+                    maxElo = comparisonEntry.elo;
+                }
+                if (pastGameDoc && comparisonEntry.game) {
+                    comparisonDocs.push({
+                        userId: user._id,
+                        gameA: pastGameDoc._id,
+                        gameB: comparisonEntry.game,
+                        winner: winner === 'new' ? pastGameDoc._id : comparisonEntry.game
+                    });
+                }
+            });
+
+            if (comparisonDocs.length) {
+                await GameComparison.insertMany(comparisonDocs);
+            }
+
+            if (Number.isNaN(minElo) || Number.isNaN(maxElo)) {
+                minElo = 1000;
+                maxElo = 2000;
+            }
+            if (minElo > maxElo) {
+                const tmp = minElo;
+                minElo = maxElo;
+                maxElo = tmp;
+            }
+
+            if (validComparisons.length) {
+                finalElo = Math.floor((minElo + maxElo) / 2);
+            } else if (existingEloRecord && Number.isFinite(existingEloRecord.elo)) {
+                finalElo = existingEloRecord.elo;
+            } else if (entry.elo != null) {
+                finalElo = entry.elo;
+            } else {
+                finalElo = 1500;
+            }
+        }
+
+        if (Number.isNaN(minElo) || Number.isNaN(maxElo)) {
+            minElo = 1000;
+            maxElo = 2000;
+        }
+        if (minElo > maxElo) {
+            const tmp = minElo;
+            minElo = maxElo;
+            maxElo = tmp;
+        }
+
+        entry.elo = finalElo;
+        entry.rating = ratingPayload;
+        entry.comment = sanitizedComment || null;
+        entry.ratingPrompted = true;
+        if (req.file) {
+            entry.image = '/uploads/' + req.file.filename;
+        }
+
+        if (pastGameDoc) {
+            let updated = false;
+            const commentObj = pastGameDoc.comments.find(c => String(c.userId) === String(user._id));
+            if (commentObj) {
+                commentObj.comment = sanitizedComment;
+                updated = true;
+            } else if (sanitizedComment) {
+                pastGameDoc.comments.push({ userId: user._id, comment: sanitizedComment });
+                updated = true;
+            }
+            if (updated) {
+                await pastGameDoc.save();
+            }
+        }
+
+        let targetEloEntry = existingEloRecord;
+        if (!targetEloEntry) {
+            targetEloEntry = {
+                game: pastGameDoc ? pastGameDoc._id : null,
+                gameId: entryGameIdNumeric,
+                elo: finalElo,
+                finalized: true,
+                comparisonHistory: [],
+                minElo,
+                maxElo,
+                updatedAt: new Date()
+            };
+            user.gameElo.push(targetEloEntry);
+        } else {
+            targetEloEntry.elo = finalElo;
+            targetEloEntry.finalized = true;
+            targetEloEntry.minElo = minElo;
+            targetEloEntry.maxElo = maxElo;
+            targetEloEntry.updatedAt = new Date();
+            targetEloEntry.gameId = entryGameIdNumeric;
+            if (pastGameDoc) {
+                targetEloEntry.game = pastGameDoc._id;
+            }
+        }
+
+        await user.save();
+
+        const enriched = await enrichGameEntries([entry]);
+
+        res.json({
+            success: true,
+            entry: enriched[0],
+            finalElo,
+            rating: ratingPayload
+        });
+    } catch (err) {
+        next(err);
+    }
+}];
 
 
 exports.updateGameEntry = [uploadDisk.single('photo'), async (req, res, next) => {
