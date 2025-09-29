@@ -248,6 +248,32 @@
         if(!select || typeof $ === 'undefined' || !$.fn.select2) return;
         const gameId = container.dataset.gameId;
         const ownerId = container.dataset.ownerId;
+        const formatUserOption = (user) => {
+            if(!user.id){
+                return user.text || '';
+            }
+            const username = user.username || user.text || '';
+            const displayName = user.displayName || '';
+            const label = displayName && displayName !== username ? `${displayName} (@${username})` : username;
+            const avatarUrl = `/users/${user.id}/profile-image`;
+            const container = document.createElement('div');
+            container.className = 'invite-option';
+            const avatar = document.createElement('img');
+            avatar.className = 'invite-option-avatar';
+            avatar.src = avatarUrl;
+            avatar.alt = label;
+            avatar.loading = 'lazy';
+            container.appendChild(avatar);
+            const text = document.createElement('span');
+            text.textContent = label;
+            container.appendChild(text);
+            return $(container);
+        };
+
+        if($(select).hasClass('select2-hidden-accessible')){
+            $(select).select2('destroy');
+        }
+
         $(select).select2({
             placeholder: select.dataset.placeholder || 'Invite by username',
             dropdownParent: $(select).closest('.waitlist-coordination'),
@@ -255,13 +281,33 @@
             ajax: {
                 url: '/users/search',
                 dataType: 'json',
-                delay: 200,
+                delay: 150,
                 data: params => ({ q: params.term || '' }),
                 processResults: data => ({
-                    results: data.map(user => ({ id: user._id, text: user.username }))
+                    results: (data || []).map(user => ({
+                        id: user._id,
+                        text: user.username || user.displayName || '',
+                        username: user.username || '',
+                        displayName: user.displayName || ''
+                    }))
                 })
             },
-            minimumInputLength: 1
+            minimumInputLength: 1,
+            templateResult: formatUserOption,
+            templateSelection: (user) => {
+                if(!user.id){
+                    return user.text || '';
+                }
+                return user.username || user.displayName || user.text || '';
+            }
+        });
+
+        $(select).on('select2:open', () => {
+            const search = document.querySelector('.select2-container--open .select2-search__field');
+            if(search){
+                search.removeAttribute('readonly');
+                search.focus();
+            }
         });
 
         $(select).on('select2:select', async (event) => {
