@@ -896,6 +896,7 @@
 
 .waitlist-game-wrapper .game-card{
   border-radius:1.25rem;
+
   min-height:182px;
 }
 
@@ -1026,7 +1027,7 @@
   border-radius:999px;
   background:linear-gradient(135deg,#14b8a6,#7e22ce);
   color:#fff;
-}
+
 
 .glass-panel{
   background:rgba(255,255,255,0.12);

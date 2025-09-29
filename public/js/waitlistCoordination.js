@@ -7,7 +7,9 @@
     if(!coordinationBlocks.length) return;
 
     const pollers = new Map();
+
     let cachedInviteSuggestions = null;
+
 
     const responseLabels = {
         yes: 'Going',
@@ -244,11 +246,14 @@
         }
     }
 
+
     async function setupInviteSelect(container){
+
         const select = container.querySelector('.invite-select');
         if(!select || typeof $ === 'undefined' || !$.fn.select2) return;
         const gameId = container.dataset.gameId;
         const ownerId = container.dataset.ownerId;
+
 
         if(!Array.isArray(cachedInviteSuggestions)){
             try {
@@ -318,12 +323,14 @@
             dropdownParent: $(select).closest('.invite-area'),
             width: '100%',
             minimumInputLength: 0,
+
             ajax: {
                 url: '/users/search',
                 dataType: 'json',
                 delay: 200,
                 data: params => ({ q: params.term || '' }),
                 processResults: data => ({
+
                     results: data.map(user => ({
                         id: user._id,
                         text: user.username,
@@ -335,6 +342,7 @@
             templateResult: renderOption,
             templateSelection: renderSelection,
             escapeMarkup: markup => markup
+
         });
 
         $(select).on('select2:select', async (event) => {
@@ -362,12 +370,14 @@
             }
         });
 
+
         $(select).on('select2:open', () => {
             const searchField = document.querySelector('.select2-container--open .select2-search__field');
             if(searchField){
                 searchField.placeholder = 'Search by username';
             }
         });
+
     }
 
     async function loadCoordination(container){
