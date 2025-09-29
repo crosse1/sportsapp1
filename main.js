@@ -244,6 +244,7 @@ app.get('/profile', requireAuth, (req, res) => { res.redirect('/profileBadges/' 
 app.get('/profileBadges/:user?', requireAuth, profileController.profileBadges);
 app.get('/profileGames/:user/:gameEntry', requireAuth, profileController.profileGameShowcase);
 app.get('/profileGames/:user?', requireAuth, profileController.profileGames);
+app.get('/users/followers/search', requireAuth, profileController.searchFollowers);
 app.get('/profileStats/:user?', requireAuth, profileController.profileStats);
 app.get('/profileWaitlist/:user?', requireAuth, profileController.profileWaitlist);
 app.get('/profile/edit', requireAuth, profileController.getEditProfile);

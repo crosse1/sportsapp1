@@ -89,6 +89,47 @@
             overflow-y: auto;
         }
 
+        /* --- Custom Select2 Styling for Invite Search --- */
+.waitlist-coordination .select2-container--default .select2-selection--single {
+  border-radius: 0.75rem;
+  padding: 0.35rem 0.75rem;
+  height: auto;
+
+  /* 🔥 Gradient border */
+  border: 2px solid transparent;
+  background-image:
+    linear-gradient(white, white),
+    linear-gradient(to right, #14b8a6, #7e22ce); /* teal → purple */
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  box-shadow: none;
+}
+
+/* Text inside the field */
+.waitlist-coordination .select2-selection__rendered {
+  color: #000 !important; /* black font */
+  font-weight: 500;
+  padding-left: 0 !important;
+}
+
+/* Search input in the dropdown */
+.waitlist-coordination .select2-search__field {
+  border-radius: 0.5rem;
+  border: 2px solid #14b8a6;  /* teal outline on dropdown search bar */
+  color: #000 !important;
+  font-weight: 500;
+}
+
+/* When focused */
+.waitlist-coordination .select2-container--default.select2-container--focus .select2-selection--single {
+  outline: none;
+  border-color: #7e22ce; /* purple focus ring */
+}
+.waitlist-coordination .select2-container--default .select2-selection--single {
+  cursor: text !important;
+}
+
+
         .waitlist-coordination .select2-results__option {
             padding: 0.5rem 0.75rem;
         }
@@ -225,6 +266,33 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
+
+        $(function(){
+  $('.invite-select').select2({
+  dropdownParent: $('.waitlist-coordination'),
+  placeholder: $(this).data('placeholder') || 'Search by username',
+  width: '100%',
+  minimumResultsForSearch: 0,   // 🔥 always show search box
+  ajax: {
+    url: '/users/followers/search',
+    dataType: 'json',
+    delay: 250,
+    data: params => ({ q: params.term }),
+    processResults: data => ({ results: data })
+  },
+  templateResult: function(data){
+    if (!data.id) return data.text;
+    const avatarUrl = `/users/${data.id}/profile-image`;
+    return $(`
+      <div class="invite-option">
+        <img class="invite-option-avatar" src="${avatarUrl}" alt="${data.text}" loading="lazy"/>
+        <span>${data.text}</span>
+      </div>
+    `);
+  },
+  templateSelection: data => data.text || ''
+});
+
         if(window.jQuery && window.jQuery.fn && window.jQuery.fn.select2){
             (function($){
                 const renderOption = (data) => {

@@ -312,6 +312,35 @@ exports.getEditProfile = async (req, res, next) => {
     }
 };
 
+exports.searchFollowers = async (req, res) => {
+  try {
+    if (!req.user) return res.status(401).json([]);
+
+    const q = req.query.q ? req.query.q.trim() : '';
+
+    // load viewer with populated followers
+    const viewer = await User.findById(req.user.id).populate('followers', 'username');
+    if (!viewer || !viewer.followers) {
+      return res.json([]);
+    }
+
+    // case-insensitive filter
+    const regex = new RegExp(q, 'i');
+    const matches = viewer.followers.filter(f => regex.test(f.username));
+
+    // format for Select2
+    const results = matches.map(f => ({
+      id: String(f._id),
+      text: f.username
+    }));
+
+    res.json(results);
+  } catch (err) {
+    console.error('[searchFollowers ERROR]', err);
+    res.status(500).json([]);
+  }
+};
+
 exports.updateProfile = [uploadMemory.single('profileImage'), async (req, res, next) => {
     try {
         const { username, email, phoneNumber, favoriteTeams } = req.body;
