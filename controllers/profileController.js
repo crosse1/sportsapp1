@@ -66,15 +66,51 @@ function sanitizeComment(text) {
     return result;
 }
 
+function resolveEntryGameId(entry){
+    if(!entry) return null;
+    const source = entry.toObject ? entry.toObject() : entry;
+
+    const normalize = value => {
+        if(value === undefined || value === null || value === '') return null;
+        const numeric = Number(value);
+        if(Number.isFinite(numeric)) return numeric;
+        return null;
+    };
+
+    const direct = normalize(source.gameId);
+    if(direct != null) return direct;
+
+    const rawGame = source.game;
+    if(rawGame && typeof rawGame === 'object'){
+        const byGameId = normalize(rawGame.gameId);
+        if(byGameId != null) return byGameId;
+        const byId = normalize(rawGame.Id);
+        if(byId != null) return byId;
+    } else {
+        const fallback = normalize(rawGame);
+        if(fallback != null) return fallback;
+    }
+
+    return null;
+}
+
 async function enrichGameEntries(entries){
     if(!entries || !entries.length) return [];
-    const ids = entries.map(e => e.gameId).filter(Boolean);
+    const ids = entries
+        .map(resolveEntryGameId)
+        .filter((id, index, arr) => id != null && arr.indexOf(id) === index);
     const games = await fetchGamesByIds(ids);
     const gameMap = {};
-    games.forEach(g => { gameMap[String(g.gameId)] = g; });
+    games.forEach(g => {
+        const key = g && (g.gameId ?? g.Id ?? g._id);
+        if(key != null){
+            gameMap[String(key)] = g;
+        }
+    });
     return entries.map(e => {
         const entryObj = e.toObject ? e.toObject() : { ...e };
-        entryObj.game = gameMap[String(e.gameId)] || null;
+        const entryKey = resolveEntryGameId(entryObj);
+        entryObj.game = entryKey != null ? gameMap[String(entryKey)] || null : null;
         return entryObj;
     });
 }
@@ -88,9 +124,29 @@ async function mergeUserGames(user){
 // Enriches an array of {game, elo} objects with full PastGame info
 async function enrichEloGames(entries){
     if(!entries || !entries.length) return [];
-    
-    const enriched = await enrichGameEntries(entries);
-    
+
+    const normalized = entries.map(e => {
+        const entryObj = e.toObject ? e.toObject() : { ...e };
+        if (entryObj.gameId == null) {
+            const rawGame = entryObj.game;
+            let resolvedId = null;
+            if (rawGame && typeof rawGame === 'object') {
+                if (rawGame.gameId != null) resolvedId = rawGame.gameId;
+                else if (rawGame.Id != null) resolvedId = rawGame.Id;
+            } else if (rawGame != null) {
+                resolvedId = rawGame;
+            }
+            const numericId = Number(resolvedId);
+            entryObj.gameId = Number.isFinite(numericId) ? numericId : null;
+        } else {
+            const numericId = Number(entryObj.gameId);
+            entryObj.gameId = Number.isFinite(numericId) ? numericId : null;
+        }
+        return entryObj;
+    });
+
+    const enriched = await enrichGameEntries(normalized);
+
     return enriched;
 }
 
@@ -1020,19 +1076,25 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
             return res.status(400).json({ error: 'Rating required for initial games' });
         }
 
-        const pastGameDoc = await PastGame.findOne({ gameId: Number(gameId) });
+        const numericGameId = Number(gameId);
+        const pastGameDoc = await PastGame.findOne({ gameId: numericGameId });
         if(!pastGameDoc) {
             return res.status(404).json({ error: 'Game not found' });
         }
 
+        const canonicalGameId = Number(pastGameDoc.gameId ?? pastGameDoc.Id);
+        if(!Number.isFinite(canonicalGameId)){
+            return res.status(400).json({ error: 'Game identifier invalid' });
+        }
+
         const entry = {
-            gameId: String(pastGameDoc.gameId),
+            gameId: String(canonicalGameId),
             elo: finalElo,
             comment: sanitizedComment || null,
             image: req.file ? '/uploads/' + req.file.filename : null
         };
 
-        const alreadyExists = user.gameEntries.some(e => String(e.gameId) === String(pastGameDoc.gameId));
+        const alreadyExists = user.gameEntries.some(e => String(e.gameId) === String(canonicalGameId));
         if (alreadyExists) {
             const enrichedEntries = await mergeUserGames(user);
             const eloGames = await enrichEloGames(user.gameElo || []);
@@ -1055,11 +1117,46 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
         const newGameObjectId = pastGameDoc._id;
 
         const finalizedGames = (user.gameElo || []).filter(g => g.finalized);
+        const missingGameRefs = finalizedGames
+            .filter(g => g.gameId == null && g.game)
+            .map(g => g.game);
+        if(missingGameRefs.length){
+            const pastGameDocs = await PastGame.find({ _id: { $in: missingGameRefs } })
+                .select('_id gameId Id')
+                .lean();
+            const pastGameMap = {};
+            pastGameDocs.forEach(doc => {
+                pastGameMap[String(doc._id)] = doc;
+            });
+            finalizedGames.forEach(g => {
+                if(g.gameId == null){
+                    const pg = pastGameMap[String(g.game)];
+                    if(pg){
+                        const derivedId = Number(pg.gameId ?? pg.Id);
+                        if(Number.isFinite(derivedId)){
+                            g.gameId = derivedId;
+                        }
+                    }
+                }
+            });
+        }
         let minElo = 1000;
         let maxElo = 2000;
 
+        const parseGameId = value => {
+            if (value === undefined || value === null || value === '') return null;
+            const num = Number(value);
+            return Number.isFinite(num) ? num : null;
+        };
+        const entryGameId = canonicalGameId;
+        const findComparisonEntry = id => {
+            const numericId = parseGameId(id);
+            if (numericId == null) return null;
+            return finalizedGames.find(g => parseGameId(g.gameId) === numericId);
+        };
+
         if(!isInitial){
-            const comp1 = finalizedGames.find(g => String(g.game) === String(compareGameId1));
+            const comp1 = findComparisonEntry(compareGameId1);
             if (comp1 && (winner1 === 'new' || winner1 === 'existing')) {
                 await GameComparison.create({
                     userId: user._id,
@@ -1074,7 +1171,7 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
                 }
             }
 
-            const comp2 = finalizedGames.find(g => String(g.game) === String(compareGameId2));
+            const comp2 = findComparisonEntry(compareGameId2);
             if (comp2 && (winner2 === 'new' || winner2 === 'existing')) {
                 await GameComparison.create({
                     userId: user._id,
@@ -1089,7 +1186,7 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
                 }
             }
 
-            const comp3 = finalizedGames.find(g => String(g.game) === String(compareGameId3));
+            const comp3 = findComparisonEntry(compareGameId3);
             if (comp3 && (winner3 === 'new' || winner3 === 'existing')) {
                 await GameComparison.create({
                     userId: user._id,
@@ -1138,6 +1235,7 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
 
         const newEloEntry = {
             game: newGameObjectId,
+            gameId: entryGameId,
             elo: finalElo,
             finalized: true,
             comparisonHistory: []
@@ -1217,7 +1315,8 @@ exports.updateGameEntry = [uploadDisk.single('photo'), async (req, res, next) =>
             entry.image = '/uploads/' + req.file.filename;
         }
 
-        const pastGameDoc = await PastGame.findOne({ gameId: entry.gameId });
+        const entryGameIdNumeric = Number(entry.gameId);
+        const pastGameDoc = await PastGame.findOne({ gameId: entryGameIdNumeric });
         if(pastGameDoc){
             let updated = false;
             const commentObj = pastGameDoc.comments.find(c => String(c.userId) === String(user._id));
@@ -1233,7 +1332,14 @@ exports.updateGameEntry = [uploadDisk.single('photo'), async (req, res, next) =>
             }
         }
 
-        const eloEntry = pastGameDoc ? user.gameElo.find(e => String(e.game) === String(pastGameDoc._id)) : null;
+        const targetGameId = pastGameDoc && Number.isFinite(pastGameDoc.gameId)
+            ? pastGameDoc.gameId
+            : entryGameIdNumeric;
+        const eloEntry = user.gameElo.find(e => {
+            if (e.gameId == null) return false;
+            const numericId = Number(e.gameId);
+            return Number.isFinite(numericId) && Number.isFinite(targetGameId) && numericId === targetGameId;
+        });
         if(eloEntry){
             eloEntry.elo = newElo;
         }
@@ -1257,7 +1363,8 @@ exports.deleteGameEntry = async (req, res, next) => {
         const entry = user.gameEntries.id(entryId);
         if(!entry) return res.status(404).json({ error:'Entry not found' });
 
-        const pastGameDoc = await PastGame.findOne({ gameId: entry.gameId });
+        const entryGameIdNumeric = Number(entry.gameId);
+        const pastGameDoc = await PastGame.findOne({ gameId: entryGameIdNumeric });
 
         const teamsToRemove = [];
         const venuesToRemove = [];
@@ -1295,7 +1402,14 @@ exports.deleteGameEntry = async (req, res, next) => {
             if(idx >= 0) user.venuesList.splice(idx,1);
         });
 
-        const idx = pastGameDoc ? user.gameElo.findIndex(e => String(e.game) === String(pastGameDoc._id)) : -1;
+        const targetGameId = pastGameDoc && Number.isFinite(pastGameDoc.gameId)
+            ? pastGameDoc.gameId
+            : entryGameIdNumeric;
+        const idx = user.gameElo.findIndex(e => {
+            if (e.gameId == null) return false;
+            const numericId = Number(e.gameId);
+            return Number.isFinite(numericId) && Number.isFinite(targetGameId) && numericId === targetGameId;
+        });
         if(idx >= 0){
             user.gameElo.splice(idx,1);
         }

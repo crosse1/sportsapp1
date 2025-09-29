@@ -766,11 +766,22 @@ exports.showPastGame = async (req, res, next) => {
       };
     });
 
+    const targetGameId = Number(game.gameId ?? game.Id);
     const reviews = (game.comments || []).map(c => {
       const info = userMap[String(c.userId)] || { username: 'User', gameElo: [] };
-      const eloEntry = (info.gameElo || []).find(e =>
-        String(e.game) === String(game._id) && typeof e.elo === 'number'
-      );
+      const eloEntry = (info.gameElo || []).find(e => {
+        if (typeof e.elo !== 'number') return false;
+        if (e.gameId != null) {
+          const entryId = Number(e.gameId);
+          if (Number.isFinite(entryId) && Number.isFinite(targetGameId)) {
+            return entryId === targetGameId;
+          }
+        }
+        if (e.game != null) {
+          return String(e.game) === String(game._id);
+        }
+        return false;
+      });
       const rating = eloEntry ? (((eloEntry.elo - 1000) / 1000) * 9 + 1).toFixed(1) : null;
       return {
         userId: c.userId,
@@ -782,9 +793,19 @@ exports.showPastGame = async (req, res, next) => {
 
     
 
+    const eloMatch = { 'gameElo.elo': { $ne: null } };
+    if (Number.isFinite(targetGameId)) {
+      eloMatch.$or = [
+        { 'gameElo.gameId': targetGameId },
+        { 'gameElo.game': game._id }
+      ];
+    } else {
+      eloMatch['gameElo.game'] = game._id;
+    }
+
     const eloAgg = await User.aggregate([
       { $unwind: '$gameElo' },
-      { $match: { 'gameElo.game': game._id, 'gameElo.elo': { $ne: null } } },
+      { $match: eloMatch },
       { $group: { _id: null, avgElo: { $avg: '$gameElo.elo' } } }
     ]);
     let avgRating = 'N/A';

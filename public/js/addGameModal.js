@@ -49,6 +49,18 @@
     const gameEntryNames = window.gameEntryNames || [];
     let rankingDone = gameEntryCount < 5 ? true : finalizedGames.length === 0;
 
+    function getEloEntryId(entry){
+      if(!entry) return null;
+      if(entry.gameId != null && entry.gameId !== ''){
+        return String(entry.gameId);
+      }
+      const game = entry.game || {};
+      if(game.gameId != null && game.gameId !== '') return String(game.gameId);
+      if(game.Id != null && game.Id !== '') return String(game.Id);
+      if(entry.game != null && entry.game !== '') return String(entry.game);
+      return null;
+    }
+
     function resetForm(){
       if(!form.length) return;
       form[0].reset();
@@ -106,8 +118,8 @@
       exclude = exclude || [];
       if(isNaN(min) || isNaN(max) || min > max) return null;
       const eligible = finalizedGames.filter(g => {
-        const id = String(g.game && g.game._id ? g.game._id : g.game);
-        return g.elo >= min && g.elo <= max && !exclude.includes(id);
+        const id = getEloEntryId(g);
+        return g.elo >= min && g.elo <= max && (!id || !exclude.includes(String(id)));
       });
       if (!eligible.length) return null;
       const midpoint = Math.floor((min + max) / 2);
@@ -131,7 +143,8 @@
         return;
       }
       const comp = randomGame1.game || {};
-      compareGameInput1.val(comp._id ? comp._id : randomGame1.game);
+      const compId = getEloEntryId(randomGame1);
+      compareGameInput1.val(compId || '');
       const compData = {
         awayLogo: comp.awayTeam && comp.awayTeam.logos && comp.awayTeam.logos[0],
         homeLogo: comp.homeTeam && comp.homeTeam.logos && comp.homeTeam.logos[0],
@@ -147,13 +160,16 @@
     }
 
     function showComparison2(){
-      randomGame2 = pickRandomGame(minRange,maxRange,[String(randomGame1.game && randomGame1.game._id ? randomGame1.game._id : randomGame1.game)]);
+      const firstId = getEloEntryId(randomGame1);
+      const excludeIds = firstId ? [String(firstId)] : [];
+      randomGame2 = pickRandomGame(minRange,maxRange,excludeIds);
       if(!randomGame2){
         finalize();
         return;
       }
       const comp = randomGame2.game || {};
-      compareGameInput2.val(comp._id ? comp._id : randomGame2.game);
+      const compId = getEloEntryId(randomGame2);
+      compareGameInput2.val(compId || '');
       const compData = {
         awayLogo: comp.awayTeam && comp.awayTeam.logos && comp.awayTeam.logos[0],
         homeLogo: comp.homeTeam && comp.homeTeam.logos && comp.homeTeam.logos[0],
@@ -169,17 +185,19 @@
     }
 
     function showComparison3(){
-      const exclude = [
-        String(randomGame1 && (randomGame1.game && randomGame1.game._id ? randomGame1.game._id : randomGame1.game)),
-        String(randomGame2 && (randomGame2.game && randomGame2.game._id ? randomGame2.game._id : randomGame2.game))
-      ];
+      const exclude = [];
+      const excludeId1 = getEloEntryId(randomGame1);
+      const excludeId2 = getEloEntryId(randomGame2);
+      if(excludeId1) exclude.push(String(excludeId1));
+      if(excludeId2) exclude.push(String(excludeId2));
       randomGame3 = pickRandomGame(minRange, maxRange, exclude);
       if(!randomGame3){
         finalize();
         return;
       }
       const comp = randomGame3.game || {};
-      compareGameInput3.val(comp._id ? comp._id : randomGame3.game);
+      const compId = getEloEntryId(randomGame3);
+      compareGameInput3.val(compId || '');
       const compData = {
         awayLogo: comp.awayTeam && comp.awayTeam.logos && comp.awayTeam.logos[0],
         homeLogo: comp.homeTeam && comp.homeTeam.logos && comp.homeTeam.logos[0],

@@ -203,10 +203,13 @@
                             </a>
                         </div>
                         <%
-      const gameId = String(game._id);
+      const targetGameId = String(game.gameId ?? game.Id ?? game._id);
       const eloEntry = (eloGames || []).find(e => {
-        const entryId = String(e.game && (e.game._id || e.game)); // Handle ObjectId vs populated object
-        return entryId === gameId;
+        if (e.gameId != null) return String(e.gameId) === targetGameId;
+        const g = e.game || {};
+        if (g.gameId != null) return String(g.gameId) === targetGameId;
+        if (g.Id != null) return String(g.Id) === targetGameId;
+        return String(g._id || e.game) === targetGameId;
       });
     
       
