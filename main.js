@@ -9,6 +9,7 @@ const express = require("express"),
     gamesController = require("./controllers/gamesController"),
     venuesController = require('./controllers/venuesController'),
     messagesController = require('./controllers/messagesController'),
+    coordinationController = require('./controllers/coordinationController'),
     comparisonController = require('./controllers/comparisonController'),
     badgeController = require('./controllers/badgeController'),
     socialController = require('./controllers/socialController'),
@@ -293,6 +294,11 @@ app.get('/pastGames/leagues', gamesController.listPastGameLeagues);
 app.get('/pastGames/seasons', gamesController.listPastGameSeasons);
 app.get('/pastGames/teams', gamesController.listPastGameTeams);
 app.get('/pastGames/search', gamesController.searchPastGames);
+app.get('/games/:gameId/coordination', requireAuth, coordinationController.getCoordination);
+app.post('/games/:gameId/invite', requireAuth, coordinationController.inviteUser);
+app.post('/games/:gameId/respond', requireAuth, coordinationController.respondToInvite);
+app.get('/games/:gameId/chat', requireAuth, coordinationController.getChatMessages);
+app.post('/games/:gameId/chat', requireAuth, coordinationController.postChatMessage);
 app.get('/pastGames/:id', gamesController.showPastGame);
 app.get('/games/:id', gamesController.showGame);
 app.get('/team/:id', async (req, res) => {
