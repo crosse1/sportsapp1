@@ -152,7 +152,11 @@
                  const game = entry.game;
                  if(!game){ return; }
                  const awayColor = game.awayTeam && game.awayTeam.color ? game.awayTeam.color : '#ffffff';
-                 const homeColor = game.homeTeam && game.homeTeam.color ? game.homeTeam.color : '#ffffff'; %>
+                 const homeColor = game.homeTeam && game.homeTeam.color ? game.homeTeam.color : '#ffffff';
+                 const entryKey = entry._id || entry.gameId;
+                 const normalizedGameId = game.gameId || game.Id || game._id || entry.gameId;
+                 const canRate = isCurrentUser && (entry.elo === null || entry.elo === undefined);
+            %>
             <div class="col">
 
                 <div class="game-container">
@@ -179,7 +183,20 @@
                     </div>
                     <div class="d-flex align-items-center">
                         <div class="position-relative flex-grow-1">
-                            <a href="/profileGames/<%= profileIdentifier %>/<%= entry._id || entry.gameId %>" class="game-link d-block">
+                            <a href="/profileGames/<%= profileIdentifier %>/<%= entryKey %>"
+                               class="game-link d-block <%= canRate ? 'game-link-unrated' : '' %>"
+                               data-entry-key="<%= entryKey %>"
+                               data-entry-id="<%= entry._id %>"
+                               data-game-id="<%= normalizedGameId %>"
+                               data-can-rate="<%= canRate ? 'true' : 'false' %>"
+                               data-away-team="<%= game.awayTeamName %>"
+                               data-home-team="<%= game.homeTeamName %>"
+                               data-game-date="<%= game.startDate || game.StartDate %>"
+                               data-away-logo="<%= game.awayTeam && game.awayTeam.logos && game.awayTeam.logos[0] ? game.awayTeam.logos[0] : '/images/placeholder.jpg' %>"
+                               data-home-logo="<%= game.homeTeam && game.homeTeam.logos && game.homeTeam.logos[0] ? game.homeTeam.logos[0] : '/images/placeholder.jpg' %>"
+                               data-away-score="<%= game.AwayPoints != null ? game.AwayPoints : '' %>"
+                               data-home-score="<%= game.HomePoints != null ? game.HomePoints : '' %>"
+                               data-entry-elo="<%= entry.elo %>">
 
                                 <div class="card shadow-sm h-100 game-card p-3 text-center position-relative <%= entry.checkedIn ? 'checked-in-border' : '' %>" data-away-color="<%= awayColor %>" data-home-color="<%= homeColor %>" style="background: linear-gradient(to right, <%= awayColor %>, <%= homeColor %>);">
                                     <div class="venue-overlay"><%= game.Venue || game.venue %></div>
@@ -236,6 +253,69 @@
     </div>
 
     <% if(isCurrentUser){ %>
+    <div class="modal fade user-search-modal" id="rateGameModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-3">
+                <form id="rateGameForm" enctype="multipart/form-data">
+                    <input type="hidden" name="entryId" id="rateEntryId">
+                    <input type="hidden" name="compareGameId1" id="rateCompareGameId1">
+                    <input type="hidden" name="winner1" id="rateWinner1">
+                    <input type="hidden" name="compareGameId2" id="rateCompareGameId2">
+                    <input type="hidden" name="winner2" id="rateWinner2">
+                    <input type="hidden" name="compareGameId3" id="rateCompareGameId3">
+                    <input type="hidden" name="winner3" id="rateWinner3">
+                    <div class="modal-header border-0">
+                        <h3 class="text-white fw-bold mb-0" id="rateModalTitle">Rate this game!</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="rateManualSection">
+                            <div class="mb-3 position-relative">
+                                <label class="form-label d-flex justify-content-between">
+                                    <span>Rating:</span>
+                                    <span id="rateRatingValue" class="fw-bold text-white">5</span>
+                                </label>
+                                <div class="glass-range-wrapper">
+                                    <input type="range" id="rateRatingRange" name="rating" class="form-range glass-control" min="1" max="10" step="0.1" value="5">
+                                </div>
+                            </div>
+                        </div>
+                        <div id="rateEloSection" style="display:none;">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-3">
+                                    <div id="rateNewGameCard" class="elo-game-card flex-fill me-2"></div>
+                                    <div id="rateExistingGameCard" class="elo-game-card flex-fill ms-2"></div>
+                                </div>
+                                <p id="rateComparisonPrompt" class="mb-2 fw-bold text-center"></p>
+                                <div id="rateComparisonButtons" class="d-flex justify-content-around" style="display:none;">
+                                    <button type="button" class="btn btn-primary btn-sm" id="rateBetterBtn">New Game</button>
+                                    <button type="button" class="btn btn-secondary btn-sm" id="rateWorseBtn">Existing Game</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Photo</label>
+                            <input type="file" name="photo" class="form-control glass-control" id="ratePhotoInput">
+                            <div id="ratePhotoPreview" class="mt-2 d-none">
+                                <img src="" alt="Preview" class="img-fluid rounded">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label d-flex justify-content-between">
+                                <span>Comment</span>
+                                <small id="rateCommentCounter">0/100</small>
+                            </label>
+                            <textarea id="rateCommentInput" class="form-control glass-control" name="comment" rows="3" maxlength="100"></textarea>
+                        </div>
+                        <div id="rateError" class="alert alert-danger d-none" role="alert"></div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="submit" class="btn btn-primary" id="rateSubmitBtn">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
     <div class="modal fade user-search-modal" id="editGameModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content p-3">
@@ -284,9 +364,12 @@
         })) %>;
         window.gameEntriesData = <%- JSON.stringify(gameEntries || []) %>;
         window.eloGamesData = <%- JSON.stringify(eloGames || []) %>;
+        window.profileUserId = "<%= user._id %>";
+        window.loggedInUserId = "<%= viewer ? viewer._id : '' %>";
     </script>
     <script src="/js/addGameModal.js"></script>
     <script src="/js/editGameModal.js"></script>
+    <script src="/js/rateGameModal.js"></script>
     <script>
         const followBtn = document.getElementById('followBtn');
         if(followBtn){

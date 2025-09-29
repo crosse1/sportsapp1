@@ -26,6 +26,7 @@ const userSchema = new mongoose.Schema({
     gameEntries: [{
         gameId: String,
         elo: Number,
+        rating: mongoose.Schema.Types.Mixed,
         comment: String,
         image: String,
         checkedIn: { type: Boolean, default: false },
