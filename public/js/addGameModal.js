@@ -49,17 +49,24 @@
     const gameEntryNames = window.gameEntryNames || [];
     let rankingDone = gameEntryCount < 5 ? true : finalizedGames.length === 0;
 
+
+    
     function getEloEntryId(entry){
-      if(!entry) return null;
-      if(entry.gameId != null && entry.gameId !== ''){
-        return String(entry.gameId);
-      }
-      const game = entry.game || {};
-      if(game.gameId != null && game.gameId !== '') return String(game.gameId);
-      if(game.Id != null && game.Id !== '') return String(game.Id);
-      if(entry.game != null && entry.game !== '') return String(entry.game);
-      return null;
-    }
+  if (!entry) return null;
+
+  if (entry.gameId) return String(entry.gameId);
+
+  const game = entry.game;
+  if (typeof game === 'string' || typeof game === 'number') return String(game);
+  if (game && typeof game === 'object') {
+    if (game.gameId) return String(game.gameId);
+    if (game.Id) return String(game.Id);
+    if (game._id) return String(game._id);
+  }
+
+  return null;
+}
+
 
     function resetForm(){
       if(!form.length) return;
@@ -115,102 +122,125 @@
     }
 
     function pickRandomGame(min, max, exclude) {
-      exclude = exclude || [];
-      if(isNaN(min) || isNaN(max) || min > max) return null;
-      const eligible = finalizedGames.filter(g => {
-        const id = getEloEntryId(g);
-        return g.elo >= min && g.elo <= max && (!id || !exclude.includes(String(id)));
-      });
-      if (!eligible.length) return null;
-      const midpoint = Math.floor((min + max) / 2);
-      let closest = eligible[0];
-      let bestDist = Math.abs(closest.elo - midpoint);
-      for (let i = 1; i < eligible.length; i++) {
-        const dist = Math.abs(eligible[i].elo - midpoint);
-        if (dist < bestDist) {
-          closest = eligible[i];
-          bestDist = dist;
-        }
-      }
-      return closest;
+  exclude = (exclude || []).map(String);
+
+  if (isNaN(min) || isNaN(max) || min > max) return null;
+
+  const eligible = finalizedGames.filter(g => {
+    const id = getEloEntryId(g);
+    // ❌ CURRENT: (!id || !exclude.includes(String(id)))
+    // ✅ FIX: must have an id, and it must not be excluded, and elo in range
+    return id && g.elo >= min && g.elo <= max && !exclude.includes(String(id));
+  });
+
+  if (!eligible.length) return null;
+
+  const midpoint = Math.floor((min + max) / 2);
+  let closest = eligible[0];
+  let bestDist = Math.abs(closest.elo - midpoint);
+  for (let i = 1; i < eligible.length; i++) {
+    const dist = Math.abs(eligible[i].elo - midpoint);
+    if (dist < bestDist) {
+      closest = eligible[i];
+      bestDist = dist;
     }
+  }
+  return closest;
+}
+function getSelectedGameId() {
+  // select2 value is your new game’s id
+  return gameSelect && gameSelect.val() ? String(gameSelect.val()) : null;
+}
 
     function showComparison1(){
-      randomGame1 = pickRandomGame(minRange,maxRange);
-      if(!randomGame1){
-        rankingDone = true;
-        finalize();
-        return;
-      }
-      const comp = randomGame1.game || {};
-      const compId = getEloEntryId(randomGame1);
-      compareGameInput1.val(compId || '');
-      const compData = {
-        awayLogo: comp.awayTeam && comp.awayTeam.logos && comp.awayTeam.logos[0],
-        homeLogo: comp.homeTeam && comp.homeTeam.logos && comp.homeTeam.logos[0],
-        awayPoints: comp.AwayPoints ?? comp.awayPoints,
-        homePoints: comp.HomePoints ?? comp.homePoints,
-        gameDate: comp.StartDate || comp.startDate
-      };
-      $('#comparisonPrompt').text('');
-      renderCard(newCard, selectedGameData);
-      renderCard(existingCard, compData);
-      $('#comparisonButtons').hide();
-      comparisonStep = 1;
-    }
+  const exclude = [];
+  const newId = getSelectedGameId();
+  if (newId) exclude.push(newId);
 
-    function showComparison2(){
-      const firstId = getEloEntryId(randomGame1);
-      const excludeIds = firstId ? [String(firstId)] : [];
-      randomGame2 = pickRandomGame(minRange,maxRange,excludeIds);
-      if(!randomGame2){
-        finalize();
-        return;
-      }
-      const comp = randomGame2.game || {};
-      const compId = getEloEntryId(randomGame2);
-      compareGameInput2.val(compId || '');
-      const compData = {
-        awayLogo: comp.awayTeam && comp.awayTeam.logos && comp.awayTeam.logos[0],
-        homeLogo: comp.homeTeam && comp.homeTeam.logos && comp.homeTeam.logos[0],
-        awayPoints: comp.AwayPoints ?? comp.awayPoints,
-        homePoints: comp.HomePoints ?? comp.homePoints,
-        gameDate: comp.StartDate || comp.startDate
-      };
-      $('#comparisonPrompt').text('');
-      renderCard(newCard, selectedGameData);
-      renderCard(existingCard, compData);
-      $('#comparisonButtons').hide();
-      comparisonStep = 2;
-    }
+  randomGame1 = pickRandomGame(minRange, maxRange, exclude);
+  if(!randomGame1){ finalize(); return; }
 
-    function showComparison3(){
-      const exclude = [];
-      const excludeId1 = getEloEntryId(randomGame1);
-      const excludeId2 = getEloEntryId(randomGame2);
-      if(excludeId1) exclude.push(String(excludeId1));
-      if(excludeId2) exclude.push(String(excludeId2));
-      randomGame3 = pickRandomGame(minRange, maxRange, exclude);
-      if(!randomGame3){
-        finalize();
-        return;
-      }
-      const comp = randomGame3.game || {};
-      const compId = getEloEntryId(randomGame3);
-      compareGameInput3.val(compId || '');
-      const compData = {
-        awayLogo: comp.awayTeam && comp.awayTeam.logos && comp.awayTeam.logos[0],
-        homeLogo: comp.homeTeam && comp.homeTeam.logos && comp.homeTeam.logos[0],
-        awayPoints: comp.AwayPoints ?? comp.awayPoints,
-        homePoints: comp.HomePoints ?? comp.homePoints,
-        gameDate: comp.StartDate || comp.startDate
-      };
-      $('#comparisonPrompt').text('');
-      renderCard(newCard, selectedGameData);
-      renderCard(existingCard, compData);
-      $('#comparisonButtons').hide();
-      comparisonStep = 3;
-    }
+  const compId = getEloEntryId(randomGame1);
+  compareGameInput1.val(compId || '');
+
+  const comp = randomGame1.game || {};
+  const compData = {
+    awayLogo: comp.awayTeam?.logos?.[0],
+    homeLogo: comp.homeTeam?.logos?.[0],
+    awayPoints: comp.AwayPoints ?? comp.awayPoints,
+    homePoints: comp.HomePoints ?? comp.homePoints,
+    gameDate: comp.StartDate || comp.startDate
+  };
+
+  $('#comparisonPrompt').text('');
+  renderCard(newCard, selectedGameData);
+  renderCard(existingCard, compData);
+  $('#comparisonButtons').hide();
+  comparisonStep = 1;
+}
+
+function showComparison2(){
+  const exclude = [];
+  const newId = getSelectedGameId();
+  if (newId) exclude.push(newId);
+
+  const firstId = getEloEntryId(randomGame1);
+  if (firstId) exclude.push(String(firstId));
+
+  randomGame2 = pickRandomGame(minRange, maxRange, exclude);
+  if(!randomGame2){ finalize(); return; }
+
+  const compId = getEloEntryId(randomGame2);
+  compareGameInput2.val(compId || '');
+
+  const comp = randomGame2.game || {};
+  const compData = {
+    awayLogo: comp.awayTeam?.logos?.[0],
+    homeLogo: comp.homeTeam?.logos?.[0],
+    awayPoints: comp.AwayPoints ?? comp.awayPoints,
+    homePoints: comp.HomePoints ?? comp.homePoints,
+    gameDate: comp.StartDate || comp.startDate
+  };
+
+  $('#comparisonPrompt').text('');
+  renderCard(newCard, selectedGameData);
+  renderCard(existingCard, compData);
+  $('#comparisonButtons').hide();
+  comparisonStep = 2;
+}
+
+function showComparison3(){
+  const exclude = [];
+  const newId = getSelectedGameId();
+  if (newId) exclude.push(newId);
+
+  const excludeId1 = getEloEntryId(randomGame1);
+  const excludeId2 = getEloEntryId(randomGame2);
+  if (excludeId1) exclude.push(String(excludeId1));
+  if (excludeId2) exclude.push(String(excludeId2));
+
+  randomGame3 = pickRandomGame(minRange, maxRange, exclude);
+  if(!randomGame3){ finalize(); return; }
+
+  const compId = getEloEntryId(randomGame3);
+  compareGameInput3.val(compId || '');
+
+  const comp = randomGame3.game || {};
+  const compData = {
+    awayLogo: comp.awayTeam?.logos?.[0],
+    homeLogo: comp.homeTeam?.logos?.[0],
+    awayPoints: comp.AwayPoints ?? comp.awayPoints,
+    homePoints: comp.HomePoints ?? comp.homePoints,
+    gameDate: comp.StartDate || comp.startDate
+  };
+
+  $('#comparisonPrompt').text('');
+  renderCard(newCard, selectedGameData);
+  renderCard(existingCard, compData);
+  $('#comparisonButtons').hide();
+  comparisonStep = 3;
+}
+
 
     if(nextBtn){
       nextBtn.on('click', function(){
@@ -276,44 +306,45 @@
     }
 
     betterBtn.off('click').on('click', function(){
-      if(comparisonStep === 1){
-        winnerInput1.val('new');
-        minRange = randomGame1.elo;
-        if(randomGame1 && randomGame1.elo === highestElo){
-          finalize();
-        } else {
-          showComparison2();
-        }
-      } else if(comparisonStep === 2){
-        winnerInput2.val('new');
-        minRange = randomGame2.elo;
-        showComparison3();
-      } else if(comparisonStep === 3){
-        winnerInput3.val('new');
-        minRange = randomGame3.elo;
-        finalize();
-      }
-    });
+  if(comparisonStep === 1){
+    winnerInput1.val('new');
+    if (randomGame1) minRange = Math.min(maxRange, randomGame1.elo + 1);
+    if(randomGame1 && randomGame1.elo === highestElo){
+      finalize();
+    } else {
+      showComparison2();
+    }
+  } else if(comparisonStep === 2){
+    winnerInput2.val('new');
+    if (randomGame2) minRange = Math.min(maxRange, randomGame2.elo + 1);
+    showComparison3();
+  } else if(comparisonStep === 3){
+    winnerInput3.val('new');
+    if (randomGame3) minRange = Math.min(maxRange, randomGame3.elo + 1);
+    finalize();
+  }
+});
 
-    worseBtn.off('click').on('click', function(){
-      if(comparisonStep === 1){
-        winnerInput1.val('existing');
-        maxRange = randomGame1.elo;
-        if(randomGame1 && randomGame1.elo === lowestElo){
-          finalize();
-        } else {
-          showComparison2();
-        }
-      } else if(comparisonStep === 2){
-        winnerInput2.val('existing');
-        maxRange = randomGame2.elo;
-        showComparison3();
-      } else if(comparisonStep === 3){
-        winnerInput3.val('existing');
-        maxRange = randomGame3.elo;
-        finalize();
-      }
-    });
+worseBtn.off('click').on('click', function(){
+  if(comparisonStep === 1){
+    winnerInput1.val('existing');
+    if (randomGame1) maxRange = Math.max(minRange, randomGame1.elo - 1);
+    if(randomGame1 && randomGame1.elo === lowestElo){
+      finalize();
+    } else {
+      showComparison2();
+    }
+  } else if(comparisonStep === 2){
+    winnerInput2.val('existing');
+    if (randomGame2) maxRange = Math.max(minRange, randomGame2.elo - 1);
+    showComparison3();
+  } else if(comparisonStep === 3){
+    winnerInput3.val('existing');
+    if (randomGame3) maxRange = Math.max(minRange, randomGame3.elo - 1);
+    finalize();
+  }
+});
+
 
     if(newCard){
       newCard.on('click', function(){
