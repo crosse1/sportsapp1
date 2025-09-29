@@ -709,7 +709,8 @@ exports.profileGameShowcase = async (req, res, next) => {
                 entry: null,
                 profileImageUrl: null,
                 gameDetails: null,
-                normalizedEloRating: null
+                normalizedEloRating: null,
+                homeVenueImage: null
 
             });
         }
@@ -726,7 +727,8 @@ exports.profileGameShowcase = async (req, res, next) => {
                 profileImageUrl: null,
 
                 gameDetails: null,
-                normalizedEloRating: null
+                normalizedEloRating: null,
+                homeVenueImage: null
 
             });
         }
@@ -749,10 +751,19 @@ exports.profileGameShowcase = async (req, res, next) => {
                 profileImageUrl,
 
                 gameDetails: null,
-                normalizedEloRating: null
+                normalizedEloRating: null,
+                homeVenueImage: null
 
             });
         }
+
+        const homeVenueImage = (entry.game && (
+            (entry.game.homeVenue && entry.game.homeVenue.imgUrl) ||
+            (entry.game.venue && entry.game.venue.imgUrl) ||
+            entry.game.venueImgUrl ||
+            entry.game.imgUrl ||
+            entry.game.VenueImgUrl
+        )) || null;
 
         res.render('gameEntryShowcase', {
             user: targetUser,
@@ -760,7 +771,8 @@ exports.profileGameShowcase = async (req, res, next) => {
             profileImageUrl,
 
             gameDetails: entry.game || null,
-            normalizedEloRating: eloToRating(entry.elo)
+            normalizedEloRating: eloToRating(entry.elo),
+            homeVenueImage
 
         });
     } catch (err) {
