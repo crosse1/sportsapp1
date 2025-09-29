@@ -731,13 +731,50 @@ exports.profileGames = async (req, res, next) => {
             const db = b.game && (b.game.startDate || b.game.StartDate);
             return new Date(db) - new Date(da);
         });
-        const isCurrentUser = req.user && req.user.id.toString() === profileUser._id.toString();
-        let isFollowing = false, canMessage = false;
-        if (req.user && !isCurrentUser) {
-            const viewer = await User.findById(req.user.id);
-            isFollowing = viewer.following.some(f => String(f) === String(profileUser._id));
-            const followsBack = profileUser.following.some(f => String(f) === String(viewer._id));
+        const viewerId = req.user ? req.user.id : null;
+        const viewerData = viewerId ? await User.findById(viewerId).select('following').lean() : null;
+        const followingIds = viewerData?.following ? viewerData.following.map(id => String(id)) : [];
+        const isCurrentUser = viewerId && viewerId.toString() === profileUser._id.toString();
+        let isFollowing = false;
+        let canMessage = false;
+        if (viewerId && !isCurrentUser) {
+            isFollowing = followingIds.includes(String(profileUser._id));
+            const followsBack = (profileUser.following || []).some(f => String(f) === String(viewerId));
             canMessage = isFollowing && followsBack;
+        }
+        let followedUsersByGame = {};
+        if (followingIds.length) {
+            const followedUsers = await User.find({ _id: { $in: followingIds } })
+                .select('username profileImage gameEntries')
+                .lean();
+            followedUsersByGame = followedUsers.reduce((acc, followedUser) => {
+                const profileImg = `/users/${followedUser._id}/profile-image`;
+                const entries = followedUser.gameEntries || [];
+                entries.forEach(entry => {
+                    const potentialIds = new Set();
+                    if (entry?.gameId != null) potentialIds.add(String(entry.gameId));
+                    if (entry?.pastGameId != null) potentialIds.add(String(entry.pastGameId));
+                    if (entry?.pastgameId != null) potentialIds.add(String(entry.pastgameId));
+                    if (entry?.game && typeof entry.game === 'object') {
+                        if (entry.game.gameId != null) potentialIds.add(String(entry.game.gameId));
+                        if (entry.game.Id != null) potentialIds.add(String(entry.game.Id));
+                        if (entry.game._id != null) potentialIds.add(String(entry.game._id));
+                    }
+                    potentialIds.forEach(id => {
+                        if (!id) return;
+                        if (!acc[id]) acc[id] = [];
+                        const alreadyIncluded = acc[id].some(u => u.username === followedUser.username);
+                        if (!alreadyIncluded) {
+                            acc[id].push({
+                                username: followedUser.username,
+                                profileImg,
+                                checkedIn: !!entry.checkedIn
+                            });
+                        }
+                    });
+                });
+                return acc;
+            }, {});
         }
         const eloGames = await enrichEloGames(profileUser.gameElo || []);
         res.render('profileGames', {
@@ -749,7 +786,8 @@ exports.profileGames = async (req, res, next) => {
             activeTab: 'games',
             gameEntries: enrichedEntries,
             usePastGameLinks: true,
-            eloGames
+            eloGames,
+            followedUsersByGame
         });
     } catch (err) {
         next(err);
