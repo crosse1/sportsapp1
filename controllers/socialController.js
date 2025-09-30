@@ -11,14 +11,9 @@ function formatOrdinal(n) {
 
 exports.showMostCheckedIn = async (req, res, next) => {
   try {
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfYesterday = new Date(startOfToday);
-    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
-
-    const pastGames = await PastGame.find({
-      StartDate: { $gte: startOfYesterday, $lt: startOfToday }
-    }).lean();
+    const pastGames = await PastGame.find({})
+      .sort({ StartDate: -1 })
+      .lean();
 
     if (!pastGames.length) {
       return res.render('social', {
@@ -32,22 +27,23 @@ exports.showMostCheckedIn = async (req, res, next) => {
       });
     }
 
-    const ids = pastGames.map(g => String(g.gameId));
+    const pastGameMap = {};
+    pastGames.forEach(pg => { pastGameMap[String(pg.gameId)] = pg; });
 
-    const checkins = await User.aggregate([
+    const globalCheckins = await User.aggregate([
       { $unwind: '$gameEntries' },
-      { $match: { 'gameEntries.checkedIn': true, 'gameEntries.gameId': { $in: ids } } },
+      { $match: { 'gameEntries.checkedIn': true } },
       { $group: { _id: '$gameEntries.gameId', users: { $addToSet: '$_id' } } },
       { $project: { count: { $size: '$users' } } }
     ]);
 
-    const countMap = {};
-    checkins.forEach(c => { countMap[c._id] = c.count; });
+    const countMapAll = {};
+    globalCheckins.forEach(c => { countMapAll[String(c._id)] = c.count; });
 
     let selected = pastGames[0];
-    let max = 0;
+    let max = countMapAll[String(selected.gameId)] || 0;
     pastGames.forEach(g => {
-      const c = countMap[String(g.gameId)] || 0;
+      const c = countMapAll[String(g.gameId)] || 0;
       if (c > max) {
         max = c;
         selected = g;
@@ -68,27 +64,13 @@ exports.showMostCheckedIn = async (req, res, next) => {
     const events = [];
 
     if (req.user) {
-      // Aggregate total check-ins for all games once so we can
-      // compute milestones and ranking information.
-      const globalCheckins = await User.aggregate([
-        { $unwind: '$gameEntries' },
-        { $match: { 'gameEntries.checkedIn': true } },
-        { $group: { _id: '$gameEntries.gameId', users: { $addToSet: '$_id' } } },
-        { $project: { count: { $size: '$users' } } }
-      ]);
-
-      const countMapAll = {};
-      globalCheckins.forEach(c => { countMapAll[c._id] = c.count; });
-
-      // Preload past game documents for milestone calculations
-      const allGameIds = globalCheckins.map(g => Number(g._id));
-      const pastGameDocs = await PastGame.find({ gameId: { $in: allGameIds } }).lean();
-      const pastGameMap = {};
-      pastGameDocs.forEach(pg => { pastGameMap[String(pg.gameId)] = pg; });
-
       // Group counts by date for ranking
+      const relevantPastGames = globalCheckins
+        .map(gc => pastGameMap[String(gc._id)])
+        .filter(Boolean);
+
       const byDate = {};
-      pastGameDocs.forEach(pg => {
+      relevantPastGames.forEach(pg => {
         const key = pg.StartDate.toISOString().split('T')[0];
         byDate[key] = byDate[key] || [];
         const count = countMapAll[String(pg.gameId)] || 0;
