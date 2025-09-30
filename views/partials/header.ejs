@@ -18,8 +18,8 @@
             <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle inbox-dot"></span>
           <% } %>
         </a>
-        <a href="/profile" class="me-3 <%= currentPath.startsWith('/profile') ? 'active-profile' : '' %>">
-
+        <% const profileSlug = loggedInUser && (loggedInUser.venmo || loggedInUser.id); %>
+        <a href="<%= profileSlug ? `/profile/${profileSlug}/stats` : '/profile' %>" class="me-3 <%= currentPath.startsWith('/profile') ? 'active-profile' : '' %>">
           <img src="<%= navImg %>" alt="Profile" class="nav-profile-icon">
         </a>
         <a href="/logout" class="btn btn-outline-secondary">Log Out</a>

@@ -121,6 +121,27 @@ async function mergeUserGames(user){
     return gameEntriesRaw.length ? await enrichGameEntries(gameEntriesRaw) : [];
 }
 
+function applyPopulates(query, populatePaths = []) {
+    if (!Array.isArray(populatePaths)) return query;
+    return populatePaths.reduce((acc, pop) => acc.populate(pop), query);
+}
+
+async function findUserByIdentifier(identifier, populatePaths = []) {
+    if (!identifier) return null;
+
+    let query = applyPopulates(User.findOne({ venmo: identifier }), populatePaths);
+    let user = await query.exec();
+    if (user) return user;
+
+    if (mongoose.Types.ObjectId.isValid(identifier)) {
+        query = applyPopulates(User.findById(identifier), populatePaths);
+        user = await query.exec();
+        if (user) return user;
+    }
+
+    return null;
+}
+
 // Enriches an array of {game, elo} objects with full PastGame info
 async function enrichEloGames(entries){
     if(!entries || !entries.length) return [];
@@ -230,7 +251,8 @@ exports.loginUser = async (req, res, next) => {
         if (!match) return res.redirect('/login');
         const token = jwt.sign({ id: user._id, username: user.username, email: user.email, phoneNumber: user.phoneNumber }, 'secret');
         res.cookie('token', token, { httpOnly: true });
-        res.redirect('/');
+        const profileSlug = user.venmo || user.username || user._id;
+        res.redirect(`/profile/${profileSlug}/stats`);
     } catch (error) {
         next(error);
     }
@@ -401,11 +423,13 @@ exports.getProfileImage = async (req, res, next) => {
 
 exports.profileBadges = async (req, res, next) => {
     try {
-        const userId = req.params.user || req.user.id;
-        const profileUser = await User.findById(userId)
-            .populate('favoriteTeams');
+        const identifier = req.params.user || req.params.identifier || req.params.id || req.params.venmo || (req.user && req.user.id);
+        const profileUser = await findUserByIdentifier(identifier, ['favoriteTeams']);
+        if (!profileUser) {
+            const fallbackSlug = req.user ? (req.user.venmo || req.user.id) : '';
+            return res.redirect(fallbackSlug ? `/profile/${fallbackSlug}/badges` : '/profile');
+        }
         console.log('✅ user.favoriteTeams:', profileUser.favoriteTeams);
-        if (!profileUser) return res.redirect('/profileBadges/' + req.user.id);
         const isCurrentUser = req.user && req.user.id.toString() === profileUser._id.toString();
         let isFollowing = false, canMessage = false;
         if (req.user && !isCurrentUser) {
@@ -547,27 +571,26 @@ exports.profileBadges = async (req, res, next) => {
 
 exports.profileStats = async (req, res, next) => {
     try {
-        const userId = req.params.user || req.user.id;
-        console.log('[profileStats] Requested User ID:', userId);
+        const identifier = req.params.user || req.params.identifier || req.params.id || req.params.venmo || (req.user && req.user.id);
+        console.log('[profileStats] Requested identifier:', identifier);
 
         // Get populated lists for UI rendering
-        const profileUser = await User.findById(userId)
-            .populate('favoriteTeams')
-            .populate('teamsList')
-            .populate('venuesList');
-        console.log('✅ user.favoriteTeams:', profileUser.favoriteTeams);
+        const profileUser = await findUserByIdentifier(identifier, ['favoriteTeams', 'teamsList', 'venuesList']);
 
         if (!profileUser) {
             console.warn('[profileStats] No user found, redirecting to self');
-            return res.redirect('/profileStats/' + req.user.id);
+            const fallbackSlug = req.user ? (req.user.venmo || req.user.id) : '';
+            return res.redirect(fallbackSlug ? `/profile/${fallbackSlug}/stats` : '/profile');
         }
+
+        console.log('✅ user.favoriteTeams:', profileUser.favoriteTeams);
 
         console.log(`[profileStats] Loaded user: ${profileUser.username} (${profileUser._id})`);
         console.log(`[profileStats] Populated teamsList count: ${profileUser.teamsList?.length}`);
         console.log(`[profileStats] Populated venuesList count: ${profileUser.venuesList?.length}`);
 
         // Get raw, unpopulated list of IDs
-        const rawUser = await User.findById(userId).lean();
+        const rawUser = await User.findById(profileUser._id).lean();
         const rawTeamIds = rawUser.teamsList || [];
         const rawVenueIds = rawUser.venuesList || [];
 
@@ -750,10 +773,13 @@ exports.profileStats = async (req, res, next) => {
 
 exports.profileGames = async (req, res, next) => {
     try {
-        const userId = req.params.user || req.user.id;
-        const profileUser = await User.findById(userId).populate('favoriteTeams');
+        const identifier = req.params.user || req.params.identifier || req.params.id || req.params.venmo || (req.user && req.user.id);
+        const profileUser = await findUserByIdentifier(identifier, ['favoriteTeams']);
+        if (!profileUser) {
+            const fallbackSlug = req.user ? (req.user.venmo || req.user.id) : '';
+            return res.redirect(fallbackSlug ? `/profile/${fallbackSlug}/games` : '/profile');
+        }
         console.log('✅ user.favoriteTeams:', profileUser.favoriteTeams);
-        if (!profileUser) return res.redirect('/profileGames/' + req.user.id);
         let enrichedEntries = await mergeUserGames(profileUser);
         enrichedEntries.sort((a, b) => {
             const da = a.game && (a.game.startDate || a.game.StartDate);
@@ -825,8 +851,9 @@ exports.profileGames = async (req, res, next) => {
 
 exports.profileGameShowcase = async (req, res, next) => {
     try {
-        const { user: userIdentifier, gameEntry } = req.params;
-        if (!userIdentifier || !gameEntry) {
+        const identifier = req.params.user || req.params.identifier;
+        const { gameEntry } = req.params;
+        if (!identifier || !gameEntry) {
             return res.status(404).render('gameEntryShowcase', {
                 user: null,
                 entry: null,
@@ -838,10 +865,7 @@ exports.profileGameShowcase = async (req, res, next) => {
             });
         }
 
-        let targetUser = await User.findOne({ venmo: userIdentifier });
-        if (!targetUser) {
-            targetUser = await User.findById(userIdentifier);
-        }
+        let targetUser = await findUserByIdentifier(identifier);
 
         if (!targetUser) {
             return res.status(404).render('gameEntryShowcase', {
@@ -905,12 +929,16 @@ exports.profileGameShowcase = async (req, res, next) => {
 
 exports.profileWaitlist = async (req, res, next) => {
     try {
-        const userId = req.params.user || req.user.id;
-        const profileUser = await User.findById(userId)
-            .populate('favoriteTeams')
-            .populate({ path: 'wishlist', populate: ['homeTeam', 'awayTeam'] });
+        const identifier = req.params.user || req.params.identifier || req.params.id || req.params.venmo || (req.user && req.user.id);
+        const profileUser = await findUserByIdentifier(identifier, [
+            'favoriteTeams',
+            { path: 'wishlist', populate: ['homeTeam', 'awayTeam'] }
+        ]);
+        if (!profileUser) {
+            const fallbackSlug = req.user ? (req.user.venmo || req.user.id) : '';
+            return res.redirect(fallbackSlug ? `/profile/${fallbackSlug}/waitlist` : '/profile');
+        }
         console.log('✅ user.favoriteTeams:', profileUser.favoriteTeams);
-        if (!profileUser) return res.redirect('/profileWaitlist/' + req.user.id);
         const isCurrentUser = req.user && req.user.id.toString() === profileUser._id.toString();
         let isFollowing = false, canMessage = false;
         if (req.user && !isCurrentUser) {

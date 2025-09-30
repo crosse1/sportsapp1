@@ -98,6 +98,7 @@ app.use(async (req, res, next) => {
                     username: userDoc.username,
                     email: userDoc.email,
                     phoneNumber: userDoc.phoneNumber,
+                    venmo: userDoc.venmo || null,
                     profileImage: userDoc.profileImage,
                     newFollowers: userDoc.newFollowers || [],
                     hasQueuedGameInvites: hasQueuedInvites
@@ -255,7 +256,10 @@ app.get('/logout', (req, res) => {
     res.redirect('/login');
 });
 app.get('/thanks', requireAuth, (req, res) => { res.redirect('/profileBadges/' + req.user.id); });
-app.get('/profile', requireAuth, (req, res) => { res.redirect('/profileBadges/' + req.user.id); });
+app.get('/profile', requireAuth, (req, res) => {
+    const slug = req.user ? (req.user.venmo || req.user.id) : '';
+    return res.redirect(slug ? `/profile/${slug}/stats` : '/games');
+});
 app.get('/profileBadges/:user?', requireAuth, profileController.profileBadges);
 app.get('/profileGames/:user/:gameEntry', requireAuth, profileController.profileGameShowcase);
 app.get('/profileGames/:user?', requireAuth, profileController.profileGames);
@@ -268,6 +272,15 @@ app.post('/profile/photo', requireAuth, profileController.uploadProfilePhoto);
 app.post('/profile/location', requireAuth, profileController.setLocation);
 app.post('/profile/games', requireAuth, profileController.addGame);
 app.post('/profile/games/:id/rate', requireAuth, profileController.rateExistingGame);
+app.get('/profile/:identifier/games/:gameEntry', requireAuth, profileController.profileGameShowcase);
+app.get('/profile/:identifier/stats', requireAuth, profileController.profileStats);
+app.get('/profile/:identifier/games', requireAuth, profileController.profileGames);
+app.get('/profile/:identifier/badges', requireAuth, profileController.profileBadges);
+app.get('/profile/:identifier/waitlist', requireAuth, profileController.profileWaitlist);
+app.get('/profile/:identifier', requireAuth, (req, res) => {
+    const slug = req.params.identifier;
+    return res.redirect(`/profile/${slug}/stats`);
+});
 app.put('/gameEntry/:id', requireAuth, profileController.updateGameEntry);
 app.delete('/gameEntry/:id', requireAuth, profileController.deleteGameEntry);
 app.get('/welcome', requireAuth, (req, res) => {
