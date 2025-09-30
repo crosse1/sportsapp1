@@ -48,7 +48,7 @@
 
       <div class="row justify-content-center mt-5">
         <div class="col-md-6 timeline-wrapper">
-        <% if (events && events.length) { %>
+        <% if (typeof events !== 'undefined' && events.length) { %>
           <% events.forEach(function(ev){ %>
             <div class="timeline-event">
               <% if(ev.type === 'checkin' || ev.type === 'fanMilestone'){ %>
@@ -99,7 +99,7 @@
             </div>
           <% }); %>
         <% } else { %>
-          <p class="text-center text-white fw-bold">No recent activity.</p>
+          <p class="text-center text-white fw-bold">No recent activity yet.</p>
         <% } %>
         </div>
       </div>

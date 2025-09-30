@@ -21,7 +21,15 @@ exports.showMostCheckedIn = async (req, res, next) => {
     }).lean();
 
     if (!pastGames.length) {
-      return res.render('social', { pastgame: null, count: 0, homeLogo: '', awayLogo: '', homeColor: '#ffffff', awayColor: '#ffffff' });
+      return res.render('social', {
+        pastgame: null,
+        count: 0,
+        homeLogo: '',
+        awayLogo: '',
+        homeColor: '#ffffff',
+        awayColor: '#ffffff',
+        events: []
+      });
     }
 
     const ids = pastGames.map(g => String(g.gameId));
