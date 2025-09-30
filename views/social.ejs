@@ -10,7 +10,7 @@
 <body class="d-flex flex-column min-vh-100 gradient-bg">
   <%- include('partials/header') %>
   <div class="container my-4 flex-grow-1">
-    <h1 class="text-center text-white fw-bold mb-4">Most Checked-In Game Yesterday</h1>
+    <h1 class="text-center text-white fw-bold mb-4">Most Checked-In Game</h1>
     <% if (pastgame) { %>
     <div class="row justify-content-center">
       <div class="col-md-6">
@@ -43,7 +43,7 @@
     <p class="text-center text-white fs-5">users checked in to <%= pastgame.AwayTeam %> vs <%= pastgame.HomeTeam %></p>
 
     <% } else { %>
-    <p class="text-center text-white fw-bold">No past games found for yesterday.</p>
+    <p class="text-center text-white fw-bold">No past games found.</p>
       <% } %>
 
       <div class="row justify-content-center mt-5">
@@ -99,7 +99,7 @@
             </div>
           <% }); %>
         <% } else { %>
-          <p class="text-center text-white fw-bold">No recent activity yet.</p>
+          <p class="text-center text-white fw-bold">No activity yet.</p>
         <% } %>
         </div>
       </div>
