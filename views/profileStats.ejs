@@ -478,6 +478,27 @@
   -webkit-text-fill-color: transparent;
 }
 
+#conferenceBlock .stat-percent-col {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+#conferenceBlock .conference-percentage-text {
+  margin-right: 0;
+  text-align: center;
+}
+
+.gold-text {
+  background: linear-gradient(to right, #ffd700, #ffcc00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  font-weight: bold;
+}
+
 .stat-row {
   display: flex;
   align-items: center;
@@ -668,15 +689,17 @@
                   <div class="stat-row">
                     <div class="stat-name-col conference-name-text"><%= conf.name %></div>
                     <div class="stat-middle conference-dots-row">
-                        <% 
+                        <%
                           const teamIdsInConf = conferenceTeamMap[conf.name] || [];
                           const unlockedTeams = teamIdsInConf.filter(id => userTeamIds.includes(String(id)));
                           const lockedCount = conf.totalTeams - unlockedTeams.length;
-                      
+                          const visitedCount = typeof conf.teamsVisited === 'number' ? conf.teamsVisited : unlockedTeams.length;
+                          const completedConference = visitedCount === conf.totalTeams;
+
                           // First show unlocked teams
                           unlockedTeams.forEach(teamId => {
                             const team = teamMap[teamId];
-                            if (team && team.logos?.[0]) { 
+                            if (team && team.logos?.[0]) {
                         %>
                               <span class="team-dot unlocked-team" style="background-color: <%= team.alternateColor || '#ccc' %>;">
                                 <img src="<%= team.logos[0] %>" alt="Team Logo" />
@@ -691,9 +714,12 @@
                         <% } %>
                       </div>
                       
-                    <div class="stat-percent-col conference-percentage-text"><%= conf.percentage %>%</div>
+                    <div class="stat-percent-col conference-percentage-text">
+                      <span class="<%= completedConference ? 'gold-text' : '' %>">
+                        <%= visitedCount %>/<%= conf.totalTeams %>
+                      </span>
+                    </div>
                   </div>
-                  
                 <% }) %>
               </div>
           
