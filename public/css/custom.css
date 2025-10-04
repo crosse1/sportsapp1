@@ -18,6 +18,78 @@
     text-decoration: underline;
 }
 
+.glass-select2 .game-result-option {
+  background: transparent;
+  color: #0f172a !important; /* match other text color */
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.glass-select2 .game-result-option .game-result-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.glass-select2 .game-result-option span {
+  color: #ffffff !important;
+}
+
+.glass-select2 .game-result-option:hover {
+  background: linear-gradient(to right, rgba(20, 184, 166, 0.1), rgba(126, 34, 206, 0.1));
+}
+
+.select2-container--default.glass-select2 .select2-selection--single,
+.select2-container--default.glass-select2 .select2-selection--multiple {
+  border-radius: 0.75rem;
+  border: 2px solid transparent;
+  background-image:
+    linear-gradient(#ffffff, #ffffff),
+    linear-gradient(to right, #14b8a6, #7e22ce); /* teal → purple border */
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  color: #0f172a;
+  font-weight: 500;
+  box-shadow: none;
+  min-height: 42px; /* same height as your other fields */
+}
+
+/* Ensure the text color matches */
+.select2-container--default.glass-select2 .select2-selection__rendered {
+  color: #0f172a !important;
+  font-weight: 500;
+  line-height: 42px; /* vertically centers text */
+  padding-left: 0.75rem;
+}
+
+.select2-container--default:not(.glass-select2) .select2-selection--single {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  backdrop-filter: blur(8px);
+  border-radius: .5rem !important;
+  color: #fff !important;
+  font-weight: bold;
+}
+
+/* Remove ugly default background on dropdown list */
+.select2-container--default.glass-select2 .select2-dropdown {
+  border: 2px solid transparent;
+  border-radius: 0.75rem;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)),
+    linear-gradient(to right, #14b8a6, #7e22ce);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.2);
+}
+
+/* Fix option hover */
+.select2-container--default.glass-select2 .select2-results__option--highlighted {
+  background: linear-gradient(to right, rgba(20,184,166,0.2), rgba(126,34,206,0.2));
+  color: #0f172a !important;
+}
+
 /* profile icon in navigation bar */
 .nav-profile-icon {
     border-radius: 50%;
@@ -539,6 +611,8 @@
     right: 0;
     background-color: red;
 }
+
+
 
 /* Messaging modal styles */
 .messages-modal .modal-dialog{ max-width:50vw; }
