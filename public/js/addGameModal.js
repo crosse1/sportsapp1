@@ -59,6 +59,40 @@
     const ratingFieldName = ratingRange ? ratingRange.getAttribute('name') : null;
     const commentFieldName = commentInput && commentInput.length ? commentInput.attr('name') : null;
     const photoFieldName = photoInput && photoInput.length ? photoInput.attr('name') : null;
+    const select2Utils = $.fn.select2 && $.fn.select2.amd ? $.fn.select2.amd.require('select2/utils') : null;
+    const select2Multiple = $.fn.select2 && $.fn.select2.amd ? $.fn.select2.amd.require('select2/selection/multiple') : null;
+    const select2Placeholder = $.fn.select2 && $.fn.select2.amd ? $.fn.select2.amd.require('select2/selection/placeholder') : null;
+    const select2EventRelay = $.fn.select2 && $.fn.select2.amd ? $.fn.select2.amd.require('select2/selection/eventRelay') : null;
+    const select2Search = $.fn.select2 && $.fn.select2.amd ? $.fn.select2.amd.require('select2/selection/search') : null;
+    let MinimalSelectionAdapter = null;
+
+    if(select2Utils && select2Multiple){
+      MinimalSelectionAdapter = select2Multiple;
+      if(select2Placeholder){
+        MinimalSelectionAdapter = select2Utils.Decorate(MinimalSelectionAdapter, select2Placeholder);
+      }
+      if(select2Search){
+        MinimalSelectionAdapter = select2Utils.Decorate(MinimalSelectionAdapter, select2Search);
+      }
+      if(select2EventRelay){
+        MinimalSelectionAdapter = select2Utils.Decorate(MinimalSelectionAdapter, select2EventRelay);
+      }
+      const originalUpdate = MinimalSelectionAdapter.prototype.update;
+      MinimalSelectionAdapter.prototype.update = function(data){
+        if(typeof originalUpdate === 'function'){
+          originalUpdate.call(this, data);
+        }
+        const rendered = this.$selection.find('.select2-selection__rendered');
+        const searchEl = this.$search || rendered.find('.select2-search--inline');
+        if(searchEl && searchEl.length){
+          searchEl.detach();
+        }
+        rendered.empty();
+        if(searchEl && searchEl.length){
+          rendered.append(searchEl);
+        }
+      };
+    }
 
     function getSelectedGameIds(){
       if(!gameSelect || !gameSelect.length) return [];
@@ -161,6 +195,7 @@
       if(ratingRange){ ratingRange.value = 5; updateRating(); }
       rankingDone = gameEntryCount < 5 ? true : finalizedGames.length === 0;
       updateSelectionPlaceholder();
+      updateEntryMode();
       updateSubmitState();
       refreshGameOptionIndicators();
     }
@@ -512,10 +547,11 @@ worseBtn.off('click').on('click', function(){
       const homeLogo = option.homeLogo || '/images/placeholder.jpg';
       const awayLogo = option.awayLogo || '/images/placeholder.jpg';
       const scoreDisplay = option.scoreDisplay || '';
-      const isSelected = option.element ? option.element.selected : false;
+      const selectedIds = new Set(getSelectedGameIds().map(String));
+      const isSelected = selectedIds.has(String(option.id));
       const circleClass = isSelected ? 'game-select-circle filled' : 'game-select-circle';
       return $(
-        `<div class="game-result-option d-flex align-items-center justify-content-between w-100" data-game-id="${option.id}">`+
+        `<div class="game-result-option game-option d-flex align-items-center justify-content-between w-100" data-game-id="${option.id}">`+
           `<div class="d-flex align-items-center flex-grow-1 gap-2">`+
             `<span class="${circleClass}" aria-hidden="true"></span>`+
             `<img src="${awayLogo}" class="game-result-logo">`+
@@ -555,7 +591,9 @@ worseBtn.off('click').on('click', function(){
       placeholder:'Select Game',
       width:'100%',
       templateResult: formatGame,
-      templateSelection: formatGame,
+      tags:false,
+      multiple:true,
+      selectionAdapter: MinimalSelectionAdapter || undefined,
       containerCssClass:'glass-select2',
       dropdownCssClass:'glass-select2',
       closeOnSelect:false,
@@ -602,6 +640,7 @@ worseBtn.off('click').on('click', function(){
 
     initSelectionElements();
     updateSelectionPlaceholder();
+    updateEntryMode();
 
     gameSelect.on('select2:open', function(){
       initSelectionElements();
@@ -626,6 +665,7 @@ worseBtn.off('click').on('click', function(){
       setTimeout(function(){
         refreshGameOptionIndicators();
         updateSelectionPlaceholder();
+        updateEntryMode();
       }, 0);
     });
 
@@ -650,6 +690,58 @@ worseBtn.off('click').on('click', function(){
 
       submitBtn.prop('disabled', !enable);
       updateDuplicateWarning(selected);
+    }
+
+    function updateEntryMode(){
+      const selected = getSelectedGameIds();
+      const multiSelected = selected.length > 1;
+
+      if(commentGroup && commentGroup.length){
+        commentGroup.toggleClass('d-none', multiSelected);
+      }
+
+      if(photoGroup && photoGroup.length){
+        photoGroup.toggleClass('d-none', multiSelected);
+      }
+
+      if(ratingGroup && ratingGroup.length){
+        const shouldShowRating = !multiSelected && gameEntryCount < 5;
+        if(shouldShowRating){
+          ratingGroup.removeClass('d-none').show();
+        } else {
+          ratingGroup.addClass('d-none').hide();
+        }
+      }
+
+      if(commentInput && commentInput.length && commentFieldName){
+        if(multiSelected){
+          commentInput.removeAttr('name');
+        } else if(!commentInput.attr('name')){
+          commentInput.attr('name', commentFieldName);
+        }
+      }
+
+      if(photoInput && photoInput.length && photoFieldName){
+        if(multiSelected){
+          photoInput.removeAttr('name');
+        } else if(!photoInput.attr('name')){
+          photoInput.attr('name', photoFieldName);
+        }
+      }
+
+      if(ratingRange && ratingFieldName){
+        if(multiSelected){
+          ratingRange.removeAttribute('name');
+          ratingRange.removeAttribute('required');
+        } else {
+          if(!ratingRange.getAttribute('name')){
+            ratingRange.setAttribute('name', ratingFieldName);
+          }
+          if(gameEntryCount < 5){
+            ratingRange.setAttribute('required','');
+          }
+        }
+      }
     }
 
     commentInput.on('input', function(){
@@ -701,6 +793,7 @@ worseBtn.off('click').on('click', function(){
         selectedGameData = null;
       }
       updateSelectionPlaceholder();
+      updateEntryMode();
       updateSubmitState();
       refreshGameOptionIndicators();
     });
@@ -711,6 +804,7 @@ worseBtn.off('click').on('click', function(){
       if(multiSelected){
         if(ratingRange && ratingFieldName){
           ratingRange.removeAttribute('name');
+          ratingRange.removeAttribute('required');
         }
         if(commentInput && commentInput.length && commentFieldName){
           commentInput.removeAttr('name');
@@ -719,14 +813,20 @@ worseBtn.off('click').on('click', function(){
           photoInput.removeAttr('name');
         }
         setTimeout(function(){
-          if(ratingRange && ratingFieldName){
-            ratingRange.setAttribute('name', ratingFieldName);
-          }
-          if(commentInput && commentInput.length && commentFieldName){
-            commentInput.attr('name', commentFieldName);
-          }
-          if(photoInput && photoInput.length && photoFieldName){
-            photoInput.attr('name', photoFieldName);
+          const stillMulti = getSelectedGameIds().length > 1;
+          if(!stillMulti){
+            if(ratingRange && ratingFieldName && !ratingRange.getAttribute('name')){
+              ratingRange.setAttribute('name', ratingFieldName);
+            }
+            if(ratingRange && gameEntryCount < 5){
+              ratingRange.setAttribute('required','');
+            }
+            if(commentInput && commentInput.length && commentFieldName && !commentInput.attr('name')){
+              commentInput.attr('name', commentFieldName);
+            }
+            if(photoInput && photoInput.length && photoFieldName && !photoInput.attr('name')){
+              photoInput.attr('name', photoFieldName);
+            }
           }
         }, 0);
       } else {
@@ -783,6 +883,7 @@ worseBtn.off('click').on('click', function(){
       $('#comparisonButtons').hide();
       $('#comparisonPrompt').text('');
       updateSelectionPlaceholder();
+      updateEntryMode();
       updateSubmitState();
       refreshGameOptionIndicators();
       if(!$('#leagueSelect option').length){
