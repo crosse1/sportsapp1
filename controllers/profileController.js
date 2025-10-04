@@ -1164,6 +1164,168 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
 
         if (!user.gameEntries) user.gameEntries = [];
 
+        const normalizeIds = value => {
+            if (value == null) return [];
+            if (Array.isArray(value)) return value;
+            return [value];
+        };
+
+        const rawIds = normalizeIds(gameId)
+            .map(val => {
+                const num = Number(val);
+                return Number.isFinite(num) ? num : null;
+            })
+            .filter(id => id != null);
+
+        const orderedUniqueIds = [];
+        const seenIds = new Set();
+        for (const id of rawIds) {
+            const key = String(id);
+            if (seenIds.has(key)) continue;
+            seenIds.add(key);
+            orderedUniqueIds.push(id);
+        }
+
+        if (orderedUniqueIds.length > 1) {
+            const existingSet = new Set((user.gameEntries || []).map(e => String(e.gameId)));
+            const idsToAdd = orderedUniqueIds.filter(id => !existingSet.has(String(id)));
+
+            if (!idsToAdd.length) {
+                if (req.headers.accept && req.headers.accept.includes('application/json')) {
+                    return res.status(400).json({ error: 'All selected games are already on your list.' });
+                }
+                const enrichedEntries = await enrichGameEntries(user.gameEntries || []);
+                const eloGames = await enrichEloGames(user.gameElo || []);
+                return res.status(400).render('profileGames', {
+                    user,
+                    isCurrentUser: true,
+                    isFollowing: false,
+                    canMessage: false,
+                    viewer: req.user,
+                    activeTab: 'games',
+                    gameEntries: enrichedEntries,
+                    error: 'All selected games are already on your list.',
+                    usePastGameLinks: true,
+                    eloGames
+                });
+            }
+
+            const pastGameDocs = await PastGame.find({
+                $or: [
+                    { gameId: { $in: idsToAdd } },
+                    { Id: { $in: idsToAdd } }
+                ]
+            }).lean();
+
+            const pastGameMap = new Map();
+            for (const doc of pastGameDocs) {
+                if (!doc) continue;
+                if (doc.gameId != null) pastGameMap.set(String(doc.gameId), doc);
+                if (doc.Id != null) pastGameMap.set(String(doc.Id), doc);
+            }
+
+            const entriesToCreate = [];
+            const referencedDocs = [];
+
+            for (const id of idsToAdd) {
+                const lookup = pastGameMap.get(String(id));
+                if (!lookup) continue;
+                const canonicalId = Number(lookup.gameId ?? lookup.Id);
+                if (!Number.isFinite(canonicalId)) continue;
+                entriesToCreate.push({
+                    gameId: String(canonicalId),
+                    elo: null,
+                    rating: null,
+                    comment: null,
+                    image: null,
+                    ratingPrompted: false
+                });
+                referencedDocs.push(lookup);
+            }
+
+            if (!entriesToCreate.length) {
+                if (req.headers.accept && req.headers.accept.includes('application/json')) {
+                    return res.status(404).json({ error: 'No selected games could be found.' });
+                }
+                const enrichedEntries = await enrichGameEntries(user.gameEntries || []);
+                const eloGames = await enrichEloGames(user.gameElo || []);
+                return res.status(404).render('profileGames', {
+                    user,
+                    isCurrentUser: true,
+                    isFollowing: false,
+                    canMessage: false,
+                    viewer: req.user,
+                    activeTab: 'games',
+                    gameEntries: enrichedEntries,
+                    error: 'We couldn\'t locate the games you selected.',
+                    usePastGameLinks: true,
+                    eloGames
+                });
+            }
+
+            const teamIdsNeeded = new Set();
+            const venueIdsNeeded = new Set();
+            for (const doc of referencedDocs) {
+                if (doc.HomeId != null) teamIdsNeeded.add(Number(doc.HomeId));
+                if (doc.AwayId != null) teamIdsNeeded.add(Number(doc.AwayId));
+                if (doc.VenueId != null) venueIdsNeeded.add(Number(doc.VenueId));
+            }
+
+            const teamDocs = teamIdsNeeded.size
+                ? await Team.find({ teamId: { $in: Array.from(teamIdsNeeded) } }).select('_id teamId').lean()
+                : [];
+            const venueDocs = venueIdsNeeded.size
+                ? await Venue.find({ venueId: { $in: Array.from(venueIdsNeeded) } }).select('_id venueId').lean()
+                : [];
+
+            const teamMap = new Map(teamDocs.map(doc => [String(doc.teamId), doc._id]));
+            const venueMap = new Map(venueDocs.map(doc => [String(doc.venueId), doc._id]));
+
+            const teamsToAdd = new Set();
+            const venuesToAdd = new Set();
+
+            for (const doc of referencedDocs) {
+                if (doc.HomeId != null) {
+                    const mapped = teamMap.get(String(doc.HomeId));
+                    if (mapped) teamsToAdd.add(String(mapped));
+                }
+                if (doc.AwayId != null) {
+                    const mapped = teamMap.get(String(doc.AwayId));
+                    if (mapped) teamsToAdd.add(String(mapped));
+                }
+                if (doc.VenueId != null) {
+                    const mapped = venueMap.get(String(doc.VenueId));
+                    if (mapped) venuesToAdd.add(String(mapped));
+                }
+            }
+
+            const update = {
+                $push: {
+                    gameEntries: { $each: entriesToCreate }
+                }
+            };
+
+            if (teamsToAdd.size) {
+                update.$addToSet = update.$addToSet || {};
+                update.$addToSet.teamsList = { $each: Array.from(teamsToAdd).map(toObjectId) };
+            }
+
+            if (venuesToAdd.size) {
+                update.$addToSet = update.$addToSet || {};
+                update.$addToSet.venuesList = { $each: Array.from(venuesToAdd).map(toObjectId) };
+            }
+
+            await User.findByIdAndUpdate(user._id, update);
+
+            const enriched = await enrichGameEntries(entriesToCreate);
+
+            if (req.headers.accept && req.headers.accept.includes('application/json')) {
+                return res.json({ success: true, entries: enriched });
+            }
+
+            return res.redirect('/profileGames/' + user._id);
+        }
+
         const isInitial = (user.gameEntries || []).length < 5;
         let finalElo = isInitial ? ratingToElo(rating) : null;
 
