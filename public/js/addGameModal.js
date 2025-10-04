@@ -9,7 +9,11 @@
     const gameSpinner = $('#gameSpinner');
     const commentInput = $('#commentInput');
     const commentCounter = $('#commentCounter');
+    const commentGroup = $('#commentGroup');
+    const photoGroup = $('#photoGroup');
+    const photoInput = $('#photoInput');
     const submitBtn = $('#submitGameBtn');
+    const originalSubmitLabel = submitBtn.length ? submitBtn.text() : 'Submit';
     const ratingRange = document.getElementById('ratingRange');
     const ratingValue = document.getElementById('ratingValue');
     const ratingGroup = $('#ratingGroup');
@@ -35,6 +39,8 @@
     const eloGames = window.eloGamesData || [];
     const finalizedGames = eloGames.filter(g => g.finalized);
     const autoSubmitOverlay = $('#autoSubmitOverlay');
+    const multiNotice = $('#multiSelectionNotice');
+    const multiDuplicateWarning = $('#multiDuplicateWarning');
     const highestElo = finalizedGames.reduce((m,g)=> g.elo>m ? g.elo : m, finalizedGames.length ? finalizedGames[0].elo : 0);
     const lowestElo = finalizedGames.reduce((m,g)=> g.elo<m ? g.elo : m, finalizedGames.length ? finalizedGames[0].elo : 0);
     let randomGame1 = null;
@@ -48,6 +54,7 @@
     const gameEntryCount = window.gameEntryCount || 0;
     const gameEntryNames = window.gameEntryNames || [];
     let rankingDone = gameEntryCount < 5 ? true : finalizedGames.length === 0;
+    let multiMode = false;
 
 
     
@@ -75,10 +82,16 @@
       seasonSelect.prop('disabled', true).val(null).trigger('change');
       teamSelect.prop('disabled', true).val(null).trigger('change');
       gameSelect.prop('disabled', true).val(null).trigger('change');
-      commentCounter.text('0/100');
+      if(commentCounter && commentCounter.length){
+        commentCounter.text('0/100');
+      }
       if(ratingRange){ ratingRange.value = 5; updateRating(); }
       rankingDone = gameEntryCount < 5 ? true : finalizedGames.length === 0;
-      updateSubmitState && updateSubmitState();
+      if(typeof updateMultiMode === 'function'){
+        updateMultiMode();
+      } else if(typeof updateSubmitState === 'function'){
+        updateSubmitState();
+      }
     }
 
     if(nextBtn){
@@ -121,6 +134,109 @@
       );
     }
 
+    function updateDuplicateWarning(selected){
+      if(!multiDuplicateWarning || !multiDuplicateWarning.length) return;
+      const hasDuplicate = (selected || []).some(id => existingGameIds.includes(String(id)));
+      multiDuplicateWarning.toggleClass('d-none', !hasDuplicate);
+    }
+
+    function updateMultiMode(){
+      const selected = getSelectedGameIds();
+      const isMulti = selected.length > 1;
+      multiMode = isMulti;
+      if(multiNotice && multiNotice.length){
+        multiNotice.toggleClass('d-none', !isMulti);
+      }
+      updateDuplicateWarning(selected);
+
+      if(isMulti){
+        if(ratingGroup && ratingGroup.length){
+          ratingGroup.hide();
+        }
+        if(ratingRange){
+          ratingRange.removeAttribute('required');
+          ratingRange.disabled = true;
+        }
+        if(photoGroup && photoGroup.length){
+          photoGroup.hide();
+        }
+        if(photoInput && photoInput.length){
+          photoInput.val('').prop('disabled', true);
+        }
+        if(commentGroup && commentGroup.length){
+          commentGroup.hide();
+        }
+        if(commentInput && commentInput.length){
+          commentInput.val('').prop('disabled', true);
+        }
+        if(commentCounter && commentCounter.length){
+          commentCounter.text('0/100');
+        }
+        if(nextBtn && nextBtn.length){
+          nextBtn.hide();
+        }
+        if(backBtn){
+          backBtn.addClass('d-none');
+        }
+        if(infoStep && infoStep.length){
+          infoStep.show();
+        }
+        if(eloStep && eloStep.length){
+          eloStep.hide();
+        }
+        if(submitBtn && submitBtn.length){
+          submitBtn.removeClass('d-none');
+          submitBtn.text('Add Games');
+        }
+        rankingDone = true;
+      } else {
+        const infoVisible = !infoStep || !infoStep.length || infoStep.is(':visible');
+        if(ratingRange){
+          ratingRange.disabled = false;
+        }
+        if(commentInput && commentInput.length){
+          commentInput.prop('disabled', false);
+          commentCounter && commentCounter.length && commentCounter.text(`${commentInput.val().length}/100`);
+        }
+        if(photoInput && photoInput.length){
+          photoInput.prop('disabled', false);
+        }
+        if(photoGroup && photoGroup.length){
+          photoGroup.show();
+        }
+        if(commentGroup && commentGroup.length){
+          commentGroup.show();
+        }
+        if(ratingGroup && ratingGroup.length){
+          if(gameEntryCount < 5){
+            ratingGroup.show();
+            ratingRange && ratingRange.setAttribute('required','');
+          } else {
+            ratingGroup.hide();
+            ratingRange && ratingRange.removeAttribute('required');
+          }
+        }
+        if(nextBtn && nextBtn.length && infoVisible){
+          if(gameEntryCount < 5){
+            nextBtn.hide();
+          } else {
+            nextBtn.show();
+          }
+        }
+        if(submitBtn && submitBtn.length){
+          submitBtn.text(originalSubmitLabel || 'Submit');
+          if(gameEntryCount < 5){
+            submitBtn.removeClass('d-none');
+          } else if(infoVisible){
+            submitBtn.addClass('d-none');
+          }
+        }
+        rankingDone = gameEntryCount < 5 ? true : finalizedGames.length === 0;
+      }
+
+      updateSubmitState();
+    }
+
     function pickRandomGame(min, max, exclude) {
   exclude = (exclude || []).map(String);
 
@@ -147,9 +263,19 @@
   }
   return closest;
 }
-function getSelectedGameId() {
-  // select2 value is your new game’s id
-  return gameSelect && gameSelect.val() ? String(gameSelect.val()) : null;
+function getSelectedGameIds(){
+  if(!gameSelect || !gameSelect.length) return [];
+  const raw = gameSelect.val();
+  if(raw == null) return [];
+  if(Array.isArray(raw)){
+    return raw.filter(v => v !== null && v !== undefined && v !== '');
+  }
+  return [raw];
+}
+
+function getSelectedGameId(){
+  const ids = getSelectedGameIds();
+  return ids.length ? String(ids[ids.length - 1]) : null;
 }
 
     function showComparison1(){
@@ -464,6 +590,7 @@ worseBtn.off('click').on('click', function(){
       templateSelection: formatGame,
       containerCssClass:'glass-select2',
       dropdownCssClass:'glass-select2',
+      closeOnSelect:false,
       ajax:{
         url:'/pastGames/search',
         dataType:'json',
@@ -509,12 +636,22 @@ worseBtn.off('click').on('click', function(){
       const league = leagueSelect.val();
       const season = seasonSelect.val();
       const team = teamSelect.val();
-      const game = gameSelect.val();
-      const commentValid = commentInput.val().length <= 100;
-      const duplicate = game && existingGameIds.includes(game);
-      let enable = league && season && team && game && commentValid && !duplicate;
-      if(!rankingDone) enable = false;
+      const selected = getSelectedGameIds();
+      const hasSelection = selected.length > 0;
+      const commentLength = commentInput && commentInput.length ? commentInput.val().length : 0;
+      const commentValid = commentLength <= 100;
+      const duplicate = selected.some(id => existingGameIds.includes(String(id)));
+      let enable = Boolean(league && season && team && hasSelection) && !duplicate;
+
+      if(selected.length <= 1){
+        enable = enable && commentValid;
+        if(hasSelection && !rankingDone){
+          enable = false;
+        }
+      }
+
       submitBtn.prop('disabled', !enable);
+      updateDuplicateWarning(selected);
     }
 
     commentInput.on('input', function(){
@@ -552,15 +689,20 @@ worseBtn.off('click').on('click', function(){
     });
 
     gameSelect.on('change', function(){
-      const data = gameSelect.select2('data')[0];
-      selectedGameData = data ? {
-        awayLogo:data.awayLogo,
-        homeLogo:data.homeLogo,
-        awayPoints:data.awayPoints,
-        homePoints:data.homePoints,
-        gameDate:data.gameDate
-      } : null;
-      updateSubmitState();
+      const dataArr = gameSelect.select2('data') || [];
+      if(dataArr.length === 1){
+        const data = dataArr[0];
+        selectedGameData = {
+          awayLogo:data.awayLogo,
+          homeLogo:data.homeLogo,
+          awayPoints:data.awayPoints,
+          homePoints:data.homePoints,
+          gameDate:data.gameDate
+        };
+      } else {
+        selectedGameData = null;
+      }
+      updateMultiMode();
     });
 
     modal.on('shown.bs.modal', function(){
@@ -603,7 +745,7 @@ worseBtn.off('click').on('click', function(){
       backBtn.addClass('d-none');
       $('#comparisonButtons').hide();
       $('#comparisonPrompt').text('');
-      updateSubmitState();
+      updateMultiMode();
       if(!$('#leagueSelect option').length){
         fetch('/pastGames/leagues').then(r=>r.json()).then(data=>{
           const opts = data.map(l=>`<option value="${l.leagueId}">${l.leagueName}</option>`).join('');
