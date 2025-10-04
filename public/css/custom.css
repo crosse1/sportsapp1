@@ -874,6 +874,40 @@
   margin: 0;
 }
 
+.select2-container.game-select-container.multi-mode .select2-selection--multiple {
+  align-items: center;
+}
+
+.select2-container.game-select-container.multi-mode .select2-selection__rendered {
+  position: relative;
+  width: 100%;
+}
+
+.select2-container.game-select-container.multi-mode .select2-selection__choice,
+.select2-container.game-select-container.multi-mode .select2-selection__placeholder,
+.select2-container.game-select-container.multi-mode .select2-selection__rendered .select2-selection__choice__remove {
+  display: none !important;
+}
+
+.select2-container.game-select-container.multi-mode .select2-selection__rendered::after {
+  content: attr(data-multi-summary);
+  position: absolute;
+  left: .35rem;
+  right: .35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: block;
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: .01em;
+  pointer-events: none;
+  text-align: left;
+}
+
+.select2-container.game-select-container.multi-mode .select2-search.select2-search--inline {
+  display: none !important;
+}
+
 .select2-container--default.select2-container--open .select2-selection--single {
   background-color: rgba(255, 255, 255, 0.25) !important;
 }
@@ -899,7 +933,7 @@
   color: #fff;
   font-weight: bold;
   position: relative;
-  padding-left: 2.5rem;
+  padding-left: 1.5rem;
 }
 
 .select2-container--default .select2-results__option--highlighted {
@@ -907,7 +941,11 @@
   color: #fff !important;
 }
 
-.glass-select2.select2-dropdown .select2-results__option:not(.select2-results__message)::before {
+.glass-select2.select2-dropdown.show-checkmarks .select2-results__option:not(.select2-results__message) {
+  padding-left: 2.5rem;
+}
+
+.glass-select2.select2-dropdown.show-checkmarks .select2-results__option:not(.select2-results__message)::before {
   content: '';
   position: absolute;
   left: .9rem;
@@ -922,12 +960,12 @@
   transition: background .2s, border-color .2s;
 }
 
-.glass-select2.select2-dropdown .select2-results__option[aria-selected="true"]:not(.select2-results__message)::before {
+.glass-select2.select2-dropdown.show-checkmarks .select2-results__option[aria-selected="true"]:not(.select2-results__message)::before {
   border-color: transparent;
   background: linear-gradient(135deg, rgba(20, 184, 166, 0.85), rgba(126, 34, 206, 0.85));
 }
 
-.glass-select2.select2-dropdown .select2-results__option[aria-selected="true"]:not(.select2-results__message)::after {
+.glass-select2.select2-dropdown.show-checkmarks .select2-results__option[aria-selected="true"]:not(.select2-results__message)::after {
   content: '\2713';
   position: absolute;
   left: 1.07rem;

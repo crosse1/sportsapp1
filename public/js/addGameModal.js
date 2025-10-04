@@ -55,6 +55,47 @@
     const gameEntryNames = window.gameEntryNames || [];
     let rankingDone = gameEntryCount < 5 ? true : finalizedGames.length === 0;
     let multiMode = false;
+    let gameSelectContainer = null;
+    let gameSelectionRendered = null;
+
+    function ensureGameSelectRefs(){
+      if(!gameSelect || !gameSelect.length) return;
+      if(!gameSelectContainer || !gameSelectContainer.length){
+        gameSelectContainer = gameSelect.next('.select2');
+        if(gameSelectContainer && gameSelectContainer.length){
+          gameSelectContainer.addClass('game-select-container');
+        }
+      }
+      if(gameSelectContainer && (!gameSelectionRendered || !gameSelectionRendered.length)){
+        gameSelectionRendered = gameSelectContainer.find('.select2-selection__rendered');
+      }
+    }
+
+    function updateGameSelectionUI(preselected){
+      ensureGameSelectRefs();
+      if(!gameSelect || !gameSelect.length) return;
+      const ids = Array.isArray(preselected) ? preselected : getSelectedGameIds();
+      const uniqueCount = Array.isArray(ids) ? Array.from(new Set(ids.map(String))).length : 0;
+      const isMultiActive = uniqueCount > 1;
+      const summaryText = isMultiActive ? `${uniqueCount} games selected` : '';
+
+      if(gameSelectionRendered && gameSelectionRendered.length){
+        if(isMultiActive){
+          gameSelectionRendered.attr('data-multi-summary', summaryText);
+          gameSelectionRendered.attr('aria-label', summaryText);
+        } else {
+          gameSelectionRendered.removeAttr('data-multi-summary');
+          gameSelectionRendered.removeAttr('aria-label');
+        }
+      }
+
+      if(gameSelectContainer && gameSelectContainer.length){
+        gameSelectContainer.toggleClass('multi-mode', isMultiActive);
+      }
+
+      const dropdown = $('.select2-container--open .select2-dropdown');
+      dropdown.toggleClass('show-checkmarks', isMultiActive);
+    }
 
 
     
@@ -148,6 +189,7 @@
         multiNotice.toggleClass('d-none', !isMulti);
       }
       updateDuplicateWarning(selected);
+      updateGameSelectionUI(selected);
 
       if(isMulti){
         if(ratingGroup && ratingGroup.length){
@@ -633,6 +675,17 @@ worseBtn.off('click').on('click', function(){
           if(gameSpinner){ gameSpinner.hide(); }
         }
       }
+    });
+
+    ensureGameSelectRefs();
+    updateGameSelectionUI();
+
+    gameSelect.on('select2:open', function(){
+      updateGameSelectionUI();
+    });
+
+    gameSelect.on('select2:select select2:unselect', function(){
+      setTimeout(function(){ updateGameSelectionUI(); }, 0);
     });
 
     function updateSubmitState(){
