@@ -1234,6 +1234,7 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
                 if (!Number.isFinite(canonicalId)) continue;
                 entriesToCreate.push({
                     gameId: String(canonicalId),
+                    checkedIn: true,
                     elo: null,
                     rating: null,
                     comment: null,
