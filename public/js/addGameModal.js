@@ -549,14 +549,17 @@ worseBtn.off('click').on('click', function(){
       if(!option.id) return option.text;
       const homeLogo = option.homeLogo || '/images/placeholder.jpg';
       const awayLogo = option.awayLogo || '/images/placeholder.jpg';
+      const scoreDisplay = option.scoreDisplay || '';
       return $(
-        `<div class="d-flex align-items-center">`+
-        `<img src="${awayLogo}" style="width:30px;height:30px;border-radius:50%;" class="me-2">`+
-        `<span>${option.awayTeamName}</span>`+
-        `<span class="mx-1">vs</span>`+
-        `<span>${option.homeTeamName}</span>`+
-        `<img src="${homeLogo}" style="width:30px;height:30px;border-radius:50%;" class="ms-2">`+
-        `<span class="ms-2 text-white">(${option.scoreDisplay})</span>`+
+        `<div class="game-result-option d-flex align-items-center justify-content-between w-100">`+
+          `<div class="d-flex align-items-center flex-grow-1 gap-2">`+
+            `<img src="${awayLogo}" class="game-result-logo">`+
+            `<span class="fw-semibold text-white">${option.awayTeamName}</span>`+
+            `<span class="text-white-50">@</span>`+
+            `<img src="${homeLogo}" class="game-result-logo">`+
+            `<span class="fw-semibold text-white">${option.homeTeamName}</span>`+
+          `</div>`+
+          `<span class="game-result-score text-white-50 ms-3">${scoreDisplay}</span>`+
         `</div>`
       );
     }
