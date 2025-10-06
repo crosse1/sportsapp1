@@ -41,7 +41,7 @@
     const autoSubmitOverlay = $('#autoSubmitOverlay');
     const multiDuplicateWarning = $('#multiDuplicateWarning');
     const multiSelectionNotice = $('#multiSelectionNotice');
-    const gameOptionCache = new Map();
+    const selectedGameLogos = $('#selectedGameLogos');
     const highestElo = finalizedGames.reduce((m,g)=> g.elo>m ? g.elo : m, finalizedGames.length ? finalizedGames[0].elo : 0);
     const lowestElo = finalizedGames.reduce((m,g)=> g.elo<m ? g.elo : m, finalizedGames.length ? finalizedGames[0].elo : 0);
     let randomGame1 = null;
@@ -202,53 +202,29 @@
       return null;
     }
 
-    function upsertGameOption(option){
-      if(!option || option.id == null) return;
-      const key = String(option.id);
-      gameOptionCache.set(key, Object.assign({}, option));
-    }
-
-    function resolveCachedGame(id){
-      if(id == null) return null;
-      return gameOptionCache.get(String(id)) || null;
-    }
-
-    function renderSelectionChips(target){
-      if(!target || !target.length) return;
-      const selectedIds = getSelectedGameIds();
-      if(!selectedIds.length) return;
+    function renderSelectedGameLogos(){
+      if(!selectedGameLogos || !selectedGameLogos.length) return;
+      selectedGameLogos.empty();
+      if(!gameSelect || !gameSelect.length || typeof gameSelect.select2 !== 'function') return;
+      const dataArr = gameSelect.select2('data') || [];
+      if(!Array.isArray(dataArr) || !dataArr.length) return;
       const selectedTeamId = teamSelect && teamSelect.length ? teamSelect.val() : null;
       const fragments = [];
-      selectedIds.forEach(id => {
-        let meta = resolveCachedGame(id);
-        if(!meta && gameSelect && gameSelect.length && typeof gameSelect.select2 === 'function'){
-          const currentData = gameSelect.select2('data') || [];
-          const fallbackMeta = currentData.find(item => String(item.id) === String(id));
-          if(fallbackMeta){
-            upsertGameOption(fallbackMeta);
-            meta = fallbackMeta;
-          }
+      dataArr.forEach(data => {
+        const opponent = resolveOpponentLogo(data, selectedTeamId);
+        if(opponent && opponent.url){
+          const altText = opponent.label || 'Opponent';
+          const $img = $('<img>', {
+            src: opponent.url,
+            alt: `${altText} logo`,
+            title: altText
+          });
+          const $wrapper = $('<div class="selected-game-logo"></div>').append($img);
+          fragments.push($wrapper);
         }
-        if(!meta) return;
-        const opponent = resolveOpponentLogo(meta, selectedTeamId);
-        const fallbackLogo = meta.awayLogo || meta.homeLogo || null;
-        const logoUrl = opponent && opponent.url ? opponent.url : fallbackLogo;
-        if(!logoUrl) return;
-        const label = opponent && opponent.label ? opponent.label : (meta.text || 'Selected game');
-        const chip = $('<span>', {
-          class: 'selected-game-chip',
-          'data-game-id': id,
-          title: label
-        });
-        const img = $('<img>', {
-          src: logoUrl,
-          alt: `${label} logo`
-        });
-        chip.append(img);
-        fragments.push(chip);
       });
       if(fragments.length){
-        target.append(fragments);
+        selectedGameLogos.append(fragments);
       }
     }
 
@@ -256,7 +232,7 @@
       if(!selectionElement || !selectionElement.length) return;
       const hasSelection = getSelectedGameIds().length > 0;
       selectionElement.toggleClass('has-selection', hasSelection);
-      updateSelectionDisplay();
+      renderSelectedGameLogos();
     }
 
     function refreshGameOptionIndicators(){
