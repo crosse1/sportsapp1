@@ -29,6 +29,115 @@
             color: #fff !important;
         }
 
+        #gamesModal .modal-header {
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        #gamesModal .games-header-stack {
+            flex: 1 1 auto;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .games-toggle-wrapper {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.15rem 0.35rem;
+            border-radius: 999px;
+            backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .games-toggle {
+            position: relative;
+            width: 56px;
+            height: 28px;
+            border-radius: 999px;
+            padding: 2px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.25);
+            display: inline-flex;
+            align-items: center;
+            transition: box-shadow 0.3s ease, background 0.3s ease;
+        }
+
+        .games-toggle:hover {
+            box-shadow: 0 16px 30px rgba(15, 23, 42, 0.3);
+        }
+
+        .games-toggle input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .games-toggle .toggle-track {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: linear-gradient(135deg, rgba(20, 184, 166, 0.25), rgba(126, 34, 206, 0.25));
+            transition: background 0.3s ease, opacity 0.3s ease;
+        }
+
+        .games-toggle .toggle-thumb {
+            position: relative;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.85);
+            box-shadow: 0 6px 14px rgba(15, 23, 42, 0.3);
+            transform: translateX(0);
+            transition: transform 0.35s ease, background 0.35s ease;
+        }
+
+        .games-toggle input:checked ~ .toggle-track {
+            background: linear-gradient(135deg, rgba(20, 184, 166, 0.85), rgba(126, 34, 206, 0.85));
+        }
+
+        .games-toggle input:checked ~ .toggle-thumb {
+            transform: translateX(28px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .games-toggle-option {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.65);
+            transition: opacity 0.3s ease, color 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .games-toggle-option.active {
+            opacity: 1;
+            color: transparent;
+            background: linear-gradient(135deg, #14b8a6, #7e22ce);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        #gamesModalBody {
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        #gamesModalBody.is-sorting {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+
+        #gamesModalBody.is-sorted {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
         #venuesModal .modal-content {
             background: #fff;
             color: #000;
@@ -746,7 +855,18 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content p-3">
                 <div class="modal-header border-0">
-                    <h5 class="modal-title">All Games</h5>
+                    <div class="games-header-stack">
+                        <h5 class="modal-title mb-0">All Games</h5>
+                        <div class="games-toggle-wrapper ms-auto">
+                            <span class="games-toggle-option active" data-games-sort-label="recent">Recent</span>
+                            <label class="games-toggle mb-0" for="gamesSortToggle">
+                                <input type="checkbox" id="gamesSortToggle" aria-label="Toggle game order between recent and rating">
+                                <span class="toggle-track"></span>
+                                <span class="toggle-thumb"></span>
+                            </label>
+                            <span class="games-toggle-option" data-games-sort-label="rating">Rating</span>
+                        </div>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -817,19 +937,20 @@
   const venuesCount = <%- typeof venuesCount !== 'undefined' ? venuesCount : 0 %>;
   const statesCount = <%- typeof statesCount !== 'undefined' ? statesCount : 0 %>;
 
+  let allGamesByRating = [];
+  let allGamesByChron = [];
+  let gameRankMap = new Map();
+  let gamesSortMode = 'recent';
+  let gamesSortAnimationHandle = null;
+  let gamesSortCleanupHandle = null;
+
   // ---- Helpers (same as you had) ----
   function buildGameRows(games) {
-    const ratingCounts = {};
-    games.forEach(g => { ratingCounts[g.rating] = (ratingCounts[g.rating] || 0) + 1; });
-    let prevRating = null, rankIndex = 0, displayRank = 0;
-    return games.map(g => {
-      rankIndex++;
-      if (g.rating !== prevRating) displayRank = rankIndex;
-      const prefix = ratingCounts[g.rating] > 1 ? 'T-' : '';
-      prevRating = g.rating;
+    return games.map((g, index) => {
+      const rankLabel = gameRankMap.get(g._id) || `${index + 1}.`;
       return `
         <a href="/pastGames/${g._id}" class="top-game-link">
-          <div class="game-rank gradient-text fw-semibold">${prefix}${displayRank}.</div>
+          <div class="game-rank gradient-text fw-semibold">${rankLabel}</div>
           <div class="game-matchup">
             <div class="gradient-text small fw-light game-date">${formatGameDate(g.gameDate)}</div>
             <div class="d-flex align-items-center justify-content-center flex-wrap gap-1">
@@ -950,6 +1071,61 @@
     return new Intl.DateTimeFormat(navigator.language,{dateStyle:'medium'}).format(date);
   }
 
+  function gameTimestamp(game){
+    if (!game || !game.gameDate) return 0;
+    const time = new Date(game.gameDate).getTime();
+    return Number.isFinite(time) ? time : 0;
+  }
+
+  function setGamesToggleLabels(mode){
+    document.querySelectorAll('[data-games-sort-label]').forEach(el => {
+      const value = el.getAttribute('data-games-sort-label');
+      el.classList.toggle('active', value === mode);
+    });
+  }
+
+  function getSortedGames(mode){
+    return mode === 'rating' ? allGamesByRating : allGamesByChron;
+  }
+
+  function renderGamesModalContent(mode, options = {}){
+    const body = document.getElementById('gamesModalBody');
+    if (!body) return;
+    const games = getSortedGames(mode);
+    const animate = options.animate !== false;
+
+    if (gamesSortAnimationHandle) {
+      clearTimeout(gamesSortAnimationHandle);
+      gamesSortAnimationHandle = null;
+    }
+    if (gamesSortCleanupHandle) {
+      clearTimeout(gamesSortCleanupHandle);
+      gamesSortCleanupHandle = null;
+    }
+
+    if (!animate) {
+      body.classList.remove('is-sorting', 'is-sorted');
+      body.innerHTML = buildGameRows(games);
+      return;
+    }
+
+    body.classList.remove('is-sorted');
+    body.classList.add('is-sorting');
+
+    gamesSortAnimationHandle = setTimeout(() => {
+      body.innerHTML = buildGameRows(games);
+      requestAnimationFrame(() => {
+        body.classList.remove('is-sorting');
+        body.classList.add('is-sorted');
+        gamesSortCleanupHandle = setTimeout(() => {
+          body.classList.remove('is-sorted');
+          gamesSortCleanupHandle = null;
+        }, 450);
+      });
+      gamesSortAnimationHandle = null;
+    }, 180);
+  }
+
   function renderStats() {
     const gradientDirection = window.innerWidth < 768 ? 'to bottom' : 'to right';
     // Games
@@ -964,7 +1140,7 @@
     document.getElementById('gamesCount').textContent = validGames.length;
 
     const gamesTopEl = document.getElementById('gamesTop');
-    const allGames = gameEntries
+    const baseGames = gameEntries
       .filter(e => e && e.game && e.game._id)
       .map(e => {
         const g = e.game;
@@ -974,11 +1150,38 @@
         const rawScore = e.elo ? ((e.elo - 1000) / 1000) * 9 + 1 : 0;
         const rating = Math.max(1.0, Math.min(10.0, Math.round(rawScore * 10) / 10));
         return { _id: g._id, gameDate, awayTeamLogoUrl: awayLogo, homeTeamLogoUrl: homeLogo, rating };
-      })
-      .sort((a,b) => b.rating - a.rating);
+      });
 
-    window.allRankedGames = allGames;
-    gamesTopEl.innerHTML = buildGameRows(allGames.slice(0, 3));
+    allGamesByRating = [...baseGames].sort((a, b) => b.rating - a.rating);
+    allGamesByChron = [...baseGames].sort((a, b) => gameTimestamp(b) - gameTimestamp(a));
+
+    // Preserve compatibility with any legacy lookups
+    window.allRankedGames = allGamesByRating;
+    window.allRankedGamesByRating = allGamesByRating;
+    window.allRankedGamesByChron = allGamesByChron;
+
+    const ratingCounts = {};
+    allGamesByRating.forEach(g => {
+      const key = Number(g.rating).toFixed(1);
+      ratingCounts[key] = (ratingCounts[key] || 0) + 1;
+    });
+
+    gameRankMap = new Map();
+    let prevKey = null;
+    let rankIndex = 0;
+    let displayRank = 0;
+    allGamesByRating.forEach(g => {
+      rankIndex++;
+      const ratingKey = Number(g.rating).toFixed(1);
+      if (ratingKey !== prevKey) displayRank = rankIndex;
+      const prefix = ratingCounts[ratingKey] > 1 ? 'T-' : '';
+      gameRankMap.set(g._id, `${prefix}${displayRank}.`);
+      prevKey = ratingKey;
+    });
+
+    gamesSortMode = 'recent';
+
+    gamesTopEl.innerHTML = buildGameRows(allGamesByRating.slice(0, 3));
 
     // Venues
     window.allRankedVenues = venueEntries;
@@ -1046,10 +1249,30 @@
     const mTeams  = document.getElementById('teamsModal');
     const mStates = document.getElementById('statesModal');
 
+    const gamesSortToggle = document.getElementById('gamesSortToggle');
+
+    if (gamesSortToggle) {
+      gamesSortToggle.checked = gamesSortMode === 'rating';
+      setGamesToggleLabels(gamesSortMode);
+      gamesSortToggle.addEventListener('change', (event) => {
+        gamesSortMode = event.target.checked ? 'rating' : 'recent';
+        setGamesToggleLabels(gamesSortMode);
+        renderGamesModalContent(gamesSortMode);
+      });
+    } else {
+      setGamesToggleLabels(gamesSortMode);
+    }
+
+    if (mGames) {
+      mGames.addEventListener('show.bs.modal', () => {
+        if (gamesSortToggle) gamesSortToggle.checked = gamesSortMode === 'rating';
+        setGamesToggleLabels(gamesSortMode);
+        renderGamesModalContent(gamesSortMode, { animate: false });
+      });
+    }
+
     if (hGames && mGames) {
       hGames.addEventListener('click', () => {
-        const body = document.getElementById('gamesModalBody');
-        if (body) body.innerHTML = buildGameRows(window.allRankedGames || []);
         bootstrap.Modal.getOrCreateInstance(mGames).show();
       });
     }
