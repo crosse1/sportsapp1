@@ -838,23 +838,38 @@ worseBtn.off('click').on('click', function(){
       updateDuplicateWarning(selected);
     }
 
+    function setGhostState($el, shouldGhost){
+      if(!$el || !$el.length) return;
+      if(shouldGhost){
+        $el.addClass('ghost-element');
+        $el.attr('aria-hidden', 'true');
+      } else {
+        $el.removeClass('ghost-element');
+        $el.removeAttr('aria-hidden');
+      }
+    }
+
     function updateEntryMode(){
       const selected = getSelectedGameIds();
       const multiSelected = selected.length > 1;
 
       if(commentGroup && commentGroup.length){
-        commentGroup.toggleClass('d-none', multiSelected);
+        commentGroup.removeClass('d-none');
+        setGhostState(commentGroup, multiSelected);
       }
 
       if(photoGroup && photoGroup.length){
-        photoGroup.toggleClass('d-none', multiSelected);
+        photoGroup.removeClass('d-none');
+        setGhostState(photoGroup, multiSelected);
       }
 
       if(ratingGroup && ratingGroup.length){
-        const shouldShowRating = !multiSelected && gameEntryCount < 5;
-        if(shouldShowRating){
+        const ratingEligible = gameEntryCount < 5;
+        if(ratingEligible){
           ratingGroup.removeClass('d-none').show();
+          setGhostState(ratingGroup, multiSelected);
         } else {
+          setGhostState(ratingGroup, false);
           ratingGroup.addClass('d-none').hide();
         }
       }
