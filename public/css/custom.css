@@ -70,8 +70,6 @@
   border-color: rgba(255, 255, 255, 0.35);
 }
 
-
-
 .glass-select2 .game-result-option.is-selected::before {
   opacity: 1;
 }
@@ -130,9 +128,7 @@
 }
 
 .select2-container--default.glass-select2 .select2-results__option--highlighted .game-result-option::before {
-
   opacity: 0;
-
 }
 
 /* profile icon in navigation bar */
@@ -989,8 +985,8 @@
 }
 
 .glass-select2 .select2-selection--multiple .selected-game-chip {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 2rem;
+  height: 2rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -998,8 +994,8 @@
 }
 
 .glass-select2 .select2-selection--multiple .selected-game-chip img {
-  width: 1rem;
-  height: 1rem;
+  width: 2rem;
+  height: 2rem;
   object-fit: contain;
   filter: drop-shadow(0 1px 3px rgba(15, 23, 42, 0.55));
 }
