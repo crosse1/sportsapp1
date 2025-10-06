@@ -706,7 +706,7 @@ exports.searchPastGames = async (req, res, next) => {
       .lean();
     const teamIds = [...new Set(games.flatMap(g => [g.HomeId, g.AwayId]))];
     const teams = await Team.find({ teamId: { $in: teamIds } })
-      .select('teamId logos')
+      .select('teamId logos color alternateColor')
       .lean();
     const teamMap = {};
     teams.forEach(t => { teamMap[t.teamId] = t; });
@@ -716,6 +716,12 @@ exports.searchPastGames = async (req, res, next) => {
       awayTeamName: g.AwayTeam,
       homeLogo: teamMap[g.HomeId] && teamMap[g.HomeId].logos && teamMap[g.HomeId].logos[0],
       awayLogo: teamMap[g.AwayId] && teamMap[g.AwayId].logos && teamMap[g.AwayId].logos[0],
+      homeTeamId: g.HomeId,
+      awayTeamId: g.AwayId,
+      homeColor: teamMap[g.HomeId] ? teamMap[g.HomeId].color : undefined,
+      homeAlternateColor: teamMap[g.HomeId] ? teamMap[g.HomeId].alternateColor : undefined,
+      awayColor: teamMap[g.AwayId] ? teamMap[g.AwayId].color : undefined,
+      awayAlternateColor: teamMap[g.AwayId] ? teamMap[g.AwayId].alternateColor : undefined,
       score: `${g.HomePoints ?? ''}-${g.AwayPoints ?? ''}`,
       homePoints: g.HomePoints,
       awayPoints: g.AwayPoints,
