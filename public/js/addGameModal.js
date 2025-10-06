@@ -40,6 +40,8 @@
     const finalizedGames = eloGames.filter(g => g.finalized);
     const autoSubmitOverlay = $('#autoSubmitOverlay');
     const multiDuplicateWarning = $('#multiDuplicateWarning');
+    const multiSelectionNotice = $('#multiSelectionNotice');
+    const selectedGameLogos = $('#selectedGameLogos');
     const highestElo = finalizedGames.reduce((m,g)=> g.elo>m ? g.elo : m, finalizedGames.length ? finalizedGames[0].elo : 0);
     const lowestElo = finalizedGames.reduce((m,g)=> g.elo<m ? g.elo : m, finalizedGames.length ? finalizedGames[0].elo : 0);
     let randomGame1 = null;
@@ -109,29 +111,127 @@
       return ids.length ? String(ids[ids.length - 1]) : null;
     }
 
+    function normalizeHex(color){
+      if(!color && color !== 0) return null;
+      let hex = String(color).trim();
+      if(!hex) return null;
+      if(hex.startsWith('#')) hex = hex.slice(1);
+      if(hex.length === 3){
+        hex = hex.split('').map(ch => ch + ch).join('');
+      }
+      if(hex.length !== 6 || !/^[0-9a-fA-F]{6}$/.test(hex)){
+        return null;
+      }
+      return `#${hex.toLowerCase()}`;
+    }
+
+    function hexToRgba(hex, alpha){
+      const normalized = normalizeHex(hex);
+      if(!normalized) return null;
+      const value = parseInt(normalized.slice(1), 16);
+      const r = (value >> 16) & 255;
+      const g = (value >> 8) & 255;
+      const b = value & 255;
+      const clampedAlpha = Math.min(Math.max(alpha ?? 1, 0), 1);
+      return `rgba(${r}, ${g}, ${b}, ${clampedAlpha})`;
+    }
+
+    function resolveTeamColor(primary, alternate){
+      return normalizeHex(primary) || normalizeHex(alternate) || null;
+    }
+
+    function buildGradientStops(option){
+      if(!option) return {
+        away: 'rgba(20, 184, 166, 0.78)',
+        home: 'rgba(126, 34, 206, 0.78)'
+      };
+      const awayColor = resolveTeamColor(option.awayColor, option.awayAlternateColor);
+      const homeColor = resolveTeamColor(option.homeColor, option.homeAlternateColor);
+      return {
+        away: hexToRgba(awayColor, 0.82) || 'rgba(20, 184, 166, 0.78)',
+        home: hexToRgba(homeColor, 0.82) || 'rgba(126, 34, 206, 0.78)'
+      };
+    }
+
+    function resolveOpponentLogo(gameData, selectedTeamId){
+      if(!gameData) return null;
+      const normalizedTeamId = selectedTeamId != null ? String(selectedTeamId) : null;
+      const homeId = gameData.homeTeamId != null ? String(gameData.homeTeamId) : null;
+      const awayId = gameData.awayTeamId != null ? String(gameData.awayTeamId) : null;
+      if(normalizedTeamId){
+        if(normalizedTeamId === homeId){
+          return {
+            url: gameData.awayLogo || null,
+            label: gameData.awayTeamName || 'Opponent'
+          };
+        }
+        if(normalizedTeamId === awayId){
+          return {
+            url: gameData.homeLogo || null,
+            label: gameData.homeTeamName || 'Opponent'
+          };
+        }
+      }
+      if(gameData.awayLogo){
+        return {
+          url: gameData.awayLogo,
+          label: gameData.awayTeamName || 'Away team'
+        };
+      }
+      if(gameData.homeLogo){
+        return {
+          url: gameData.homeLogo,
+          label: gameData.homeTeamName || 'Home team'
+        };
+      }
+      return null;
+    }
+
+    function renderSelectedGameLogos(){
+      if(!selectedGameLogos || !selectedGameLogos.length) return;
+      selectedGameLogos.empty();
+      if(!gameSelect || !gameSelect.length || typeof gameSelect.select2 !== 'function') return;
+      const dataArr = gameSelect.select2('data') || [];
+      if(!Array.isArray(dataArr) || !dataArr.length) return;
+      const selectedTeamId = teamSelect && teamSelect.length ? teamSelect.val() : null;
+      const fragments = [];
+      dataArr.forEach(data => {
+        const opponent = resolveOpponentLogo(data, selectedTeamId);
+        if(opponent && opponent.url){
+          const altText = opponent.label || 'Opponent';
+          const $img = $('<img>', {
+            src: opponent.url,
+            alt: `${altText} logo`,
+            title: altText
+          });
+          const $wrapper = $('<div class="selected-game-logo"></div>').append($img);
+          fragments.push($wrapper);
+        }
+      });
+      if(fragments.length){
+        selectedGameLogos.append(fragments);
+      }
+    }
+
     function updateSelectionPlaceholder(){
       if(!selectionElement || !selectionElement.length) return;
       const hasSelection = getSelectedGameIds().length > 0;
       selectionElement.toggleClass('has-selection', hasSelection);
+      renderSelectedGameLogos();
     }
 
-    function refreshGameOptionIndicators() {
-  const selectedSet = new Set(getSelectedGameIds().map(String));
-  const openDropdown = document.querySelector('.select2-container--open');
-  if (!openDropdown) return;
-  const options = openDropdown.querySelectorAll('.select2-results__option');
-
-  options.forEach(option => {
-    const $option = $(option);
-    const data = $option.data('data');
-    if (!data || !data.id) return;
-    const isSelected = selectedSet.has(String(data.id));
-    const circle = $option.find('.game-select-circle');
-    if (circle.length) {
-      circle.toggleClass('filled', isSelected);
+    function refreshGameOptionIndicators(){
+      const selectedSet = new Set(getSelectedGameIds().map(String));
+      const openDropdown = document.querySelector('.select2-container--open');
+      if(!openDropdown) return;
+      const options = openDropdown.querySelectorAll('.game-result-option[data-game-id]');
+      options.forEach(optionEl => {
+        const id = optionEl.getAttribute('data-game-id');
+        if(!id) return;
+        const isSelected = selectedSet.has(String(id));
+        optionEl.classList.toggle('is-selected', isSelected);
+      });
     }
-  });
-}
 
     function attachDropdownObserver(){
       if(dropdownObserver){
@@ -554,22 +654,52 @@ worseBtn.off('click').on('click', function(){
       const homeLogo = option.homeLogo || '/images/placeholder.jpg';
       const awayLogo = option.awayLogo || '/images/placeholder.jpg';
       const scoreDisplay = option.scoreDisplay || '';
-      const selectedIds = new Set(getSelectedGameIds().map(String));
-      const isSelected = selectedIds.has(String(option.id));
-      const circleClass = isSelected ? 'game-select-circle filled' : 'game-select-circle';
-      return $(
-        `<div class="game-result-option game-option d-flex align-items-center justify-content-between w-100" data-game-id="${option.id}">`+
-          `<div class="d-flex align-items-center flex-grow-1 gap-2">`+
-            `<span class="${circleClass}" aria-hidden="true"></span>`+
-            `<img src="${awayLogo}" class="game-result-logo">`+
-            `<span class="fw-semibold text-white">${option.awayTeamName}</span>`+
-            `<span class="text-white-50">@</span>`+
-            `<img src="${homeLogo}" class="game-result-logo">`+
-            `<span class="fw-semibold text-white">${option.homeTeamName}</span>`+
-          `</div>`+
-          `<span class="game-result-score text-white-50 ms-3">${scoreDisplay}</span>`+
-        `</div>`
-      );
+      const gradients = buildGradientStops(option);
+      const container = $('<div>', {
+        class: 'game-result-option d-flex align-items-center justify-content-between w-100',
+        'data-game-id': option.id
+      });
+      container.css('--game-away-color', gradients.away);
+      container.css('--game-home-color', gradients.home);
+
+      const teamsWrapper = $('<div>', {
+        class: 'd-flex align-items-center flex-grow-1 gap-2'
+      });
+
+      teamsWrapper.append($('<img>', {
+        src: awayLogo,
+        class: 'game-result-logo',
+        alt: `${option.awayTeamName || 'Away team'} logo`
+      }));
+
+      teamsWrapper.append($('<span>', {
+        class: 'fw-semibold text-white',
+        text: option.awayTeamName || ''
+      }));
+
+      teamsWrapper.append($('<span>', {
+        class: 'text-white-50',
+        text: '@'
+      }));
+
+      teamsWrapper.append($('<img>', {
+        src: homeLogo,
+        class: 'game-result-logo',
+        alt: `${option.homeTeamName || 'Home team'} logo`
+      }));
+
+      teamsWrapper.append($('<span>', {
+        class: 'fw-semibold text-white',
+        text: option.homeTeamName || ''
+      }));
+
+      const scoreWrapper = $('<span>', {
+        class: 'game-result-score text-white-50 ms-3',
+        text: scoreDisplay
+      });
+
+      container.append(teamsWrapper, scoreWrapper);
+      return container;
     }
 
     teamSelect.select2({
@@ -630,6 +760,12 @@ worseBtn.off('click').on('click', function(){
               awayTeamName:g.awayTeamName,
               homeLogo:g.homeLogo,
               awayLogo:g.awayLogo,
+              homeTeamId:g.homeTeamId,
+              awayTeamId:g.awayTeamId,
+              homeColor:g.homeColor,
+              homeAlternateColor:g.homeAlternateColor,
+              awayColor:g.awayColor,
+              awayAlternateColor:g.awayAlternateColor,
               score:g.score,
               homePoints:g.homePoints,
               awayPoints:g.awayPoints,
@@ -721,6 +857,22 @@ worseBtn.off('click').on('click', function(){
         } else {
           ratingGroup.addClass('d-none').hide();
         }
+      }
+
+      if(multiSelectionNotice && multiSelectionNotice.length){
+        multiSelectionNotice.toggleClass('d-none', !multiSelected);
+      }
+
+      if(nextBtn && nextBtn.length){
+        if(multiSelected || (infoStep && !infoStep.is(':visible')) || gameEntryCount < 5){
+          nextBtn.hide();
+        } else {
+          nextBtn.show();
+        }
+      }
+
+      if(submitBtn && submitBtn.length){
+        submitBtn.text(multiSelected ? 'Add Selected Games' : originalSubmitLabel);
       }
 
       if(commentInput && commentInput.length && commentFieldName){
