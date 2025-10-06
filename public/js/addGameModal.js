@@ -90,9 +90,7 @@
           searchEl.detach();
         }
         rendered.empty();
-        if(searchEl && searchEl.length){
-          rendered.append(searchEl);
-        }
+        updateSelectionDisplay({ searchEl, searchDetached: true, selection: this.$selection });
       };
     }
 
@@ -750,11 +748,11 @@ worseBtn.off('click').on('click', function(){
           };
         },
         processResults:function(data){
-          return { results:data.map(g=>{
+          const results = data.map(g=>{
             const parts = g.score.split('-');
             const home = parts[0] || '';
             const away = parts[1] || '';
-            return {
+            const option = {
               id:g.id,
               homeTeamName:g.homeTeamName,
               awayTeamName:g.awayTeamName,
@@ -773,7 +771,10 @@ worseBtn.off('click').on('click', function(){
               scoreDisplay:`${away}-${home}`,
               text:`${g.awayTeamName} vs ${g.homeTeamName}`
             };
-          }) };
+            upsertGameOption(option);
+            return option;
+          });
+          return { results };
         },
         complete:function(){
           if(gameSpinner){ gameSpinner.hide(); }
@@ -784,6 +785,22 @@ worseBtn.off('click').on('click', function(){
     initSelectionElements();
     updateSelectionPlaceholder();
     updateEntryMode();
+
+    gameSelect.on('select2:selecting', function(e){
+      const data = e && e.params && e.params.args ? e.params.args.data : null;
+      const id = data && data.id != null ? String(data.id) : null;
+      if(!id) return;
+      const selected = getSelectedGameIds().map(String);
+      if(selected.includes(id)){
+        e.preventDefault();
+        const nextSelection = selected.filter(value => value !== id);
+        gameSelect.val(nextSelection).trigger('change');
+        setTimeout(function(){
+          refreshGameOptionIndicators();
+          attachDropdownObserver();
+        }, 0);
+      }
+    });
 
     gameSelect.on('select2:open', function(){
       initSelectionElements();
@@ -804,15 +821,26 @@ worseBtn.off('click').on('click', function(){
       updateSelectionPlaceholder();
     });
 
-    gameSelect.on('select2:select select2:unselect', function(){
-  // Wait one microtask for Select2 to re-render the results list
-  setTimeout(() => {
-    refreshGameOptionIndicators();     // refresh the bubbles
-    attachDropdownObserver();          // ensure live syncing continues
-    updateSelectionPlaceholder();
-    updateEntryMode();
-  }, 30); // 30ms delay is enough for Select2 to rebuild
-});
+    function scheduleSelectionSync(){
+      setTimeout(function(){
+        refreshGameOptionIndicators();
+        attachDropdownObserver();
+        updateSelectionPlaceholder();
+        updateEntryMode();
+        updateSubmitState();
+      }, 30);
+    }
+
+    gameSelect.on('select2:select', function(e){
+      if(e && e.params && e.params.data){
+        upsertGameOption(e.params.data);
+      }
+      scheduleSelectionSync();
+    });
+
+    gameSelect.on('select2:unselect', function(){
+      scheduleSelectionSync();
+    });
 
 
     function updateSubmitState(){
@@ -957,6 +985,9 @@ worseBtn.off('click').on('click', function(){
 
     gameSelect.on('change', function(){
       const dataArr = gameSelect.select2('data') || [];
+      if(Array.isArray(dataArr)){
+        dataArr.forEach(upsertGameOption);
+      }
       if(dataArr.length === 1){
         const data = dataArr[0];
         selectedGameData = {

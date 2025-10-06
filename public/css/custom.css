@@ -985,6 +985,22 @@
   width: 100%;
 }
 
+.glass-select2 .select2-selection--multiple .selected-game-chip {
+  width: 1.25rem;
+  height: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.glass-select2 .select2-selection--multiple .selected-game-chip img {
+  width: 1rem;
+  height: 1rem;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 3px rgba(15, 23, 42, 0.55));
+}
+
 .glass-select2 .select2-selection--multiple .select2-selection__choice,
 .glass-select2 .select2-selection--multiple .select2-selection__placeholder,
 .glass-select2 .select2-selection--multiple .select2-selection__choice__remove {
