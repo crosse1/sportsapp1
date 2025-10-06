@@ -115,16 +115,23 @@
       selectionElement.toggleClass('has-selection', hasSelection);
     }
 
-    function refreshGameOptionIndicators(){
-      const selectedSet = new Set(getSelectedGameIds().map(String));
-      $('.select2-container--open .select2-results__option').each(function(){
-        const $option = $(this);
-        const data = $option.data('data');
-        if(!data || !data.id) return;
-        const isSelected = selectedSet.has(String(data.id));
-        $option.find('.game-select-circle').toggleClass('filled', isSelected);
-      });
+    function refreshGameOptionIndicators() {
+  const selectedSet = new Set(getSelectedGameIds().map(String));
+  const openDropdown = document.querySelector('.select2-container--open');
+  if (!openDropdown) return;
+  const options = openDropdown.querySelectorAll('.select2-results__option');
+
+  options.forEach(option => {
+    const $option = $(option);
+    const data = $option.data('data');
+    if (!data || !data.id) return;
+    const isSelected = selectedSet.has(String(data.id));
+    const circle = $option.find('.game-select-circle');
+    if (circle.length) {
+      circle.toggleClass('filled', isSelected);
     }
+  });
+}
 
     function attachDropdownObserver(){
       if(dropdownObserver){
@@ -662,12 +669,15 @@ worseBtn.off('click').on('click', function(){
     });
 
     gameSelect.on('select2:select select2:unselect', function(){
-      setTimeout(function(){
-        refreshGameOptionIndicators();
-        updateSelectionPlaceholder();
-        updateEntryMode();
-      }, 0);
-    });
+  // Wait one microtask for Select2 to re-render the results list
+  setTimeout(() => {
+    refreshGameOptionIndicators();     // refresh the bubbles
+    attachDropdownObserver();          // ensure live syncing continues
+    updateSelectionPlaceholder();
+    updateEntryMode();
+  }, 30); // 30ms delay is enough for Select2 to rebuild
+});
+
 
     function updateSubmitState(){
       const league = leagueSelect.val();

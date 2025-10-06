@@ -612,6 +612,13 @@
     background-color: red;
 }
 
+#addGameModal .select2-selection--multiple {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  border: 1px solid rgba(15, 23, 42, 0.2); /* optional subtle outline */
+}
+
 
 
 /* Messaging modal styles */
