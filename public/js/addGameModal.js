@@ -68,6 +68,23 @@
     const select2Search = $.fn.select2 && $.fn.select2.amd ? $.fn.select2.amd.require('select2/selection/search') : null;
     let MinimalSelectionAdapter = null;
 
+    function updateSelectionDisplay(options){
+      const opts = options || {};
+      const rootSelection = (opts.selection && opts.selection.length) ? opts.selection : selectionElement;
+      if(!rootSelection || !rootSelection.length) return;
+      const rendered = rootSelection.find('.select2-selection__rendered');
+      if(!rendered.length) return;
+      let searchEl = opts.searchEl && opts.searchEl.length ? opts.searchEl : rendered.find('.select2-search--inline');
+      if(searchEl && searchEl.length && !opts.searchDetached){
+        searchEl.detach();
+      }
+      rendered.empty();
+      renderSelectionChips(rendered);
+      if(searchEl && searchEl.length){
+        rendered.append(searchEl);
+      }
+    }
+
     if(select2Utils && select2Multiple){
       MinimalSelectionAdapter = select2Multiple;
       if(select2Placeholder){
