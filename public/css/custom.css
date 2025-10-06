@@ -70,6 +70,8 @@
   border-color: rgba(255, 255, 255, 0.35);
 }
 
+
+
 .glass-select2 .game-result-option.is-selected::before {
   opacity: 1;
 }
@@ -128,7 +130,9 @@
 }
 
 .select2-container--default.glass-select2 .select2-results__option--highlighted .game-result-option::before {
+
   opacity: 0;
+
 }
 
 /* profile icon in navigation bar */
