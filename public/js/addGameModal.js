@@ -40,6 +40,8 @@
     const finalizedGames = eloGames.filter(g => g.finalized);
     const autoSubmitOverlay = $('#autoSubmitOverlay');
     const multiDuplicateWarning = $('#multiDuplicateWarning');
+    const multiSelectionNotice = $('#multiSelectionNotice');
+    const gameOptionCache = new Map();
     const highestElo = finalizedGames.reduce((m,g)=> g.elo>m ? g.elo : m, finalizedGames.length ? finalizedGames[0].elo : 0);
     const lowestElo = finalizedGames.reduce((m,g)=> g.elo<m ? g.elo : m, finalizedGames.length ? finalizedGames[0].elo : 0);
     let randomGame1 = null;
@@ -66,6 +68,23 @@
     const select2Search = $.fn.select2 && $.fn.select2.amd ? $.fn.select2.amd.require('select2/selection/search') : null;
     let MinimalSelectionAdapter = null;
 
+    function updateSelectionDisplay(options){
+      const opts = options || {};
+      const rootSelection = (opts.selection && opts.selection.length) ? opts.selection : selectionElement;
+      if(!rootSelection || !rootSelection.length) return;
+      const rendered = rootSelection.find('.select2-selection__rendered');
+      if(!rendered.length) return;
+      let searchEl = opts.searchEl && opts.searchEl.length ? opts.searchEl : rendered.find('.select2-search--inline');
+      if(searchEl && searchEl.length && !opts.searchDetached){
+        searchEl.detach();
+      }
+      rendered.empty();
+      renderSelectionChips(rendered);
+      if(searchEl && searchEl.length){
+        rendered.append(searchEl);
+      }
+    }
+
     if(select2Utils && select2Multiple){
       MinimalSelectionAdapter = select2Multiple;
       if(select2Placeholder){
@@ -88,9 +107,7 @@
           searchEl.detach();
         }
         rendered.empty();
-        if(searchEl && searchEl.length){
-          rendered.append(searchEl);
-        }
+        updateSelectionDisplay({ searchEl, searchDetached: true, selection: this.$selection });
       };
     }
 
@@ -109,29 +126,151 @@
       return ids.length ? String(ids[ids.length - 1]) : null;
     }
 
+    function normalizeHex(color){
+      if(!color && color !== 0) return null;
+      let hex = String(color).trim();
+      if(!hex) return null;
+      if(hex.startsWith('#')) hex = hex.slice(1);
+      if(hex.length === 3){
+        hex = hex.split('').map(ch => ch + ch).join('');
+      }
+      if(hex.length !== 6 || !/^[0-9a-fA-F]{6}$/.test(hex)){
+        return null;
+      }
+      return `#${hex.toLowerCase()}`;
+    }
+
+    function hexToRgba(hex, alpha){
+      const normalized = normalizeHex(hex);
+      if(!normalized) return null;
+      const value = parseInt(normalized.slice(1), 16);
+      const r = (value >> 16) & 255;
+      const g = (value >> 8) & 255;
+      const b = value & 255;
+      const clampedAlpha = Math.min(Math.max(alpha ?? 1, 0), 1);
+      return `rgba(${r}, ${g}, ${b}, ${clampedAlpha})`;
+    }
+
+    function resolveTeamColor(primary, alternate){
+      return normalizeHex(primary) || normalizeHex(alternate) || null;
+    }
+
+    function buildGradientStops(option){
+      if(!option) return {
+        away: 'rgba(20, 184, 166, 0.78)',
+        home: 'rgba(126, 34, 206, 0.78)'
+      };
+      const awayColor = resolveTeamColor(option.awayColor, option.awayAlternateColor);
+      const homeColor = resolveTeamColor(option.homeColor, option.homeAlternateColor);
+      return {
+        away: hexToRgba(awayColor, 0.82) || 'rgba(20, 184, 166, 0.78)',
+        home: hexToRgba(homeColor, 0.82) || 'rgba(126, 34, 206, 0.78)'
+      };
+    }
+
+    function resolveOpponentLogo(gameData, selectedTeamId){
+      if(!gameData) return null;
+      const normalizedTeamId = selectedTeamId != null ? String(selectedTeamId) : null;
+      const homeId = gameData.homeTeamId != null ? String(gameData.homeTeamId) : null;
+      const awayId = gameData.awayTeamId != null ? String(gameData.awayTeamId) : null;
+      if(normalizedTeamId){
+        if(normalizedTeamId === homeId){
+          return {
+            url: gameData.awayLogo || null,
+            label: gameData.awayTeamName || 'Opponent'
+          };
+        }
+        if(normalizedTeamId === awayId){
+          return {
+            url: gameData.homeLogo || null,
+            label: gameData.homeTeamName || 'Opponent'
+          };
+        }
+      }
+      if(gameData.awayLogo){
+        return {
+          url: gameData.awayLogo,
+          label: gameData.awayTeamName || 'Away team'
+        };
+      }
+      if(gameData.homeLogo){
+        return {
+          url: gameData.homeLogo,
+          label: gameData.homeTeamName || 'Home team'
+        };
+      }
+      return null;
+    }
+
+    function upsertGameOption(option){
+      if(!option || option.id == null) return;
+      const key = String(option.id);
+      gameOptionCache.set(key, Object.assign({}, option));
+    }
+
+    function resolveCachedGame(id){
+      if(id == null) return null;
+      return gameOptionCache.get(String(id)) || null;
+    }
+
+    function renderSelectionChips(target){
+      if(!target || !target.length) return;
+      const selectedIds = getSelectedGameIds();
+      if(!selectedIds.length) return;
+      const selectedTeamId = teamSelect && teamSelect.length ? teamSelect.val() : null;
+      const fragments = [];
+      selectedIds.forEach(id => {
+        let meta = resolveCachedGame(id);
+        if(!meta && gameSelect && gameSelect.length && typeof gameSelect.select2 === 'function'){
+          const currentData = gameSelect.select2('data') || [];
+          const fallbackMeta = currentData.find(item => String(item.id) === String(id));
+          if(fallbackMeta){
+            upsertGameOption(fallbackMeta);
+            meta = fallbackMeta;
+          }
+        }
+        if(!meta) return;
+        const opponent = resolveOpponentLogo(meta, selectedTeamId);
+        const fallbackLogo = meta.awayLogo || meta.homeLogo || null;
+        const logoUrl = opponent && opponent.url ? opponent.url : fallbackLogo;
+        if(!logoUrl) return;
+        const label = opponent && opponent.label ? opponent.label : (meta.text || 'Selected game');
+        const chip = $('<span>', {
+          class: 'selected-game-chip',
+          'data-game-id': id,
+          title: label
+        });
+        const img = $('<img>', {
+          src: logoUrl,
+          alt: `${label} logo`
+        });
+        chip.append(img);
+        fragments.push(chip);
+      });
+      if(fragments.length){
+        target.append(fragments);
+      }
+    }
+
     function updateSelectionPlaceholder(){
       if(!selectionElement || !selectionElement.length) return;
       const hasSelection = getSelectedGameIds().length > 0;
       selectionElement.toggleClass('has-selection', hasSelection);
+      updateSelectionDisplay();
     }
 
-    function refreshGameOptionIndicators() {
-  const selectedSet = new Set(getSelectedGameIds().map(String));
-  const openDropdown = document.querySelector('.select2-container--open');
-  if (!openDropdown) return;
-  const options = openDropdown.querySelectorAll('.select2-results__option');
-
-  options.forEach(option => {
-    const $option = $(option);
-    const data = $option.data('data');
-    if (!data || !data.id) return;
-    const isSelected = selectedSet.has(String(data.id));
-    const circle = $option.find('.game-select-circle');
-    if (circle.length) {
-      circle.toggleClass('filled', isSelected);
+    function refreshGameOptionIndicators(){
+      const selectedSet = new Set(getSelectedGameIds().map(String));
+      const openDropdown = document.querySelector('.select2-container--open');
+      if(!openDropdown) return;
+      const options = openDropdown.querySelectorAll('.game-result-option[data-game-id]');
+      options.forEach(optionEl => {
+        const id = optionEl.getAttribute('data-game-id');
+        if(!id) return;
+        const isSelected = selectedSet.has(String(id));
+        optionEl.classList.toggle('is-selected', isSelected);
+      });
     }
-  });
-}
 
     function attachDropdownObserver(){
       if(dropdownObserver){
@@ -554,22 +693,52 @@ worseBtn.off('click').on('click', function(){
       const homeLogo = option.homeLogo || '/images/placeholder.jpg';
       const awayLogo = option.awayLogo || '/images/placeholder.jpg';
       const scoreDisplay = option.scoreDisplay || '';
-      const selectedIds = new Set(getSelectedGameIds().map(String));
-      const isSelected = selectedIds.has(String(option.id));
-      const circleClass = isSelected ? 'game-select-circle filled' : 'game-select-circle';
-      return $(
-        `<div class="game-result-option game-option d-flex align-items-center justify-content-between w-100" data-game-id="${option.id}">`+
-          `<div class="d-flex align-items-center flex-grow-1 gap-2">`+
-            `<span class="${circleClass}" aria-hidden="true"></span>`+
-            `<img src="${awayLogo}" class="game-result-logo">`+
-            `<span class="fw-semibold text-white">${option.awayTeamName}</span>`+
-            `<span class="text-white-50">@</span>`+
-            `<img src="${homeLogo}" class="game-result-logo">`+
-            `<span class="fw-semibold text-white">${option.homeTeamName}</span>`+
-          `</div>`+
-          `<span class="game-result-score text-white-50 ms-3">${scoreDisplay}</span>`+
-        `</div>`
-      );
+      const gradients = buildGradientStops(option);
+      const container = $('<div>', {
+        class: 'game-result-option d-flex align-items-center justify-content-between w-100',
+        'data-game-id': option.id
+      });
+      container.css('--game-away-color', gradients.away);
+      container.css('--game-home-color', gradients.home);
+
+      const teamsWrapper = $('<div>', {
+        class: 'd-flex align-items-center flex-grow-1 gap-2'
+      });
+
+      teamsWrapper.append($('<img>', {
+        src: awayLogo,
+        class: 'game-result-logo',
+        alt: `${option.awayTeamName || 'Away team'} logo`
+      }));
+
+      teamsWrapper.append($('<span>', {
+        class: 'fw-semibold text-white',
+        text: option.awayTeamName || ''
+      }));
+
+      teamsWrapper.append($('<span>', {
+        class: 'text-white-50',
+        text: '@'
+      }));
+
+      teamsWrapper.append($('<img>', {
+        src: homeLogo,
+        class: 'game-result-logo',
+        alt: `${option.homeTeamName || 'Home team'} logo`
+      }));
+
+      teamsWrapper.append($('<span>', {
+        class: 'fw-semibold text-white',
+        text: option.homeTeamName || ''
+      }));
+
+      const scoreWrapper = $('<span>', {
+        class: 'game-result-score text-white-50 ms-3',
+        text: scoreDisplay
+      });
+
+      container.append(teamsWrapper, scoreWrapper);
+      return container;
     }
 
     teamSelect.select2({
@@ -620,16 +789,22 @@ worseBtn.off('click').on('click', function(){
           };
         },
         processResults:function(data){
-          return { results:data.map(g=>{
+          const results = data.map(g=>{
             const parts = g.score.split('-');
             const home = parts[0] || '';
             const away = parts[1] || '';
-            return {
+            const option = {
               id:g.id,
               homeTeamName:g.homeTeamName,
               awayTeamName:g.awayTeamName,
               homeLogo:g.homeLogo,
               awayLogo:g.awayLogo,
+              homeTeamId:g.homeTeamId,
+              awayTeamId:g.awayTeamId,
+              homeColor:g.homeColor,
+              homeAlternateColor:g.homeAlternateColor,
+              awayColor:g.awayColor,
+              awayAlternateColor:g.awayAlternateColor,
               score:g.score,
               homePoints:g.homePoints,
               awayPoints:g.awayPoints,
@@ -637,7 +812,10 @@ worseBtn.off('click').on('click', function(){
               scoreDisplay:`${away}-${home}`,
               text:`${g.awayTeamName} vs ${g.homeTeamName}`
             };
-          }) };
+            upsertGameOption(option);
+            return option;
+          });
+          return { results };
         },
         complete:function(){
           if(gameSpinner){ gameSpinner.hide(); }
@@ -648,6 +826,22 @@ worseBtn.off('click').on('click', function(){
     initSelectionElements();
     updateSelectionPlaceholder();
     updateEntryMode();
+
+    gameSelect.on('select2:selecting', function(e){
+      const data = e && e.params && e.params.args ? e.params.args.data : null;
+      const id = data && data.id != null ? String(data.id) : null;
+      if(!id) return;
+      const selected = getSelectedGameIds().map(String);
+      if(selected.includes(id)){
+        e.preventDefault();
+        const nextSelection = selected.filter(value => value !== id);
+        gameSelect.val(nextSelection).trigger('change');
+        setTimeout(function(){
+          refreshGameOptionIndicators();
+          attachDropdownObserver();
+        }, 0);
+      }
+    });
 
     gameSelect.on('select2:open', function(){
       initSelectionElements();
@@ -668,15 +862,26 @@ worseBtn.off('click').on('click', function(){
       updateSelectionPlaceholder();
     });
 
-    gameSelect.on('select2:select select2:unselect', function(){
-  // Wait one microtask for Select2 to re-render the results list
-  setTimeout(() => {
-    refreshGameOptionIndicators();     // refresh the bubbles
-    attachDropdownObserver();          // ensure live syncing continues
-    updateSelectionPlaceholder();
-    updateEntryMode();
-  }, 30); // 30ms delay is enough for Select2 to rebuild
-});
+    function scheduleSelectionSync(){
+      setTimeout(function(){
+        refreshGameOptionIndicators();
+        attachDropdownObserver();
+        updateSelectionPlaceholder();
+        updateEntryMode();
+        updateSubmitState();
+      }, 30);
+    }
+
+    gameSelect.on('select2:select', function(e){
+      if(e && e.params && e.params.data){
+        upsertGameOption(e.params.data);
+      }
+      scheduleSelectionSync();
+    });
+
+    gameSelect.on('select2:unselect', function(){
+      scheduleSelectionSync();
+    });
 
 
     function updateSubmitState(){
@@ -702,25 +907,56 @@ worseBtn.off('click').on('click', function(){
       updateDuplicateWarning(selected);
     }
 
+    function setGhostState($el, shouldGhost){
+      if(!$el || !$el.length) return;
+      if(shouldGhost){
+        $el.addClass('ghost-element');
+        $el.attr('aria-hidden', 'true');
+      } else {
+        $el.removeClass('ghost-element');
+        $el.removeAttr('aria-hidden');
+      }
+    }
+
     function updateEntryMode(){
       const selected = getSelectedGameIds();
       const multiSelected = selected.length > 1;
 
       if(commentGroup && commentGroup.length){
-        commentGroup.toggleClass('d-none', multiSelected);
+        commentGroup.removeClass('d-none');
+        setGhostState(commentGroup, multiSelected);
       }
 
       if(photoGroup && photoGroup.length){
-        photoGroup.toggleClass('d-none', multiSelected);
+        photoGroup.removeClass('d-none');
+        setGhostState(photoGroup, multiSelected);
       }
 
       if(ratingGroup && ratingGroup.length){
-        const shouldShowRating = !multiSelected && gameEntryCount < 5;
-        if(shouldShowRating){
+        const ratingEligible = gameEntryCount < 5;
+        if(ratingEligible){
           ratingGroup.removeClass('d-none').show();
+          setGhostState(ratingGroup, multiSelected);
         } else {
+          setGhostState(ratingGroup, false);
           ratingGroup.addClass('d-none').hide();
         }
+      }
+
+      if(multiSelectionNotice && multiSelectionNotice.length){
+        multiSelectionNotice.toggleClass('d-none', !multiSelected);
+      }
+
+      if(nextBtn && nextBtn.length){
+        if(multiSelected || (infoStep && !infoStep.is(':visible')) || gameEntryCount < 5){
+          nextBtn.hide();
+        } else {
+          nextBtn.show();
+        }
+      }
+
+      if(submitBtn && submitBtn.length){
+        submitBtn.text(multiSelected ? 'Add Selected Games' : originalSubmitLabel);
       }
 
       if(commentInput && commentInput.length && commentFieldName){
@@ -790,6 +1026,9 @@ worseBtn.off('click').on('click', function(){
 
     gameSelect.on('change', function(){
       const dataArr = gameSelect.select2('data') || [];
+      if(Array.isArray(dataArr)){
+        dataArr.forEach(upsertGameOption);
+      }
       if(dataArr.length === 1){
         const data = dataArr[0];
         selectedGameData = {
