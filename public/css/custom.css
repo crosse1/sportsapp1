@@ -70,6 +70,7 @@
   border-color: rgba(255, 255, 255, 0.35);
 }
 
+.glass-select2 .game-result-option:hover::before,
 .glass-select2 .game-result-option.is-selected::before {
   opacity: 1;
 }
@@ -128,7 +129,7 @@
 }
 
 .select2-container--default.glass-select2 .select2-results__option--highlighted .game-result-option::before {
-  opacity: 0;
+  opacity: 1;
 }
 
 /* profile icon in navigation bar */
@@ -1033,10 +1034,27 @@
   display: block;
 }
 
-.ghost-element {
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
+#addGameModal .selected-game-logos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 1.5rem;
+}
+
+#addGameModal .selected-game-logo {
+  width: 1.25rem;
+  height: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#addGameModal .selected-game-logo img {
+  width: 1rem;
+  height: 1rem;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 3px rgba(15, 23, 42, 0.55));
 }
 
 .select2-container--default.select2-container--open .select2-selection--single {
