@@ -91,15 +91,25 @@
         if(!logoUrl) return;
         const label = opponent && opponent.label ? opponent.label : (meta.text || 'Selected game');
         const chip = $('<span>', {
-          class: 'selected-game-chip',
-          'data-game-id': id,
-          title: label
-        });
-        const img = $('<img>', {
-          src: logoUrl,
-          alt: `${label} logo`
-        });
-        chip.append(img);
+  class: 'selected-game-chip glass-tile',
+  'data-game-id': id,
+  title: label
+});
+
+const img = $('<img>', {
+  src: logoUrl,
+  alt: `${label} logo`,
+  class: 'selected-game-logo'
+});
+
+const closeBtn = $('<button>', {
+  type: 'button',
+  class: 'chip-close-btn',
+  html: '&times;', // the small white x
+  'aria-label': 'Remove selection'
+});
+
+chip.append(img, closeBtn);
         fragments.push(chip);
       });
       if(fragments.length){
@@ -151,6 +161,14 @@
         updateSelectionDisplay({ searchEl, searchDetached: true, selection: this.$selection });
       };
     }
+
+    $(document).on('click', '#addGameModal .selected-game-chip', function(e) {
+  e.preventDefault();
+  const id = $(this).data('game-id');
+  const current = gameSelect.val() || [];
+  const updated = current.filter(v => String(v) !== String(id));
+  gameSelect.val(updated).trigger('change');
+});
 
     function getSelectedGameIds(){
       if(!gameSelect || !gameSelect.length) return [];

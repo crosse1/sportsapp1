@@ -618,6 +618,83 @@
     object-fit: contain;
 }
 
+#addGameModal .selected-game-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255,255,255,0.1); /* optional subtle background */
+}
+
+#addGameModal .selected-game-chip img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+#addGameModal .selected-game-chip.glass-tile {
+  position: relative;
+  width: 70px;
+  height: 70px;
+  border-radius: 14px;
+  margin: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: default;
+}
+
+#addGameModal .selected-game-chip.glass-tile:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+
+/* Logo inside tile */
+#addGameModal .selected-game-logo {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+/* Close button (white ×) */
+#addGameModal .chip-close-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 18px;
+  height: 18px;
+  line-height: 16px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  z-index: 2;
+}
+
+#addGameModal .chip-close-btn:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
 .team-logo-detail.home-logo {}
 
 .team-logo-detail.away-logo {}
