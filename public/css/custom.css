@@ -1041,12 +1041,6 @@
   filter: drop-shadow(0 1px 3px rgba(15, 23, 42, 0.55));
 }
 
-.ghost-element {
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
 .select2-container--default.select2-container--open .select2-selection--single {
   background-color: rgba(255, 255, 255, 0.25) !important;
 }
