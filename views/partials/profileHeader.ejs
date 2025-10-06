@@ -252,28 +252,30 @@
                                 <span class="visually-hidden">Loading...</span>
                             </div>
                         </div>
-                        <small id="multiSelectionNotice" class="text-info d-none">Selecting multiple games will skip rating and comment fields. They'll be saved for you to finish later.</small>
+                        <small id="multiSelectionNotice" class="text-info d-none">Selecting multiple games will skip rating, photo, and comment fields. Use the Submit Selected button below to add them now and finish details later.</small>
                         <small id="multiDuplicateWarning" class="text-warning d-none">One or more selected games are already on your list.</small>
                     </div>
-                    <div class="mb-3 position-relative" id="ratingGroup">
-                        <label class="form-label d-flex justify-content-between">
-                            <span>Rating:</span>
-                            <span id="ratingValue" class="fw-bold text-white">5</span>
-                        </label>
-                        <div class="glass-range-wrapper">
-                            <input type="range" id="ratingRange" name="rating" class="form-range glass-control" min="1" max="10" step="0.1" value="5" required>
+                    <div id="singleGameFields" class="single-game-fields">
+                        <div class="mb-3 position-relative" id="ratingGroup">
+                            <label class="form-label d-flex justify-content-between">
+                                <span>Rating:</span>
+                                <span id="ratingValue" class="fw-bold text-white">5</span>
+                            </label>
+                            <div class="glass-range-wrapper">
+                                <input type="range" id="ratingRange" name="rating" class="form-range glass-control" min="1" max="10" step="0.1" value="5" required>
+                            </div>
                         </div>
-                    </div>
-                    <div class="mb-3" id="photoGroup">
-                        <label class="form-label">Photo</label>
-                        <input type="file" id="photoInput" name="photo" class="form-control glass-control">
-                    </div>
-                    <div class="mb-3" id="commentGroup">
-                        <label class="form-label d-flex justify-content-between">
-                            <span>Comment</span>
-                            <small id="commentCounter">0/100</small>
-                        </label>
-                        <textarea id="commentInput" class="form-control glass-control" name="comment" rows="3" maxlength="100"></textarea>
+                        <div class="mb-3" id="photoGroup">
+                            <label class="form-label">Photo</label>
+                            <input type="file" id="photoInput" name="photo" class="form-control glass-control">
+                        </div>
+                        <div class="mb-3" id="commentGroup">
+                            <label class="form-label d-flex justify-content-between">
+                                <span>Comment</span>
+                                <small id="commentCounter">0/100</small>
+                            </label>
+                            <textarea id="commentInput" class="form-control glass-control" name="comment" rows="3" maxlength="100"></textarea>
+                        </div>
                     </div>
                     <input type="hidden" name="compareGameId1" id="compareGameId1">
                     <input type="hidden" name="winner1" id="winnerInput1">
@@ -299,6 +301,7 @@
                 <div class="modal-footer border-0">
                     <button type="button" id="nextBtn" class="btn btn-primary">Next</button>
                     <button type="submit" id="submitGameBtn" class="btn btn-primary" disabled>Submit</button>
+                    <button type="button" id="multiSubmitBtn" class="btn gradient-glass-btn ms-auto d-none">Submit Selected</button>
                 </div>
             </form>
             <div id="autoSubmitOverlay" class="loading-overlay" style="display:none;">

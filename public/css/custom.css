@@ -661,6 +661,18 @@
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
 }
 
+#addGameModal .single-game-fields {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 320px;
+}
+
+#addGameModal #multiSubmitBtn {
+  min-width: 170px;
+  font-weight: 600;
+}
+
 /* Logo inside tile */
 #addGameModal .selected-game-logo {
   width: 80%;
