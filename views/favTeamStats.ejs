@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= team.school %> Fans</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: radial-gradient(circle at top left, rgba(20, 184, 166, 0.25), rgba(126, 34, 206, 0.2));
+            color: #fff;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #14b8a6, #7e22ce);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .fav-team-heading {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+
+        .team-chip {
+            min-width: 220px;
+            border-radius: 999px;
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 18px 36px rgba(15, 23, 42, 0.25);
+            backdrop-filter: blur(12px);
+        }
+
+        .team-chip img {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: contain;
+            background: #fff;
+        }
+
+        .stats-grid {
+            display: grid;
+            gap: 2rem;
+        }
+
+        @media (min-width: 992px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .stats-grid > .stat-block:nth-child(3) {
+                grid-column: 1 / -1;
+                justify-self: center;
+                width: min(100%, 640px);
+            }
+        }
+
+        @media (max-width: 991.98px) {
+            .stats-grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
+        .stat-block {
+            position: relative;
+            overflow: hidden;
+            border-radius: 1rem;
+            background-color: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            backdrop-filter: blur(12px);
+            min-height: 12rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-block::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            padding: 2px;
+            border-radius: 1rem;
+            background: linear-gradient(135deg, rgba(20, 184, 166, 0.65), rgba(126, 34, 206, 0.65));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        .stat-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            gap: 1.5rem;
+            padding: 1.75rem;
+            align-items: stretch;
+        }
+
+        .stat-left {
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 140px;
+        }
+
+        .stat-right {
+            flex: 1 1 auto;
+            display: grid;
+            grid-template-columns: 1fr 3fr 1fr;
+            align-items: center;
+            row-gap: 0.65rem;
+            column-gap: 0.75rem;
+        }
+
+        .stat-number {
+            font-size: clamp(3rem, 6vw, 5rem);
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .stat-label {
+            margin-top: 0.5rem;
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+        }
+
+        .stat-label:hover {
+            transform: scale(1.04);
+        }
+
+        .top-list-item,
+        .venue-name-text,
+        .venue-count {
+            font-weight: 600;
+        }
+
+        .venue-name {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .venue-name img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #fff;
+        }
+
+        .stat-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.65);
+            font-weight: 500;
+        }
+
+        .record-card,
+        .leaderboard-card {
+            margin-top: 2.5rem;
+            border-radius: 1rem;
+            padding: 2rem;
+            background: rgba(15, 23, 42, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 18px 48px rgba(15, 23, 42, 0.35);
+        }
+
+        .record-card h3 {
+            font-weight: 800;
+        }
+
+        .record-subtext {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .leaderboard-table thead {
+            background: linear-gradient(135deg, rgba(20, 184, 166, 0.2), rgba(126, 34, 206, 0.2));
+            color: #fff;
+        }
+
+        .leaderboard-table tbody tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .leaderboard-table tbody tr.current-user-row {
+            background: linear-gradient(135deg, rgba(20, 184, 166, 0.25), rgba(126, 34, 206, 0.25));
+        }
+
+        .leaderboard-table td,
+        .leaderboard-table th {
+            color: #fff;
+            vertical-align: middle;
+        }
+
+        .games-toggle-wrapper {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.15rem 0.35rem;
+            border-radius: 999px;
+            backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .games-toggle {
+            position: relative;
+            width: 56px;
+            height: 28px;
+            border-radius: 999px;
+            padding: 2px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.25);
+            display: inline-flex;
+            align-items: center;
+            transition: box-shadow 0.3s ease, background 0.3s ease;
+        }
+
+        .games-toggle input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .games-toggle .toggle-track {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: linear-gradient(135deg, rgba(20, 184, 166, 0.25), rgba(126, 34, 206, 0.25));
+            transition: background 0.3s ease, opacity 0.3s ease;
+        }
+
+        .games-toggle .toggle-thumb {
+            position: relative;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.85);
+            box-shadow: 0 6px 14px rgba(15, 23, 42, 0.3);
+            transform: translateX(0);
+            transition: transform 0.35s ease, background 0.35s ease;
+        }
+
+        .games-toggle input:checked ~ .toggle-track {
+            background: linear-gradient(135deg, rgba(20, 184, 166, 0.85), rgba(126, 34, 206, 0.85));
+        }
+
+        .games-toggle input:checked ~ .toggle-thumb {
+            transform: translateX(28px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .games-toggle-option {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.65);
+            transition: opacity 0.3s ease, color 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .games-toggle-option.active {
+            opacity: 1;
+            color: transparent;
+            background: linear-gradient(135deg, #14b8a6, #7e22ce);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .top-game-link {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            align-items: center;
+            text-decoration: none;
+            gap: 0.5rem;
+            padding-right: 0.25rem;
+        }
+
+        .top-game-link:hover {
+            transform: scale(1.02);
+        }
+
+        .game-matchup {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+        }
+
+        .game-matchup .d-flex {
+            gap: 0.5rem;
+        }
+
+        .game-logo-sm {
+            width: 28px;
+            height: 28px;
+            object-fit: cover;
+            border-radius: 50%;
+            background: #fff;
+        }
+
+        #gamesModalBody,
+        #checkedInModalBody {
+            transition: opacity 0.35s ease, transform 0.35s ease;
+        }
+
+        #gamesModalBody.is-sorting,
+        #checkedInModalBody.is-sorting {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+
+        #gamesModalBody.is-sorted,
+        #checkedInModalBody.is-sorted {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .table-responsive {
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+
+        .leaderboard-card h3 {
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .team-chip strong {
+            display: block;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .team-chip span {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.75);
+        }
+    </style>
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <%- include('partials/header') %>
+    <%- include('partials/profileHeader', { user, isCurrentUser, isFollowing, canMessage, viewer, activeTab }) %>
+
+    <div class="container my-4 flex-grow-1">
+        <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center justify-content-between gap-4 mb-4">
+            <div>
+                <h1 class="fav-team-heading gradient-text"><%= team.school %> Fans</h1>
+                <p class="text-white-50 mb-0">Personal and community stats for every time <%= team.school %> takes the field.</p>
+            </div>
+            <div class="team-chip">
+                <img src="<%= team.logos && team.logos[0] ? team.logos[0] : '/images/placeholder.jpg' %>" alt="<%= team.school %> logo">
+                <div>
+                    <strong><%= team.mascot ? team.mascot : team.school %></strong>
+                    <span><%= communityCount %> fan<%= communityCount === 1 ? '' : 's' %> tracking this team</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-block">
+                <div class="stat-content">
+                    <div class="stat-left text-center">
+                        <div id="gamesCount" class="stat-number gradient-text">0</div>
+                        <div id="gamesHeader" class="stat-label gradient-text">Games</div>
+                    </div>
+                    <div id="gamesTop" class="stat-right"></div>
+                </div>
+            </div>
+
+            <div class="stat-block">
+                <div class="stat-content">
+                    <div class="stat-left text-center">
+                        <div id="checkedInCount" class="stat-number gradient-text">0</div>
+                        <div id="checkedInHeader" class="stat-label gradient-text">Checked-In</div>
+                    </div>
+                    <div id="checkedInTop" class="stat-right"></div>
+                </div>
+            </div>
+
+            <div class="stat-block">
+                <div class="stat-content">
+                    <div class="stat-left text-center">
+                        <div id="venuesCount" class="stat-number gradient-text">0</div>
+                        <div id="venuesHeader" class="stat-label gradient-text">Venues Watched</div>
+                    </div>
+                    <div id="venuesTop" class="stat-right"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="record-card mt-5">
+            <h3 class="gradient-text mb-3">Record When Seen:</h3>
+            <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
+                <div>
+                    <% const tieSuffix = recordSummary.ties > 0 ? '-' + recordSummary.ties : '' %>
+                    <h2 class="display-5 fw-bold mb-1"><%= recordSummary.wins %>-<%= recordSummary.losses %><%= tieSuffix %></h2>
+                    <p class="mb-0 text-white-50">Across <%= recordSummary.totalEntries %> tracked appearance<%= recordSummary.totalEntries === 1 ? '' : 's' %>.</p>
+                </div>
+                <div class="text-md-end">
+                    <% if (recordSummary.decisions > 0) { %>
+                        <div class="fs-4 fw-semibold gradient-text"><%= (recordSummary.winPct * 100).toFixed(1) %>% win rate</div>
+                    <% } else { %>
+                        <div class="fs-4 fw-semibold gradient-text">No final scores logged yet</div>
+                    <% } %>
+                    <% if (recordSummary.rank) { %>
+                        <div class="record-subtext gradient-text"><%= recordSummary.ordinalRank %> best record with at least <%= minEntriesForRank %> entries (<%= recordSummary.totalRanked %> eligible fans)</div>
+                    <% } else { %>
+                        <div class="record-subtext gradient-text">Log at least <%= minEntriesForRank %> games with final scores to join the rankings.</div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <div class="leaderboard-card mt-5">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+                <h3 class="mb-0 gradient-text">Top Fans</h3>
+                <span class="text-white-50">Ranked by total games featuring <%= team.school %></span>
+            </div>
+            <div class="table-responsive">
+                <table class="table leaderboard-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Rank</th>
+                            <th scope="col">Username</th>
+                            <th scope="col" class="text-end">Games</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (!leaderboard.length) { %>
+                            <tr>
+                                <td colspan="3" class="text-center text-white-50 py-4">No fans have logged games with this team yet.</td>
+                            </tr>
+                        <% } else { %>
+                            <% leaderboard.forEach(row => { %>
+                                <tr class="<%= row.isCurrent ? 'current-user-row' : '' %>">
+                                    <td><%= row.rank %></td>
+                                    <td>
+                                        <a href="/profile/<%= row.identifier %>/stats" class="text-decoration-none text-white fw-semibold">
+                                            <%= row.username %>
+                                        </a>
+                                    </td>
+                                    <td class="text-end fw-semibold"><%= row.gameCount %></td>
+                                </tr>
+                            <% }) %>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade user-search-modal" id="gamesModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-3">
+                <div class="modal-header border-0">
+                    <div class="d-flex align-items-center gap-3 flex-wrap flex-grow-1">
+                        <h5 class="modal-title mb-0">All Games</h5>
+                        <div class="games-toggle-wrapper ms-auto">
+                            <span class="games-toggle-option active" data-games-sort-label="recent">Recent</span>
+                            <label class="games-toggle mb-0" for="gamesSortToggle">
+                                <input type="checkbox" id="gamesSortToggle" aria-label="Toggle game order between recent and rating">
+                                <span class="toggle-track"></span>
+                                <span class="toggle-thumb"></span>
+                            </label>
+                            <span class="games-toggle-option" data-games-sort-label="rating">Rating</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="gamesModalBody" class="d-flex flex-column gap-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade user-search-modal" id="checkedInModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-3">
+                <div class="modal-header border-0">
+                    <div class="d-flex align-items-center gap-3 flex-wrap flex-grow-1">
+                        <h5 class="modal-title mb-0">Checked-In Games</h5>
+                        <div class="games-toggle-wrapper ms-auto">
+                            <span class="games-toggle-option active" data-checked-sort-label="recent">Recent</span>
+                            <label class="games-toggle mb-0" for="checkedInSortToggle">
+                                <input type="checkbox" id="checkedInSortToggle" aria-label="Toggle checked-in order between recent and rating">
+                                <span class="toggle-track"></span>
+                                <span class="toggle-thumb"></span>
+                            </label>
+                            <span class="games-toggle-option" data-checked-sort-label="rating">Rating</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="checkedInModalBody" class="d-flex flex-column gap-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade user-search-modal" id="venuesModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-3">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">Venues Watched</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="venuesModalBody" class="d-grid" style="grid-template-columns: 1fr 3fr 1fr; row-gap:0.5rem; column-gap:0.75rem;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function(){
+        const gamesData = <%- JSON.stringify(games || []) %>;
+        const checkedInData = <%- JSON.stringify(checkedInGames || []) %>;
+        const venuesData = <%- JSON.stringify(venuesData || []) %>;
+
+        let gamesSortMode = 'recent';
+        let checkedSortMode = 'recent';
+        let gamesSortAnimationHandle = null;
+        let gamesSortCleanupHandle = null;
+        let checkedSortAnimationHandle = null;
+        let checkedSortCleanupHandle = null;
+
+        function formatGameDate(value){
+            if(!value) return '';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return '';
+            return new Intl.DateTimeFormat(navigator.language, { dateStyle: 'medium' }).format(date);
+        }
+
+        function computeRankMap(games){
+            const map = new Map();
+            if (!games.length) return map;
+            const ratingCounts = {};
+            games.forEach(g => {
+                if (typeof g.rating === 'number' && !Number.isNaN(g.rating)) {
+                    const key = g.rating.toFixed(1);
+                    ratingCounts[key] = (ratingCounts[key] || 0) + 1;
+                }
+            });
+            let prevKey = null;
+            let rankIndex = 0;
+            let displayRank = 0;
+            games.forEach((g, index) => {
+                const id = g.id || `game-${index}`;
+                if (typeof g.rating === 'number' && !Number.isNaN(g.rating)) {
+                    const ratingKey = g.rating.toFixed(1);
+                    rankIndex++;
+                    if (ratingKey !== prevKey) displayRank = rankIndex;
+                    const prefix = ratingCounts[ratingKey] > 1 ? 'T-' : '';
+                    map.set(id, `${prefix}${displayRank}.`);
+                    prevKey = ratingKey;
+                } else {
+                    map.set(id, '');
+                }
+            });
+            return map;
+        }
+
+        function buildGameRows(games, rankMap){
+            if (!games.length) {
+                return '<div class="stat-empty">No games yet.</div>';
+            }
+            return games.map((g, index) => {
+                const id = g.id || `game-${index}`;
+                const rankLabel = rankMap.get(id) || `${index + 1}.`;
+                const ratingText = typeof g.rating === 'number' && !Number.isNaN(g.rating) ? g.rating.toFixed(1) : '—';
+                const link = g.link || '#';
+                const dateText = formatGameDate(g.startDate);
+                const awayLogo = g.awayLogo || '/images/placeholder.jpg';
+                const homeLogo = g.homeLogo || '/images/placeholder.jpg';
+                return `
+                    <a href="${link}" class="top-game-link">
+                        <div class="game-rank gradient-text fw-semibold">${rankLabel}</div>
+                        <div class="game-matchup">
+                            <div class="gradient-text small fw-light game-date">${dateText}</div>
+                            <div class="d-flex align-items-center justify-content-center flex-wrap">
+                                <img src="${awayLogo}" class="game-logo-sm" alt="${g.awayTeamName || ''}">
+                                <span class="gradient-text">@</span>
+                                <img src="${homeLogo}" class="game-logo-sm" alt="${g.homeTeamName || ''}">
+                            </div>
+                        </div>
+                        <div class="game-rating gradient-text fw-semibold text-end">${ratingText}</div>
+                    </a>
+                `;
+            }).join('');
+        }
+
+        function buildVenueRows(entries){
+            if (!entries.length) {
+                return '<div class="stat-empty">No venues yet.</div>';
+            }
+            let prevCount = null;
+            let rank = 0;
+            let displayRank = 0;
+            return entries.map((item, index) => {
+                const count = item.count || 0;
+                rank++;
+                if (count !== prevCount) {
+                    displayRank = rank;
+                }
+                const tieCount = entries.filter(e => e.count === count).length;
+                const prefix = tieCount > 1 ? 'T-' : '';
+                prevCount = count;
+                const venue = item.venue || {};
+                const img = venue.imgUrl || '/images/stadium.png';
+                const name = venue.name || 'Unknown Venue';
+                return `
+                    <div class="top-list-item">${prefix}${displayRank}.</div>
+                    <div class="venue-name">
+                        <img src="${img}" alt="${name}">
+                        <span class="venue-name-text gradient-text">${name}</span>
+                    </div>
+                    <div class="venue-count gradient-text">${count}</div>
+                `;
+            }).join('');
+        }
+
+        function buildVenueModalRows(entries){
+            if (!entries.length) {
+                return '<div class="stat-empty">No venues yet.</div>';
+            }
+            let prevCount = null;
+            let rank = 0;
+            let displayRank = 0;
+            return entries.map(item => {
+                const count = item.count || 0;
+                rank++;
+                if (count !== prevCount) {
+                    displayRank = rank;
+                }
+                const tieCount = entries.filter(e => e.count === count).length;
+                const prefix = tieCount > 1 ? 'T-' : '';
+                prevCount = count;
+                const venue = item.venue || {};
+                const img = venue.imgUrl || '/images/stadium.png';
+                const name = venue.name || 'Unknown Venue';
+                return `
+                    <div class="top-list-item">${prefix}${displayRank}.</div>
+                    <div class="venue-name">
+                        <img src="${img}" alt="${name}">
+                        <span class="venue-name-text gradient-text">${name}</span>
+                    </div>
+                    <div class="venue-count gradient-text">${count}</div>
+                `;
+            }).join('');
+        }
+
+        function gameTimestamp(game){
+            if (!game || !game.startDate) return 0;
+            const time = new Date(game.startDate).getTime();
+            return Number.isFinite(time) ? time : 0;
+        }
+
+        function sortGamesByRating(data){
+            return [...data].sort((a, b) => {
+                const ratingA = typeof a.rating === 'number' ? a.rating : -Infinity;
+                const ratingB = typeof b.rating === 'number' ? b.rating : -Infinity;
+                if (ratingB !== ratingA) return ratingB - ratingA;
+                return (b.timestamp || 0) - (a.timestamp || 0);
+            });
+        }
+
+        function sortGamesByRecent(data){
+            return [...data].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        }
+
+        function setToggleLabels(attribute, mode){
+            document.querySelectorAll(`[${attribute}]`).forEach(el => {
+                const value = el.getAttribute(attribute);
+                el.classList.toggle('active', value === mode);
+            });
+        }
+
+        function renderGameSection({ data, countId, topId, headerId, modalId, modalBodyId, toggleId, attribute, sortState, animationHandles }){
+            const countEl = document.getElementById(countId);
+            if (countEl) countEl.textContent = data.length;
+
+            const byRating = sortGamesByRating(data);
+            const byRecent = sortGamesByRecent(data);
+            const rankMap = computeRankMap(byRating);
+
+            const topEl = document.getElementById(topId);
+            if (topEl) {
+                if (data.length) topEl.innerHTML = buildGameRows(byRating.slice(0, 3), rankMap);
+                else topEl.innerHTML = '<div class="stat-empty">No games yet.</div>';
+            }
+
+            const modal = document.getElementById(modalId);
+            const modalBody = document.getElementById(modalBodyId);
+            const toggle = document.getElementById(toggleId);
+
+            function getSorted(mode){
+                return mode === 'rating' ? byRating : byRecent;
+            }
+
+            function renderModal(mode, options = {}){
+                if (!modalBody) return;
+                const animate = options.animate !== false;
+                const games = getSorted(mode);
+
+                if (animationHandles.sortHandle) {
+                    clearTimeout(animationHandles.sortHandle);
+                    animationHandles.sortHandle = null;
+                }
+                if (animationHandles.cleanupHandle) {
+                    clearTimeout(animationHandles.cleanupHandle);
+                    animationHandles.cleanupHandle = null;
+                }
+
+                if (!animate) {
+                    modalBody.classList.remove('is-sorting', 'is-sorted');
+                    modalBody.innerHTML = buildGameRows(games, rankMap);
+                    return;
+                }
+
+                modalBody.classList.remove('is-sorted');
+                modalBody.classList.add('is-sorting');
+
+                animationHandles.sortHandle = setTimeout(() => {
+                    modalBody.innerHTML = buildGameRows(games, rankMap);
+                    requestAnimationFrame(() => {
+                        modalBody.classList.remove('is-sorting');
+                        modalBody.classList.add('is-sorted');
+                        animationHandles.cleanupHandle = setTimeout(() => {
+                            modalBody.classList.remove('is-sorted');
+                            animationHandles.cleanupHandle = null;
+                        }, 450);
+                    });
+                    animationHandles.sortHandle = null;
+                }, 180);
+            }
+
+            const header = document.getElementById(headerId);
+            if (header && modal) {
+                header.addEventListener('click', () => {
+                    if (toggle) {
+                        toggle.checked = (sortState.value === 'rating');
+                    }
+                    setToggleLabels(attribute, sortState.value);
+                    renderModal(sortState.value, { animate: false });
+                    bootstrap.Modal.getOrCreateInstance(modal).show();
+                });
+            }
+
+            if (toggle) {
+                toggle.checked = sortState.value === 'rating';
+                toggle.addEventListener('change', event => {
+                    sortState.value = event.target.checked ? 'rating' : 'recent';
+                    setToggleLabels(attribute, sortState.value);
+                    renderModal(sortState.value);
+                });
+            }
+
+            setToggleLabels(attribute, sortState.value);
+
+            if (modal) {
+                modal.addEventListener('show.bs.modal', () => {
+                    if (toggle) toggle.checked = sortState.value === 'rating';
+                    setToggleLabels(attribute, sortState.value);
+                    renderModal(sortState.value, { animate: false });
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderGameSection({
+                data: gamesData,
+                countId: 'gamesCount',
+                topId: 'gamesTop',
+                headerId: 'gamesHeader',
+                modalId: 'gamesModal',
+                modalBodyId: 'gamesModalBody',
+                toggleId: 'gamesSortToggle',
+                attribute: 'data-games-sort-label',
+                sortState: { value: gamesSortMode },
+                animationHandles: { sortHandle: gamesSortAnimationHandle, cleanupHandle: gamesSortCleanupHandle }
+            });
+
+            renderGameSection({
+                data: checkedInData,
+                countId: 'checkedInCount',
+                topId: 'checkedInTop',
+                headerId: 'checkedInHeader',
+                modalId: 'checkedInModal',
+                modalBodyId: 'checkedInModalBody',
+                toggleId: 'checkedInSortToggle',
+                attribute: 'data-checked-sort-label',
+                sortState: { value: checkedSortMode },
+                animationHandles: { sortHandle: checkedSortAnimationHandle, cleanupHandle: checkedSortCleanupHandle }
+            });
+
+            const venuesCount = document.getElementById('venuesCount');
+            if (venuesCount) venuesCount.textContent = venuesData.length;
+            const venuesTop = document.getElementById('venuesTop');
+            if (venuesTop) {
+                venuesTop.innerHTML = venuesData.length ? buildVenueRows(venuesData.slice(0, 3)) : '<div class="stat-empty">No venues yet.</div>';
+            }
+            const venuesHeader = document.getElementById('venuesHeader');
+            const venuesModal = document.getElementById('venuesModal');
+            if (venuesHeader && venuesModal) {
+                venuesHeader.addEventListener('click', () => {
+                    const body = document.getElementById('venuesModalBody');
+                    if (body) body.innerHTML = buildVenueModalRows(venuesData);
+                    bootstrap.Modal.getOrCreateInstance(venuesModal).show();
+                });
+            }
+        });
+    })();
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="/js/profileModals.js"></script>
+    <script>
+        window.existingGameIds = <%- JSON.stringify((user.gameEntries || []).map(e => String(e.gameId || ''))) %>;
+        window.gameEntryCount = <%- (user.gameEntries || []).length %>;
+        window.gameEntryNames = <%- JSON.stringify((games || []).map(g => `${g.awayTeamName || ''} vs ${g.homeTeamName || ''}`)) %>;
+        window.eloGamesData = [];
+    </script>
+    <script src="/js/addGameModal.js"></script>
+    <script>
+        (function(){
+            const followBtn = document.getElementById('followBtn');
+            if(followBtn){
+                followBtn.addEventListener('click', async function(){
+                    const targetId = this.dataset.user;
+                    const isFollowing = this.classList.contains('btn-secondary');
+                    const action = isFollowing ? 'unfollow' : 'follow';
+                    this.disabled = true;
+                    try {
+                        const res = await fetch(`/users/${targetId}/${action}`, { method: 'POST' });
+                        if(!res.ok) throw new Error();
+                        const countEl = document.querySelector('#followersCount');
+                        if(isFollowing){
+                            this.classList.remove('btn-secondary');
+                            this.classList.add('btn-primary');
+                            this.textContent = 'Follow';
+                            if(countEl) countEl.textContent = Math.max(0, parseInt(countEl.textContent, 10) - 1);
+                        } else {
+                            this.classList.remove('btn-primary');
+                            this.classList.add('btn-secondary');
+                            this.textContent = 'Following';
+                            if(countEl) countEl.textContent = parseInt(countEl.textContent, 10) + 1;
+                        }
+                    } catch (err) {
+                        alert('Unable to update follow status. Please try again later.');
+                    } finally {
+                        this.disabled = false;
+                    }
+                });
+            }
+
+            const wrapper = document.querySelector('.profile-avatar-wrapper');
+            if(wrapper){
+                const logos = wrapper.querySelectorAll('.chain-logo');
+                if(logos.length){
+                    const radius = wrapper.offsetWidth * 0.6;
+                    const centerX = wrapper.offsetWidth / 2;
+                    const centerY = wrapper.offsetHeight / 2;
+                    const angleStep = Math.PI / (logos.length + 1);
+                    logos.forEach((logo, idx) => {
+                        const angle = Math.PI - angleStep * (idx + 1);
+                        const x = centerX + radius * Math.cos(angle) - logo.offsetWidth / 2;
+                        const y = centerY + radius * Math.sin(angle) - logo.offsetHeight / 2;
+                        logo.style.left = x + 'px';
+                        logo.style.top = y + 'px';
+                    });
+                }
+            }
+        })();
+    </script>
+</body>
+</html>

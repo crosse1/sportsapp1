@@ -108,9 +108,10 @@
       <div class="col-md-3 text-center mb-4 mb-md-0">
         <div class="profile-avatar-wrapper d-inline-block">
           <img src="/users/<%= user._id %>/profile-image" class="avatar avatar-lg profile-avatar" alt="Profile Photo">
+          <% const profileSlug = user.venmo || user._id; %>
           <% if (user.favoriteTeams && user.favoriteTeams.length > 0) { %>
             <% user.favoriteTeams.forEach(function(t){ %>
-              <a href="/teams/<%= t._id %>" class="chain-logo">
+              <a href="/profile/<%= profileSlug %>/<%= t._id %>" class="chain-logo">
                 <img src="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>" alt="<%= t.school %>">
               </a>
             <% }) %>
