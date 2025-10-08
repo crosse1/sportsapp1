@@ -252,6 +252,19 @@
             font-weight: 500;
         }
 
+        .section-divider {
+            padding: 2rem 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .section-divider-line {
+            width: min(100%, 640px);
+            height: 0.3rem;
+            border-radius: 999px;
+            background: linear-gradient(to right, #7e22ce, #14b8a6);
+        }
+
         .leaderboard-section {
             margin: 2.5rem auto 0;
             text-align: center;
@@ -519,6 +532,10 @@
             <h3 class="record-heading gradient-text mb-0">Record When Seen:</h3>
             <div class="record-value gradient-text"><%= recordDisplay %></div>
             <div class="record-rank gradient-text"><%= recordRankMessage %></div>
+        </div>
+
+        <div class="section-divider">
+            <div class="section-divider-line"></div>
         </div>
 
         <div class="leaderboard-section">
