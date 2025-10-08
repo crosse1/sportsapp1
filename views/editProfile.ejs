@@ -38,29 +38,30 @@
           <div class="mb-3 text-center">
             <% const previewImg = '/users/' + user._id + '/profile-image'; %>
             <img id="profilePreview" src="<%= previewImg %>" class="avatar avatar-md profile-photo-preview" alt="Profile Photo">
-            <input type="file" name="profileImage" id="profileImageInput" accept=".jpg" class="form-control mt-2">
+            <input type="file" name="profileImage" id="profileImageInput" accept=".jpg" class="form-control glass-control mt-2">
             <div class="text-danger" id="uploadError"></div>
           </div>
 
           <div class="mb-3">
             <label class="form-label">Username</label>
-            <input type="text" name="username" value="<%= user.username %>" class="form-control" maxlength="20" pattern="^[a-zA-Z0-9_]+$" required>
+            <input type="text" name="username" value="<%= user.username %>" class="form-control glass-control" maxlength="20" pattern="^[a-zA-Z0-9_]+$" required>
           </div>
 
           <div class="mb-3">
             <label class="form-label">Email</label>
-            <input type="email" name="email" value="<%= user.email %>" class="form-control" required>
+            <input type="email" name="email" value="<%= user.email %>" class="form-control glass-control" required>
           </div>
 
           <div class="mb-3">
             <label class="form-label">Phone Number</label>
-            <input type="text" name="phoneNumber" value="<%= user.phoneNumber %>" class="form-control">
+            <input type="text" name="phoneNumber" value="<%= user.phoneNumber %>" class="form-control glass-control">
           </div>
 
           <div class="mb-3">
             <label class="form-label">Favorite Teams</label>
+            <% const allowedTeams = teams.filter(team => team && (Number(team.leagueId) === 1 || Number(team.leagueId) === 8)); %>
             <select name="favoriteTeams" class="form-control favoriteTeams-select" multiple required>
-              <% teams.forEach(t => { %>
+              <% allowedTeams.forEach(t => { %>
                 <option value="<%= t._id %>" data-logo="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>"
                   <%= user.favoriteTeams.some(ft => String(ft._id) === String(t._id)) ? 'selected' : '' %>>
                   <%= t.school %> <%= t.mascot %>
