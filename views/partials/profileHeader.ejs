@@ -102,6 +102,7 @@
 }
 
 </style>
+<% const profileSlug = user && (user.venmo || user._id); %>
 <div class="profile-header pt-5 pb-0 text-white">
   <div class="container">
     <div class="row align-items-center">
@@ -179,7 +180,6 @@
   </div>
   <br>
   <div class="container mt-4 pb-0">
-    <% const profileSlug = user && (user.venmo || user._id); %>
     <ul class="nav nav-tabs profile-tabs" id="profileTabs" role="tablist">
       <li class="nav-item" role="presentation">
         <a href="/profile/<%= profileSlug %>/stats" class="nav-link profile-tab <%= activeTab==='stats' ? 'active' : '' %>">Stats</a>
