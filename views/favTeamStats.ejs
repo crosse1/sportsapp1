@@ -88,8 +88,13 @@
             gap: 2rem;
         }
 
-        .stats-grid > .stat-block:nth-child(3) {
-            justify-self: center;
+        .single-stat-wrapper {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .single-stat-wrapper .stat-block {
             width: min(100%, 500px);
         }
 
@@ -482,7 +487,9 @@
                     <div id="checkedInTop" class="stat-right"></div>
                 </div>
             </div>
+        </div>
 
+        <div class="single-stat-wrapper">
             <div class="stat-block">
                 <div class="stat-content">
                     <div class="stat-left text-center">
