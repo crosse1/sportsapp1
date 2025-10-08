@@ -102,6 +102,7 @@
 }
 
 </style>
+<% const profileSlug = user && (user.venmo || user._id); %>
 <div class="profile-header pt-5 pb-0 text-white">
   <div class="container">
     <div class="row align-items-center">
@@ -110,7 +111,7 @@
           <img src="/users/<%= user._id %>/profile-image" class="avatar avatar-lg profile-avatar" alt="Profile Photo">
           <% if (user.favoriteTeams && user.favoriteTeams.length > 0) { %>
             <% user.favoriteTeams.forEach(function(t){ %>
-              <a href="/teams/<%= t._id %>" class="chain-logo">
+              <a href="/profile/<%= profileSlug %>/<%= t._id %>" class="chain-logo">
                 <img src="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>" alt="<%= t.school %>">
               </a>
             <% }) %>
@@ -178,7 +179,6 @@
   </div>
   <br>
   <div class="container mt-4 pb-0">
-    <% const profileSlug = user && (user.venmo || user._id); %>
     <ul class="nav nav-tabs profile-tabs" id="profileTabs" role="tablist">
       <li class="nav-item" role="presentation">
         <a href="/profile/<%= profileSlug %>/stats" class="nav-link profile-tab <%= activeTab==='stats' ? 'active' : '' %>">Stats</a>

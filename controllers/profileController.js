@@ -183,6 +183,151 @@ function eloToRating(elo){
     return Math.max(1.0, Math.min(10.0, Math.round(rawScore * 10) / 10));
 }
 
+const MIN_FAV_TEAM_RANK_ENTRIES = 3;
+
+function resolveTeamSideFromGame(game, teamDoc) {
+    if (!game || !teamDoc) return null;
+    const targetObjectId = String(teamDoc._id);
+    const targetNumericId = teamDoc.teamId != null ? Number(teamDoc.teamId) : null;
+
+    const matchesCandidate = candidate => {
+        if (!candidate) return false;
+        const candidateObjId = candidate._id ? String(candidate._id) : (candidate.id ? String(candidate.id) : null);
+        if (candidateObjId && candidateObjId === targetObjectId) return true;
+        if (candidate === targetObjectId) return true;
+        if (targetNumericId != null) {
+            const candidateNumericId = candidate.teamId != null ? Number(candidate.teamId) : null;
+            if (candidateNumericId != null && candidateNumericId === targetNumericId) return true;
+        }
+        return false;
+    };
+
+    if (matchesCandidate(game.homeTeam)) return 'home';
+    if (matchesCandidate(game.awayTeam)) return 'away';
+
+    if (targetNumericId != null) {
+        if (Number(game.HomeId) === targetNumericId || Number(game.homeTeamId) === targetNumericId) return 'home';
+        if (Number(game.AwayId) === targetNumericId || Number(game.awayTeamId) === targetNumericId) return 'away';
+    }
+
+    return null;
+}
+
+function gameIncludesTeam(game, teamDoc) {
+    return resolveTeamSideFromGame(game, teamDoc) !== null;
+}
+
+function determineOutcome(game, teamDoc) {
+    const side = resolveTeamSideFromGame(game, teamDoc);
+    if (!side) return { hasScore: false, isWin: false, isLoss: false, isTie: false };
+
+    const homePointsRaw = game?.homePoints ?? game?.HomePoints;
+    const awayPointsRaw = game?.awayPoints ?? game?.AwayPoints;
+    const homePoints = Number(homePointsRaw);
+    const awayPoints = Number(awayPointsRaw);
+    if (!Number.isFinite(homePoints) || !Number.isFinite(awayPoints)) {
+        return { hasScore: false, isWin: false, isLoss: false, isTie: false };
+    }
+
+    if (homePoints === awayPoints) {
+        return { hasScore: true, isWin: false, isLoss: false, isTie: true };
+    }
+
+    const teamScore = side === 'home' ? homePoints : awayPoints;
+    const opponentScore = side === 'home' ? awayPoints : homePoints;
+    const isWin = teamScore > opponentScore;
+    return { hasScore: true, isWin, isLoss: !isWin, isTie: false };
+}
+
+function formatGameForClient(entry, teamDoc) {
+    if (!entry) return null;
+    const baseEntry = entry.toObject ? entry.toObject() : { ...entry };
+    const game = baseEntry.game || {};
+    const startDate = game.startDate || game.StartDate || null;
+    const timestamp = startDate ? new Date(startDate).getTime() : 0;
+    const rating = typeof baseEntry.elo === 'number' ? eloToRating(baseEntry.elo) : (typeof baseEntry.rating === 'number' ? Number(baseEntry.rating) : null);
+    const awayTeamName = game.awayTeamName || game.AwayTeam || (game.awayTeam && (game.awayTeam.teamName || game.awayTeam.school)) || '';
+    const homeTeamName = game.homeTeamName || game.HomeTeam || (game.homeTeam && (game.homeTeam.teamName || game.homeTeam.school)) || '';
+    const awayLogo = game.awayTeam?.logos?.[0] || '/images/placeholder.jpg';
+    const homeLogo = game.homeTeam?.logos?.[0] || '/images/placeholder.jpg';
+    const canonicalId = resolveEntryGameId(baseEntry);
+    const gameObjectId = game && game._id ? String(game._id) : null;
+    const entryObjectId = baseEntry._id ? String(baseEntry._id) : null;
+    const canonicalKey = canonicalId != null ? String(canonicalId) : null;
+    const hasFinalScore = determineOutcome(game, teamDoc).hasScore;
+    const isPastGame = Boolean(game.StartDate || hasFinalScore || game.completed);
+    let link = '#';
+    if (isPastGame) {
+        if (gameObjectId) link = `/pastGames/${gameObjectId}`;
+        else if (canonicalId != null) link = `/pastGames/${canonicalId}`;
+    } else if (gameObjectId) {
+        link = `/games/${gameObjectId}`;
+    } else if (canonicalId != null) {
+        link = `/games/${canonicalId}`;
+    }
+
+    const fallbackKey = startDate ? `entry-${new Date(startDate).getTime()}` : null;
+    const uniqueId = entryObjectId || gameObjectId || canonicalKey || fallbackKey || `entry-${Math.random().toString(36).slice(2)}`;
+
+    return {
+        id: uniqueId,
+        gameId: canonicalId != null ? Number(canonicalId) : null,
+        startDate,
+        timestamp: Number.isFinite(timestamp) ? timestamp : 0,
+        rating: rating != null ? Number(rating) : null,
+        awayTeamName,
+        homeTeamName,
+        awayLogo,
+        homeLogo,
+        link,
+        checkedIn: Boolean(baseEntry.checkedIn)
+    };
+}
+
+function extractVenueKey(game) {
+    if (!game) return null;
+    if (game.venue && typeof game.venue === 'object') {
+        const venue = game.venue;
+        const id = venue._id ? String(venue._id) : (venue.venueId != null ? `venue-${venue.venueId}` : (venue.name || null));
+        if (!id) return null;
+        return {
+            key: id,
+            venue: {
+                name: venue.name || game.Venue || 'Unknown Venue',
+                imgUrl: venue.imgUrl || null
+            }
+        };
+    }
+    const name = game.Venue || (typeof game.venue === 'string' ? game.venue : null);
+    if (!name) return null;
+    return {
+        key: `venue-${name.toLowerCase()}`,
+        venue: {
+            name,
+            imgUrl: null
+        }
+    };
+}
+
+function ordinalSuffix(n) {
+    if (!Number.isFinite(n) || n <= 0) return null;
+    const s = ['th', 'st', 'nd', 'rd'];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+function attachGamesToEntries(entries, gameMap) {
+    return (entries || []).map(entry => {
+        const obj = entry && entry.toObject ? entry.toObject() : { ...entry };
+        const key = resolveEntryGameId(obj);
+        if (key != null) {
+            const mapped = gameMap[String(key)] || null;
+            if (mapped) obj.game = mapped;
+        }
+        return obj;
+    });
+}
+
 exports.getSignUp = async (req, res, next) => {
     try {
         res.render('contact', { layout: false, formData: {} });
@@ -764,6 +909,216 @@ exports.profileStats = async (req, res, next) => {
 
     } catch (err) {
         console.error('[profileStats] Error occurred:', err);
+        next(err);
+    }
+};
+
+
+
+
+exports.favoriteTeamStats = async (req, res, next) => {
+    try {
+        const identifier = req.params.user || req.params.identifier || (req.user && req.user.id);
+        const teamParam = req.params.team;
+
+        const profileUser = await findUserByIdentifier(identifier, ['favoriteTeams']);
+        if (!profileUser) {
+            const fallbackSlug = req.user ? (req.user.venmo || req.user.id) : '';
+            return res.redirect(fallbackSlug ? `/profile/${fallbackSlug}/stats` : '/profile');
+        }
+
+        if (!teamParam) {
+            const slug = profileUser.venmo || profileUser._id;
+            return res.redirect(`/profile/${slug}/stats`);
+        }
+
+        let team = null;
+        if (mongoose.Types.ObjectId.isValid(teamParam)) {
+            team = await Team.findById(teamParam).lean();
+        }
+        if (!team) {
+            const numericTeamId = Number(teamParam);
+            if (Number.isFinite(numericTeamId)) {
+                team = await Team.findOne({ teamId: numericTeamId }).lean();
+            }
+        }
+
+        if (!team) {
+            const slug = profileUser.venmo || profileUser._id;
+            if (req.flash) req.flash('error', 'Team not found');
+            return res.redirect(`/profile/${slug}/stats`);
+        }
+
+        const isCurrentUser = req.user && String(req.user.id) === String(profileUser._id);
+        let isFollowing = false;
+        let canMessage = false;
+        if (req.user && !isCurrentUser) {
+            const viewerDoc = await User.findById(req.user.id).select('following');
+            if (viewerDoc) {
+                isFollowing = viewerDoc.following.some(f => String(f) === String(profileUser._id));
+                const followsBack = (profileUser.following || []).some(f => String(f) === String(viewerDoc._id));
+                canMessage = isFollowing && followsBack;
+            }
+        }
+
+        const enrichedEntries = await mergeUserGames(profileUser);
+        const gamesWithTeam = enrichedEntries.filter(entry => gameIncludesTeam(entry.game, team));
+        const gamesForClient = gamesWithTeam.map(entry => formatGameForClient(entry, team)).filter(Boolean);
+        const checkedInGames = gamesWithTeam.filter(entry => entry.checkedIn);
+        const checkedInForClient = checkedInGames.map(entry => formatGameForClient(entry, team)).filter(Boolean);
+
+        const venuesMap = new Map();
+        for (const entry of gamesWithTeam) {
+            const meta = extractVenueKey(entry.game);
+            if (!meta) continue;
+            const venueName = (meta.venue && meta.venue.name) || 'Unknown Venue';
+            const venueImg = meta.venue && meta.venue.imgUrl ? meta.venue.imgUrl : null;
+            if (venuesMap.has(meta.key)) {
+                const existing = venuesMap.get(meta.key);
+                existing.count += 1;
+                if (!existing.venue.imgUrl && venueImg) existing.venue.imgUrl = venueImg;
+            } else {
+                venuesMap.set(meta.key, {
+                    count: 1,
+                    venue: {
+                        name: venueName,
+                        imgUrl: venueImg
+                    }
+                });
+            }
+        }
+
+        const venuesData = Array.from(venuesMap.values()).sort((a, b) => {
+            if (b.count !== a.count) return b.count - a.count;
+            const nameA = (a.venue.name || '').toLowerCase();
+            const nameB = (b.venue.name || '').toLowerCase();
+            if (nameA < nameB) return -1;
+            if (nameA > nameB) return 1;
+            return 0;
+        });
+
+        let wins = 0, losses = 0, ties = 0;
+        for (const entry of gamesWithTeam) {
+            const outcome = determineOutcome(entry.game, team);
+            if (!outcome.hasScore) continue;
+            if (outcome.isTie) ties += 1;
+            else if (outcome.isWin) wins += 1;
+            else if (outcome.isLoss) losses += 1;
+        }
+        const decisions = wins + losses;
+        const winPct = decisions > 0 ? wins / decisions : 0;
+
+        const usersWithTeam = await User.find({ favoriteTeams: team._id })
+            .select('username venmo gameEntries')
+            .lean();
+
+        const communityUsers = [...usersWithTeam];
+        if (!communityUsers.some(u => String(u._id) === String(profileUser._id))) {
+            communityUsers.push(profileUser.toObject());
+        }
+
+        const gameIds = new Set();
+        communityUsers.forEach(u => {
+            (u.gameEntries || []).forEach(entry => {
+                const id = resolveEntryGameId(entry);
+                if (id != null) {
+                    const numeric = Number(id);
+                    if (Number.isFinite(numeric)) gameIds.add(numeric);
+                }
+            });
+        });
+
+        const fetchedGames = await fetchGamesByIds(Array.from(gameIds));
+        const gameMap = {};
+        fetchedGames.forEach(g => {
+            if (!g) return;
+            const key = g.gameId ?? g.Id ?? g._id;
+            if (key != null) gameMap[String(key)] = g;
+        });
+
+        const userStats = communityUsers.map(u => {
+            const enriched = attachGamesToEntries(u.gameEntries || [], gameMap);
+            const relevant = enriched.filter(entry => gameIncludesTeam(entry.game, team));
+            let userWins = 0, userLosses = 0, userTies = 0;
+            relevant.forEach(entry => {
+                const result = determineOutcome(entry.game, team);
+                if (!result.hasScore) return;
+                if (result.isTie) userTies += 1;
+                else if (result.isWin) userWins += 1;
+                else if (result.isLoss) userLosses += 1;
+            });
+            const userDecisions = userWins + userLosses;
+            const pct = userDecisions > 0 ? userWins / userDecisions : 0;
+            return {
+                userId: String(u._id),
+                username: u.username,
+                identifier: u.venmo || u._id,
+                totalEntries: relevant.length,
+                wins: userWins,
+                losses: userLosses,
+                ties: userTies,
+                decisions: userDecisions,
+                winPct: pct
+            };
+        });
+
+        const eligibleForRank = userStats
+            .filter(s => s.totalEntries >= MIN_FAV_TEAM_RANK_ENTRIES && s.decisions > 0)
+            .sort((a, b) => {
+                if (b.winPct !== a.winPct) return b.winPct - a.winPct;
+                if (b.decisions !== a.decisions) return b.decisions - a.decisions;
+                if (b.totalEntries !== a.totalEntries) return b.totalEntries - a.totalEntries;
+                return a.username.localeCompare(b.username);
+            });
+
+        const rankIndex = eligibleForRank.findIndex(s => s.userId === String(profileUser._id));
+        const recordSummary = {
+            wins,
+            losses,
+            ties,
+            totalEntries: gamesWithTeam.length,
+            decisions,
+            winPct,
+            rank: rankIndex >= 0 ? rankIndex + 1 : null,
+            ordinalRank: rankIndex >= 0 ? ordinalSuffix(rankIndex + 1) : null,
+            totalRanked: eligibleForRank.length,
+            minEntries: MIN_FAV_TEAM_RANK_ENTRIES
+        };
+
+        const leaderboard = [...userStats]
+            .sort((a, b) => {
+                if (b.totalEntries !== a.totalEntries) return b.totalEntries - a.totalEntries;
+                if (b.decisions !== a.decisions) return b.decisions - a.decisions;
+                if (b.winPct !== a.winPct) return b.winPct - a.winPct;
+                return a.username.localeCompare(b.username);
+            })
+            .map((stat, index) => ({
+                rank: index + 1,
+                username: stat.username,
+                identifier: stat.identifier,
+                gameCount: stat.totalEntries,
+                isCurrent: stat.userId === String(profileUser._id)
+            }));
+
+        res.render('favTeamStats', {
+            user: profileUser,
+            isCurrentUser,
+            isFollowing,
+            canMessage,
+            viewer: req.user,
+            activeTab: 'stats',
+            team,
+            games: gamesForClient,
+            checkedInGames: checkedInForClient,
+            venuesData,
+            recordSummary,
+            leaderboard,
+            communityCount: userStats.length,
+            minEntriesForRank: MIN_FAV_TEAM_RANK_ENTRIES
+        });
+
+    } catch (err) {
+        console.error('[favoriteTeamStats] Error occurred:', err);
         next(err);
     }
 };
