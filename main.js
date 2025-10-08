@@ -266,6 +266,7 @@ app.get('/profileGames/:user?', requireAuth, profileController.profileGames);
 app.get('/users/followers/search', requireAuth, profileController.searchFollowers);
 app.get('/profileStats/:user?', requireAuth, profileController.profileStats);
 app.get('/profileWaitlist/:user?', requireAuth, profileController.profileWaitlist);
+app.get('/profile/:user/:team([0-9a-fA-F]{24}|\\d+)', requireAuth, profileController.favoriteTeamStats);
 app.get('/profile/edit', requireAuth, profileController.getEditProfile);
 app.post('/profile/edit', requireAuth, profileController.updateProfile);
 app.post('/profile/photo', requireAuth, profileController.uploadProfilePhoto);
