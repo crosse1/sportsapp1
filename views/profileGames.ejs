@@ -30,6 +30,79 @@
     text-align: left; /* Left justified */
     margin-bottom: 0.5rem;
 }
+        .team-filter-wrapper {
+            max-width: 420px;
+            margin: 0 auto 1.5rem;
+        }
+        .team-filter-wrapper .select2-container {
+            width: 100% !important;
+        }
+        .team-filter-wrapper .select2-container--default .select2-selection--single {
+            background-color: transparent;
+            border: none;
+            border-radius: 0;
+            background-image: linear-gradient(135deg, #14b8a6, #7e22ce);
+            background-repeat: no-repeat;
+            background-size: 100% 1px;
+            background-position: bottom left;
+            padding-bottom: 0.35rem;
+        }
+        .team-filter-wrapper .select2-selection__rendered {
+            padding-left: 0 !important;
+            padding-right: 1.75rem !important;
+            font-weight: 700;
+        }
+        .team-filter-wrapper .select2-selection__placeholder {
+            background: linear-gradient(135deg, #14b8a6, #7e22ce);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+        }
+        .team-filter-wrapper .select2-selection__rendered span.team-option-name {
+            display: inline-block;
+        }
+        .team-filter-wrapper .select2-selection__arrow {
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .team-filter-wrapper .select2-dropdown,
+        .team-filter-dropdown {
+            background-color: #ffffff;
+            border-color: #e5e7eb;
+        }
+        .team-filter-dropdown .select2-results__options {
+            background-color: #ffffff;
+        }
+        .team-filter-wrapper .select2-results__option {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .team-filter-wrapper .select2-results__option:last-child {
+            border-bottom: none;
+        }
+        .team-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .team-option-logo {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+        }
+        .team-option-name {
+            font-weight: 700;
+            background: linear-gradient(135deg, #14b8a6, #7e22ce);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+        }
+        .team-option.team-option--selected .team-option-logo {
+            width: 24px;
+            height: 24px;
+        }
         @media (min-width: 768px) { .profile-avatar { margin-left: 0; margin-right: 0; } }
         .avatar-lg { width: clamp(80px, 20vw, 300px); height: clamp(80px, 20vw, 300px); }
         .avatar-sm { width: clamp(40px, 10vw, 60px); height: clamp(40px, 10vw, 60px); }
@@ -130,8 +203,41 @@
             </div>
         </div>
         <% } %>
-        <% const profileIdentifier = (user && (user.venmo || user._id)) || '';
-           if (gameEntries && gameEntries.length > 0) { %>
+        <% 
+           const profileIdentifier = (user && (user.venmo || user._id)) || '';
+           const hasGameEntries = gameEntries && gameEntries.length > 0;
+           const showTeamFilter = gameEntries && gameEntries.length >= 5;
+           const teamOptions = [];
+           if (showTeamFilter) {
+                const seenTeams = {};
+                (gameEntries || []).forEach(function(entry){
+                    const g = entry && entry.game ? entry.game : {};
+                    const awayName = g.awayTeamName || '';
+                    const homeName = g.homeTeamName || '';
+                    const awayLogo = (g.awayTeam && g.awayTeam.logos && g.awayTeam.logos[0]) || '/images/placeholder.jpg';
+                    const homeLogo = (g.homeTeam && g.homeTeam.logos && g.homeTeam.logos[0]) || '/images/placeholder.jpg';
+                    if (awayName && !seenTeams[awayName]) {
+                        seenTeams[awayName] = awayLogo;
+                    }
+                    if (homeName && !seenTeams[homeName]) {
+                        seenTeams[homeName] = homeLogo;
+                    }
+                });
+                Object.keys(seenTeams).sort().forEach(function(name){
+                    teamOptions.push({ name: name, logo: seenTeams[name] });
+                });
+           }
+           if (hasGameEntries) { %>
+        <% if (showTeamFilter) { %>
+        <div class="team-filter-wrapper mb-4">
+            <select id="teamFilterSelect" class="form-select">
+                <option></option>
+                <% teamOptions.forEach(function(option){ %>
+                    <option value="<%= option.name %>" data-logo="<%= option.logo %>"><%= option.name %></option>
+                <% }); %>
+            </select>
+        </div>
+        <% } %>
         <div class="row row-cols-1 row-cols-md-1 row-cols-lg-1 g-4 " id="profileGamesContainer">
             <% gameEntries.forEach(function(entry){
                  const game = entry.game;
@@ -141,8 +247,12 @@
                  const entryKey = entry._id || entry.gameId;
                  const normalizedGameId = game.gameId || game.Id || game._id || entry.gameId;
                  const canRate = isCurrentUser && (entry.elo === null || entry.elo === undefined);
+                 const homeTeamName = game.homeTeamName || '';
+                 const awayTeamName = game.awayTeamName || '';
+                 const homeTeamKey = homeTeamName.toLowerCase();
+                 const awayTeamKey = awayTeamName.toLowerCase();
             %>
-            <div class="col">
+            <div class="col" data-home-team-key="<%= homeTeamKey %>" data-away-team-key="<%= awayTeamKey %>">
 
                 <div class="game-container">
                     <div class="game-date-banner mb-1 d-flex align-items-center">
@@ -237,6 +347,9 @@
             </div>
             <% }); %>
         </div>
+        <% if (showTeamFilter) { %>
+        <p class="text-center text-black d-none" id="noGamesFilteredMessage">No games match this team yet.</p>
+        <% } %>
         <% } else { %>
         <p class="empty-tab-message text-center text-black">No games yet</p>
         <% } %>
@@ -357,6 +470,91 @@
         window.eloGamesData = <%- JSON.stringify(eloGames || []) %>;
         window.profileUserId = "<%= user._id %>";
         window.loggedInUserId = "<%= viewer ? viewer._id : '' %>";
+    </script>
+    <script>
+        $(function(){
+            const $teamFilter = $('#teamFilterSelect');
+            if(!$teamFilter.length){
+                return;
+            }
+
+            const escapeHtml = (value = '') => String(value).replace(/[&<>"']/g, function(match){
+                switch(match){
+                    case '&': return '&amp;';
+                    case '<': return '&lt;';
+                    case '>': return '&gt;';
+                    case '"': return '&quot;';
+                    case "'": return '&#39;';
+                    default: return match;
+                }
+            });
+
+            const buildTeamMarkup = (team, extraClass) => {
+                const element = team && team.element ? team.element : null;
+                const logo = element && element.dataset && element.dataset.logo ? element.dataset.logo : '/images/placeholder.jpg';
+                const name = team && team.text ? team.text : '';
+                const safeLogo = escapeHtml(logo);
+                const safeName = escapeHtml(name);
+                return `<span class="team-option${extraClass ? ' ' + extraClass : ''}"><img src="${safeLogo}" class="team-option-logo" alt="${safeName} logo" loading="lazy"><span class="team-option-name">${safeName}</span></span>`;
+            };
+
+            const formatTeam = (team) => {
+                if(!team.id){
+                    return team.text;
+                }
+                return buildTeamMarkup(team);
+            };
+
+            const formatTeamSelection = (team) => {
+                if(!team.id){
+                    return team.text || 'Filter by Team';
+                }
+                return buildTeamMarkup(team, 'team-option--selected');
+            };
+
+            $teamFilter.select2({
+                placeholder: 'Filter by Team',
+                allowClear: true,
+                width: '100%',
+                dropdownCssClass: 'team-filter-dropdown',
+                templateResult: formatTeam,
+                templateSelection: formatTeamSelection,
+                escapeMarkup: function(markup){ return markup; }
+            });
+
+            const normalize = (value) => (value || '').toString().trim().toLowerCase();
+            const gameCards = Array.from(document.querySelectorAll('#profileGamesContainer .col'));
+            const noResultsMessage = document.getElementById('noGamesFilteredMessage');
+
+            const updateVisibility = () => {
+                const selectedTeam = normalize($teamFilter.val());
+                let visibleCount = 0;
+
+                gameCards.forEach((card) => {
+                    if(!card){
+                        return;
+                    }
+                    const home = normalize(card.dataset.homeTeamKey);
+                    const away = normalize(card.dataset.awayTeamKey);
+                    const match = !selectedTeam || home === selectedTeam || away === selectedTeam;
+                    card.classList.toggle('d-none', !match);
+                    if(match){
+                        visibleCount += 1;
+                    }
+                });
+
+                if(noResultsMessage){
+                    if(selectedTeam && visibleCount === 0){
+                        noResultsMessage.classList.remove('d-none');
+                    } else {
+                        noResultsMessage.classList.add('d-none');
+                    }
+                }
+            };
+
+            $teamFilter.on('change', updateVisibility);
+            updateVisibility();
+        });
     </script>
     <script src="/js/addGameModal.js"></script>
     <script src="/js/editGameModal.js"></script>
