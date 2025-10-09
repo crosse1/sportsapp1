@@ -206,7 +206,7 @@
 </head>
 <body class="d-flex flex-column min-vh-100">
 <%- include('partials/header') %>
-<%- include('partials/profileHeader', { user, isCurrentUser, isFollowing, canMessage, viewer, activeTab: 'badges' }) %>
+<%- include('partials/_profileHeader', { user, isCurrentUser, isFollowing, canMessage, viewer, activeTab: 'badges' }) %>
 <div class="container my-4 flex-grow-1">
     <% if (sortedBadges && sortedBadges.length) { %>
     <% const completedBadges = []; const inProgressBadges = []; const yetToEarnBadges = [];

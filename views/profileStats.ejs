@@ -742,7 +742,7 @@
 </head>
 <body class="d-flex flex-column min-vh-100">
     <%- include('partials/header') %>
-    <%- include('partials/profileHeader', { user, isCurrentUser, isFollowing, canMessage, viewer, activeTab: 'stats' }) %>
+    <%- include('partials/_profileHeader', { user, isCurrentUser, isFollowing, canMessage, viewer, activeTab: 'stats' }) %>
     <div class="container my-4 flex-grow-1">
         <div class="stats-grid">
             <div class="stat-block">

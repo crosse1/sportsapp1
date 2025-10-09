@@ -219,7 +219,7 @@
 </head>
 <body class="d-flex flex-column min-vh-100" data-viewer-id="<%= viewer ? viewer.id : '' %>" data-profile-owner-id="<%= user._id %>">
     <%- include('partials/header') %>
-    <%- include('partials/profileHeader', { user, isCurrentUser, isFollowing, canMessage, viewer, activeTab: 'waitlist' }) %>
+    <%- include('partials/_profileHeader', { user, isCurrentUser, isFollowing, canMessage, viewer, activeTab: 'waitlist' }) %>
     <div class="container my-4 flex-grow-1">
         <% if(isCurrentUser){ %>
         <div class="info-banner d-flex flex-wrap align-items-center justify-content-between mb-3">
