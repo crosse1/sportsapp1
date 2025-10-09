@@ -51,7 +51,7 @@
         <% if (typeof events !== 'undefined' && events.length) { %>
           <% events.forEach(function(ev){ %>
             <div class="timeline-event">
-              <% if(ev.type === 'checkin' || ev.type === 'fanMilestone'){ %>
+              <% if(ev.type === 'checkin' || ev.type === 'fanMilestone' || ev.type === 'waitlist'){ %>
                 <div class="d-flex align-items-center mb-2">
                   <img src="/users/<%= ev.user._id %>/profile-image" alt="<%= ev.user.username %>" class="avatar avatar-sm me-2">
 
@@ -61,9 +61,11 @@
                 </div>
                 <div class="text-center mb-2 timeline-description">
                   <% if(ev.type === 'checkin'){ %>
-                    Has checked into a game
+                    Checked in to <%= ev.gameDescription %>
+                  <% } else if (ev.type === 'waitlist') { %>
+                    Plans to go to <%= ev.gameDescription %>
                   <% } else { %>
-                    Was the <%= ev.ordinal %> fan to check in
+                    Was the <%= ev.ordinal %> fan to check in to <%= ev.gameDescription %>
                   <% } %>
                 </div>
               <% } else if(ev.type === 'gameMilestone'){ %>
@@ -75,9 +77,10 @@
                 </div>
               <% } %>
               <div class="position-relative">
-                <a href="/pastGames/<%= ev.game._id %>" class="game-link">
+                <% const eventStartDate = ev.game && ev.game.StartDate ? ev.game.StartDate : null; %>
+                <a href="<%= ev.gameLink ? ev.gameLink : (ev.game && ev.game._id ? '/pastGames/' + ev.game._id : '#') %>" class="game-link">
                   <div class="card shadow-sm h-100 game-card p-3 text-center position-relative" data-away-color="<%= ev.awayColor %>" data-home-color="<%= ev.homeColor %>" style="background: linear-gradient(to right, <%= ev.awayColor %>, <%= ev.homeColor %>);">
-                    <div class="game-date mb-2" data-start="<%= ev.game.StartDate.toISOString() %>"></div>
+                    <div class="game-date mb-2" data-start="<%= eventStartDate ? new Date(eventStartDate).toISOString() : '' %>"></div>
                     <div class="d-flex justify-content-between align-items-center position-relative mb-2 px-3">
                       <div class="logo-wrapper me-3">
                         <div class="team-logo-container">
@@ -108,7 +111,9 @@
     <script>
       function formatDates(){
         document.querySelectorAll('.game-date[data-start]').forEach(function(el){
+          if(!el.dataset.start) return;
           var date = new Date(el.dataset.start);
+          if(isNaN(date)) return;
           el.textContent = new Intl.DateTimeFormat(navigator.language, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
         });
       }
