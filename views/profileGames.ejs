@@ -7,7 +7,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/custom.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
         .profile-header { background: linear-gradient(to right, #7e22ce, #14b8a6); }
         .trophy-panel { background-color: rgba(255,255,255,0.15); }
@@ -30,6 +29,82 @@
     text-align: left; /* Left justified */
     margin-bottom: 0.5rem;
 }
+        .team-filter-wrapper {
+            max-width: 420px;
+            margin: 0 auto 1.5rem;
+            position: relative;
+        }
+        .team-filter-input {
+            width: 100%;
+            border: none;
+            border-radius: 0;
+            border-bottom: 1px solid transparent;
+            padding: 0.35rem 0;
+            font-weight: 700;
+            color: #111827;
+            background-color: transparent;
+            background-image: linear-gradient(135deg, #14b8a6, #7e22ce);
+            background-repeat: no-repeat;
+            background-size: 100% 1px;
+            background-position: bottom left;
+        }
+        .team-filter-input:focus {
+            outline: none;
+            box-shadow: none;
+        }
+        .team-filter-input::placeholder {
+            font-weight: 700;
+            background: linear-gradient(135deg, #14b8a6, #7e22ce);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+        }
+        .team-filter-dropdown {
+            position: absolute;
+            top: calc(100% + 0.35rem);
+            left: 0;
+            right: 0;
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            z-index: 1040;
+            overflow: hidden;
+        }
+        .team-filter-options {
+            max-height: 260px;
+            overflow-y: auto;
+        }
+        .team-filter-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 0.85rem;
+            cursor: pointer;
+            border-bottom: 1px solid #e5e7eb;
+            transition: background-color 0.2s ease;
+        }
+        .team-filter-option:last-child {
+            border-bottom: none;
+        }
+        .team-filter-option:hover,
+        .team-filter-option:focus {
+            background-color: #f8fafc;
+        }
+        .team-option-logo {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+        }
+        .team-option-name {
+            font-weight: 700;
+            background: linear-gradient(135deg, #14b8a6, #7e22ce);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+        }
         @media (min-width: 768px) { .profile-avatar { margin-left: 0; margin-right: 0; } }
         .avatar-lg { width: clamp(80px, 20vw, 300px); height: clamp(80px, 20vw, 300px); }
         .avatar-sm { width: clamp(40px, 10vw, 60px); height: clamp(40px, 10vw, 60px); }
@@ -130,8 +205,47 @@
             </div>
         </div>
         <% } %>
-        <% const profileIdentifier = (user && (user.venmo || user._id)) || '';
-           if (gameEntries && gameEntries.length > 0) { %>
+        <% 
+           const profileIdentifier = (user && (user.venmo || user._id)) || '';
+           const hasGameEntries = gameEntries && gameEntries.length > 0;
+           const showTeamFilter = gameEntries && gameEntries.length >= 5;
+           const teamOptions = [];
+           if (showTeamFilter) {
+                const seenTeams = {};
+                (gameEntries || []).forEach(function(entry){
+                    const g = entry && entry.game ? entry.game : {};
+                    const awayName = g.awayTeamName || '';
+                    const homeName = g.homeTeamName || '';
+                    const awayLogo = (g.awayTeam && g.awayTeam.logos && g.awayTeam.logos[0]) || '/images/placeholder.jpg';
+                    const homeLogo = (g.homeTeam && g.homeTeam.logos && g.homeTeam.logos[0]) || '/images/placeholder.jpg';
+                    if (awayName && !seenTeams[awayName]) {
+                        seenTeams[awayName] = awayLogo;
+                    }
+                    if (homeName && !seenTeams[homeName]) {
+                        seenTeams[homeName] = homeLogo;
+                    }
+                });
+                Object.keys(seenTeams).sort().forEach(function(name){
+                    teamOptions.push({ name: name, logo: seenTeams[name] });
+                });
+           }
+           if (hasGameEntries) { %>
+        <% if (showTeamFilter) { %>
+        <div class="team-filter-wrapper mb-4">
+            <input type="text"
+                   id="teamFilterInput"
+                   class="team-filter-input"
+                   placeholder="Filter by Team"
+                   autocomplete="off"
+                   role="combobox"
+                   aria-expanded="false"
+                   aria-autocomplete="list"
+                   aria-controls="teamFilterDropdown">
+            <div id="teamFilterDropdown" class="team-filter-dropdown d-none" role="listbox">
+                <div class="team-filter-options"></div>
+            </div>
+        </div>
+        <% } %>
         <div class="row row-cols-1 row-cols-md-1 row-cols-lg-1 g-4 " id="profileGamesContainer">
             <% gameEntries.forEach(function(entry){
                  const game = entry.game;
@@ -141,8 +255,12 @@
                  const entryKey = entry._id || entry.gameId;
                  const normalizedGameId = game.gameId || game.Id || game._id || entry.gameId;
                  const canRate = isCurrentUser && (entry.elo === null || entry.elo === undefined);
+                 const homeTeamName = game.homeTeamName || '';
+                 const awayTeamName = game.awayTeamName || '';
+                 const homeTeamKey = homeTeamName.toLowerCase();
+                 const awayTeamKey = awayTeamName.toLowerCase();
             %>
-            <div class="col">
+            <div class="col" data-home-team-key="<%= homeTeamKey %>" data-away-team-key="<%= awayTeamKey %>">
 
                 <div class="game-container">
                     <div class="game-date-banner mb-1 d-flex align-items-center">
@@ -237,6 +355,9 @@
             </div>
             <% }); %>
         </div>
+        <% if (showTeamFilter) { %>
+        <p class="text-center text-black d-none" id="noGamesFilteredMessage">No games match this team yet.</p>
+        <% } %>
         <% } else { %>
         <p class="empty-tab-message text-center text-black">No games yet</p>
         <% } %>
@@ -343,7 +464,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="/js/profileModals.js"></script>
     <script>
         window.existingGameIds = <%- JSON.stringify((user.gameEntries || []).map(e => String(e.gameId))) %>;
@@ -357,6 +477,239 @@
         window.eloGamesData = <%- JSON.stringify(eloGames || []) %>;
         window.profileUserId = "<%= user._id %>";
         window.loggedInUserId = "<%= viewer ? viewer._id : '' %>";
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            const teamOptions = <%- JSON.stringify(teamOptions || []) %>;
+            const input = document.getElementById('teamFilterInput');
+            const dropdown = document.getElementById('teamFilterDropdown');
+            const optionsContainer = dropdown ? dropdown.querySelector('.team-filter-options') : null;
+            const gameCards = Array.from(document.querySelectorAll('#profileGamesContainer .col'));
+            const noResultsMessage = document.getElementById('noGamesFilteredMessage');
+
+            if(!input || !dropdown || !optionsContainer || !teamOptions.length){
+                return;
+            }
+
+            const normalizedTeams = teamOptions.map(function(option){
+                const name = option && option.name ? option.name : '';
+                return {
+                    name: name,
+                    logo: (option && option.logo) || '/images/placeholder.jpg',
+                    key: name.toLowerCase()
+                };
+            });
+
+            const escapeHtml = function(value){
+                return String(value || '').replace(/[&<>"']/g, function(match){
+                    switch(match){
+                        case '&': return '&amp;';
+                        case '<': return '&lt;';
+                        case '>': return '&gt;';
+                        case '"': return '&quot;';
+                        case "'": return '&#39;';
+                        default: return match;
+                    }
+                });
+            };
+
+            const normalize = function(value){
+                return (value || '').toString().trim().toLowerCase();
+            };
+
+            const hideDropdown = function(){
+                dropdown.classList.add('d-none');
+                input.setAttribute('aria-expanded', 'false');
+            };
+
+            const showDropdown = function(){
+                dropdown.classList.remove('d-none');
+                input.setAttribute('aria-expanded', 'true');
+            };
+
+            const filterGames = function(teamKey){
+                let visibleCount = 0;
+                gameCards.forEach(function(card){
+                    if(!card){
+                        return;
+                    }
+                    if(!teamKey){
+                        card.classList.remove('d-none');
+                        visibleCount += 1;
+                        return;
+                    }
+                    const home = normalize(card.dataset.homeTeamKey);
+                    const away = normalize(card.dataset.awayTeamKey);
+                    const match = home === teamKey || away === teamKey;
+                    card.classList.toggle('d-none', !match);
+                    if(match){
+                        visibleCount += 1;
+                    }
+                });
+
+                if(noResultsMessage){
+                    if(teamKey && visibleCount === 0){
+                        noResultsMessage.classList.remove('d-none');
+                    } else {
+                        noResultsMessage.classList.add('d-none');
+                    }
+                }
+            };
+
+            let currentOptions = [];
+
+            const buildOptionElement = function(option, index){
+                const optionEl = document.createElement('div');
+                optionEl.className = 'team-filter-option';
+                optionEl.setAttribute('role', 'option');
+                optionEl.setAttribute('tabindex', '0');
+                optionEl.setAttribute('data-key', option.key);
+                optionEl.setAttribute('data-name', option.name);
+                optionEl.innerHTML = '<img src="' + escapeHtml(option.logo) + '" class="team-option-logo" alt="' + escapeHtml(option.name) + ' logo" loading="lazy">' +
+                    '<span class="team-option-name">' + escapeHtml(option.name) + '</span>';
+
+                const selectOption = function(){
+                    input.value = option.name;
+                    input.dataset.selectedTeam = option.key;
+                    hideDropdown();
+                    filterGames(option.key);
+                    input.focus();
+                };
+
+                optionEl.addEventListener('mousedown', function(event){
+                    event.preventDefault();
+                    selectOption();
+                });
+
+                optionEl.addEventListener('keydown', function(event){
+                    if(event.key === 'Enter' || event.key === ' '){
+                        event.preventDefault();
+                        selectOption();
+                    } else if(event.key === 'ArrowDown'){
+                        event.preventDefault();
+                        const next = optionEl.nextElementSibling;
+                        if(next){
+                            next.focus();
+                        } else {
+                            input.focus();
+                        }
+                    } else if(event.key === 'ArrowUp'){
+                        event.preventDefault();
+                        const prev = optionEl.previousElementSibling;
+                        if(prev){
+                            prev.focus();
+                        } else {
+                            input.focus();
+                        }
+                    } else if(event.key === 'Escape'){
+                        hideDropdown();
+                        input.focus();
+                    }
+                });
+
+                return optionEl;
+            };
+
+            const renderDropdown = function(query){
+                const normalizedQuery = normalize(query);
+                currentOptions = normalizedTeams.filter(function(option){
+                    return !normalizedQuery || option.key.indexOf(normalizedQuery) !== -1;
+                });
+
+                optionsContainer.innerHTML = '';
+
+                if(!currentOptions.length){
+                    hideDropdown();
+                    return;
+                }
+
+                currentOptions.forEach(function(option, index){
+                    optionsContainer.appendChild(buildOptionElement(option, index));
+                });
+
+                showDropdown();
+            };
+
+            const resetFilter = function(){
+                delete input.dataset.selectedTeam;
+                filterGames('');
+            };
+
+            input.addEventListener('focus', function(){
+                renderDropdown(input.value);
+            });
+
+            input.addEventListener('input', function(event){
+                const value = event.target.value;
+                renderDropdown(value);
+
+                const matching = normalizedTeams.find(function(option){
+                    return option.key === normalize(value);
+                });
+
+                if(matching){
+                    input.dataset.selectedTeam = matching.key;
+                    filterGames(matching.key);
+                } else if(!value){
+                    resetFilter();
+                } else {
+                    delete input.dataset.selectedTeam;
+                    filterGames('');
+                }
+            });
+
+            input.addEventListener('keydown', function(event){
+                if(event.key === 'ArrowDown'){
+                    if(dropdown.classList.contains('d-none')){
+                        renderDropdown(input.value);
+                    }
+                    const firstOption = optionsContainer.querySelector('.team-filter-option');
+                    if(firstOption){
+                        event.preventDefault();
+                        firstOption.focus();
+                    }
+                } else if(event.key === 'Enter'){
+                    const value = input.value;
+                    const matching = normalizedTeams.find(function(option){
+                        return option.key === normalize(value);
+                    });
+                    if(!matching && currentOptions.length){
+                        event.preventDefault();
+                        input.value = currentOptions[0].name;
+                        input.dataset.selectedTeam = currentOptions[0].key;
+                        hideDropdown();
+                        filterGames(currentOptions[0].key);
+                    } else if(matching){
+                        hideDropdown();
+                        filterGames(matching.key);
+                    }
+                } else if(event.key === 'Escape'){
+                    hideDropdown();
+                }
+            });
+
+            input.addEventListener('blur', function(){
+                window.setTimeout(function(){
+                    if(!dropdown.contains(document.activeElement)){
+                        hideDropdown();
+                    }
+                    const selectedKey = input.dataset.selectedTeam;
+                    if(selectedKey){
+                        filterGames(selectedKey);
+                    } else if(!input.value){
+                        resetFilter();
+                    }
+                }, 100);
+            });
+
+            document.addEventListener('click', function(event){
+                if(!event.target.closest('.team-filter-wrapper')){
+                    hideDropdown();
+                }
+            });
+
+            filterGames('');
+        });
     </script>
     <script src="/js/addGameModal.js"></script>
     <script src="/js/editGameModal.js"></script>
