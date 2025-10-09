@@ -1682,12 +1682,12 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
             return res.redirect('/profileGames/' + user._id);
         }
 
-        const isInitial = (user.gameEntries || []).length < 5;
-        let finalElo = isInitial ? ratingToElo(rating) : null;
-
-        if (isInitial && (rating === undefined || rating === '')) {
-            return res.status(400).json({ error: 'Rating required for initial games' });
-        }
+        const ratedEntryCount = (user.gameEntries || []).reduce((sum, entry) => {
+            return sum + (entry && entry.elo != null ? 1 : 0);
+        }, 0);
+        const isInitial = ratedEntryCount < 5;
+        const ratingProvided = rating !== undefined && rating !== '';
+        let finalElo = isInitial && ratingProvided ? ratingToElo(rating) : null;
 
         const numericGameId = Number(gameId);
         const pastGameDoc = await PastGame.findOne({ gameId: numericGameId });
@@ -1829,7 +1829,7 @@ exports.addGame = [uploadDisk.single('photo'), async (req, res, next) => {
             finalElo = computedElo;
         }
 
-        if(finalElo === null) {
+        if(finalElo === null && (!isInitial || ratingProvided)) {
             if(isNaN(minElo) || isNaN(maxElo)){
                 minElo = 1000;
                 maxElo = 2000;

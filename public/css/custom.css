@@ -668,6 +668,19 @@
   min-height: 320px;
 }
 
+#addGameModal #ratingGroup.rating-locked {
+  opacity: 0.5;
+}
+
+#addGameModal #ratingGroup.rating-locked input[type="range"] {
+  pointer-events: none;
+}
+
+#addGameModal .rating-lock-note {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.875rem;
+}
+
 #addGameModal #multiSubmitBtn {
   min-width: 170px;
   font-weight: 600;
