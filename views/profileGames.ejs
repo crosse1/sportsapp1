@@ -348,6 +348,7 @@
     <script>
         window.existingGameIds = <%- JSON.stringify((user.gameEntries || []).map(e => String(e.gameId))) %>;
         window.gameEntryCount = <%- (user.gameEntries || []).length %>;
+        window.ratedGameEntryCount = <%- (user.gameEntries || []).reduce(function(sum, entry){ return sum + (entry && entry.elo != null ? 1 : 0); }, 0) %>;
         window.gameEntryNames = <%- JSON.stringify((gameEntries || []).map(e => {
             const g = e.game || {};
             return `${g.awayTeamName || ''} vs ${g.homeTeamName || ''}`;

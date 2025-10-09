@@ -321,6 +321,7 @@
     <script>
         window.existingGameIds = <%- JSON.stringify((user.gameEntries || []).map(e => String(e.gameId))) %>;
         window.gameEntryCount = <%- (user.gameEntries || []).length %>;
+        window.ratedGameEntryCount = <%- (user.gameEntries || []).reduce(function(sum, entry){ return sum + (entry && entry.elo != null ? 1 : 0); }, 0) %>;
         window.eloGamesData = <%- JSON.stringify(eloGames || []) %>;
     </script>
     <script src="/js/addGameModal.js"></script>

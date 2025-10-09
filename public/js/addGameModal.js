@@ -17,6 +17,7 @@
     const ratingRange = document.getElementById('ratingRange');
     const ratingValue = document.getElementById('ratingValue');
     const ratingGroup = $('#ratingGroup');
+    const ratingLockNote = $('#ratingLockNote');
     const nextBtn = $('#nextBtn');
     const infoStep = $('#gameInfoStep');
     const eloStep = $('#eloStep');
@@ -57,8 +58,9 @@
     const existingGameIds = window.existingGameIds || [];
     const existingGameIdSet = new Set(existingGameIds.map(id => String(id)));
     const gameEntryCount = window.gameEntryCount || 0;
+    const ratedGameEntryCount = Number(window.ratedGameEntryCount || 0);
     const gameEntryNames = window.gameEntryNames || [];
-    let rankingDone = gameEntryCount < 5 ? true : finalizedGames.length === 0;
+    let rankingDone = ratedGameEntryCount < 5 ? true : finalizedGames.length === 0;
     let selectionContainer = null;
     let selectionElement = null;
     let dropdownObserver = null;
@@ -71,6 +73,10 @@
     const select2EventRelay = $.fn.select2 && $.fn.select2.amd ? $.fn.select2.amd.require('select2/selection/eventRelay') : null;
     const select2Search = $.fn.select2 && $.fn.select2.amd ? $.fn.select2.amd.require('select2/selection/search') : null;
     let MinimalSelectionAdapter = null;
+    const ratingWrapper = ratingGroup && ratingGroup.length ? ratingGroup.find('.glass-range-wrapper') : $();
+    let ratingActivated = ratedGameEntryCount >= 5;
+    let ratingDirty = ratedGameEntryCount >= 5;
+    let ratingHiddenInput = null;
 
     const renderSelectionChips = (target => {
       if(!target || !target.length) return;
@@ -187,6 +193,78 @@ chip.append(img, closeBtn);
     function getSelectedGameId(){
       const ids = getSelectedGameIds();
       return ids.length ? String(ids[ids.length - 1]) : null;
+    }
+
+    function ensureRatingHiddenInput(){
+      if(ratingHiddenInput && ratingHiddenInput.length) return ratingHiddenInput;
+      if(!form || !form.length) return null;
+      ratingHiddenInput = $('<input>', {
+        type: 'hidden',
+        id: 'ratingNullInput',
+        value: ''
+      });
+      form.append(ratingHiddenInput);
+      return ratingHiddenInput;
+    }
+
+    function clearRatingHiddenInput(){
+      if(ratingHiddenInput && ratingHiddenInput.length){
+        ratingHiddenInput.removeAttr('name');
+        ratingHiddenInput.val('');
+      }
+    }
+
+    function applyRatingInteractivity(options){
+      if(!ratingGroup || !ratingGroup.length || !ratingRange || !ratingFieldName) return;
+      const opts = options || {};
+      const multiSelected = Boolean(opts.multiSelected);
+      const ratingOptional = ratedGameEntryCount < 5;
+      const shouldLock = ratingOptional && !ratingActivated && !multiSelected;
+      const shouldSendNull = ratingOptional && !ratingDirty && !multiSelected;
+
+      ratingGroup.toggleClass('rating-locked', shouldLock);
+      if(ratingLockNote && ratingLockNote.length){
+        ratingLockNote.toggleClass('d-none', !shouldLock);
+      }
+
+      if(shouldLock){
+        ratingRange.setAttribute('aria-disabled', 'true');
+      } else {
+        ratingRange.removeAttribute('aria-disabled');
+      }
+
+      if(multiSelected){
+        ratingRange.removeAttribute('name');
+        ratingRange.removeAttribute('required');
+        clearRatingHiddenInput();
+      } else {
+        if(!shouldSendNull && !ratingRange.getAttribute('name')){
+          ratingRange.setAttribute('name', ratingFieldName);
+        }
+        if(ratedGameEntryCount >= 5 || ratingDirty){
+          ratingRange.setAttribute('required','');
+        } else {
+          ratingRange.removeAttribute('required');
+        }
+      }
+
+      if(shouldSendNull){
+        ratingRange.removeAttribute('name');
+        const hidden = ensureRatingHiddenInput();
+        if(hidden){
+          hidden.attr('name', ratingFieldName);
+          hidden.val('');
+        }
+      } else {
+        clearRatingHiddenInput();
+      }
+    }
+
+    function resetRatingState(){
+      ratingActivated = ratedGameEntryCount >= 5;
+      ratingDirty = ratedGameEntryCount >= 5;
+      clearRatingHiddenInput();
+      applyRatingInteractivity({ multiSelected: false });
     }
 
     function normalizeHex(color){
@@ -363,8 +441,12 @@ chip.append(img, closeBtn);
       if(commentCounter && commentCounter.length){
         commentCounter.text('0/100');
       }
-      if(ratingRange){ ratingRange.value = 5; updateRating(); }
-      rankingDone = gameEntryCount < 5 ? true : finalizedGames.length === 0;
+      if(ratingRange){
+        ratingRange.value = 5;
+        updateRating();
+      }
+      resetRatingState();
+      rankingDone = ratedGameEntryCount < 5 ? true : finalizedGames.length === 0;
       updateSelectionPlaceholder();
       updateEntryMode();
       updateSubmitState();
@@ -372,7 +454,7 @@ chip.append(img, closeBtn);
     }
 
     if(nextBtn){
-      if(gameEntryCount < 5){
+      if(ratedGameEntryCount < 5){
         nextBtn.hide();
       } else {
         nextBtn.show();
@@ -391,8 +473,31 @@ chip.append(img, closeBtn);
     }
     if(ratingRange){
       updateRating();
-      ratingRange.addEventListener('input', updateRating);
+      ratingRange.addEventListener('input', function(){
+        ratingActivated = true;
+        ratingDirty = true;
+        updateRating();
+        applyRatingInteractivity({ multiSelected: getSelectedGameIds().length > 1 });
+        updateSubmitState();
+      });
     }
+
+    if(ratingWrapper && ratingWrapper.length){
+      ratingWrapper.on('pointerdown', function(evt){
+        if(ratedGameEntryCount >= 5 || ratingActivated) return;
+        if(getSelectedGameIds().length > 1) return;
+        evt.preventDefault();
+        ratingActivated = true;
+        applyRatingInteractivity({ multiSelected: false });
+        setTimeout(function(){
+          if(ratingRange){
+            ratingRange.focus();
+          }
+        }, 0);
+      });
+    }
+
+    resetRatingState();
 
     function renderCard(el,data){
       if(!el) return;
@@ -566,7 +671,7 @@ function showComparison3(){
         minRange = 1000;
         maxRange = 2000;
         comparisonStep = 0;
-        if(gameEntryCount < 5){
+        if(ratedGameEntryCount < 5){
           finalize();
         } else {
           showComparison1();
@@ -579,7 +684,7 @@ function showComparison3(){
       backBtn.on('click', function(){
         if(infoStep) infoStep.show();
         if(eloStep) eloStep.hide();
-        if(gameEntryCount < 5){
+        if(ratedGameEntryCount < 5){
           nextBtn.hide();
         } else {
           nextBtn.show();
@@ -595,7 +700,7 @@ function showComparison3(){
         compareGameInput1.val('');
         compareGameInput2.val('');
         compareGameInput3.val('');
-        rankingDone = gameEntryCount < 5 ? true : finalizedGames.length === 0;
+        rankingDone = ratedGameEntryCount < 5 ? true : finalizedGames.length === 0;
         $('#comparisonButtons').hide();
         $('#comparisonPrompt').text('');
         updateSubmitState();
@@ -607,7 +712,7 @@ function showComparison3(){
       $('#comparisonPrompt').text('');
       $('#comparisonButtons').hide();
       updateSubmitState();
-      if(gameEntryCount >= 5){
+      if(ratedGameEntryCount >= 5){
         autoSubmit();
       }
     }
@@ -1062,14 +1167,9 @@ worseBtn.off('click').on('click', function(){
       }
 
       if(ratingGroup && ratingGroup.length){
-        const ratingEligible = gameEntryCount < 5;
-        if(ratingEligible){
-          ratingGroup.removeClass('d-none').show();
-          setGhostState(ratingGroup, multiSelected);
-        } else {
-          setGhostState(ratingGroup, false);
-          ratingGroup.addClass('d-none').hide();
-        }
+        ratingGroup.removeClass('d-none').show();
+        setGhostState(ratingGroup, multiSelected);
+        applyRatingInteractivity({ multiSelected });
       }
 
       if(multiSelectionNotice && multiSelectionNotice.length){
@@ -1077,7 +1177,7 @@ worseBtn.off('click').on('click', function(){
       }
 
       if(nextBtn && nextBtn.length){
-        if(multiSelected || (infoStep && !infoStep.is(':visible')) || gameEntryCount < 5){
+        if(multiSelected || (infoStep && !infoStep.is(':visible')) || ratedGameEntryCount < 5){
           nextBtn.hide();
         } else {
           nextBtn.show();
@@ -1088,7 +1188,7 @@ worseBtn.off('click').on('click', function(){
         submitBtn.text(originalSubmitLabel);
         if(multiSelected){
           submitBtn.addClass('d-none');
-        } else if(gameEntryCount < 5){
+        } else if(ratedGameEntryCount < 5){
           submitBtn.removeClass('d-none');
         }
       }
@@ -1113,18 +1213,8 @@ worseBtn.off('click').on('click', function(){
         }
       }
 
-      if(ratingRange && ratingFieldName){
-        if(multiSelected){
-          ratingRange.removeAttribute('name');
-          ratingRange.removeAttribute('required');
-        } else {
-          if(!ratingRange.getAttribute('name')){
-            ratingRange.setAttribute('name', ratingFieldName);
-          }
-          if(gameEntryCount < 5){
-            ratingRange.setAttribute('required','');
-          }
-        }
+      if(ratingGroup && ratingGroup.length){
+        applyRatingInteractivity({ multiSelected });
       }
     }
 
@@ -1192,10 +1282,8 @@ worseBtn.off('click').on('click', function(){
         e.preventDefault();
       }
       if(multiSelected){
-        if(ratingRange && ratingFieldName){
-          ratingRange.removeAttribute('name');
-          ratingRange.removeAttribute('required');
-        }
+        applyRatingInteractivity({ multiSelected: true });
+        clearRatingHiddenInput();
         if(commentInput && commentInput.length && commentFieldName){
           commentInput.removeAttr('name');
         }
@@ -1204,17 +1292,11 @@ worseBtn.off('click').on('click', function(){
         }
         setTimeout(function(){
           const stillMulti = getSelectedGameIds().length > 1;
-          if(!stillMulti){
-            if(ratingRange && ratingFieldName && !ratingRange.getAttribute('name')){
-              ratingRange.setAttribute('name', ratingFieldName);
-            }
-            if(ratingRange && gameEntryCount < 5){
-              ratingRange.setAttribute('required','');
-            }
-            if(commentInput && commentInput.length && commentFieldName && !commentInput.attr('name')){
+          applyRatingInteractivity({ multiSelected: stillMulti });
+          if(!stillMulti && commentInput && commentInput.length && commentFieldName && !commentInput.attr('name')){
               commentInput.attr('name', commentFieldName);
             }
-            if(photoInput && photoInput.length && photoFieldName && !photoInput.attr('name')){
+          if(!stillMulti && photoInput && photoInput.length && photoFieldName && !photoInput.attr('name')){
               photoInput.attr('name', photoFieldName);
             }
           }
@@ -1225,9 +1307,7 @@ worseBtn.off('click').on('click', function(){
         return false;
       }
 
-      if(ratingRange && ratingFieldName && !ratingRange.getAttribute('name')){
-        ratingRange.setAttribute('name', ratingFieldName);
-      }
+      applyRatingInteractivity({ multiSelected: false });
       if(commentInput && commentInput.length && commentFieldName && !commentInput.attr('name')){
         commentInput.attr('name', commentFieldName);
       }
@@ -1237,7 +1317,8 @@ worseBtn.off('click').on('click', function(){
     });
 
     modal.on('shown.bs.modal', function(){
-      rankingDone = gameEntryCount < 5 ? true : finalizedGames.length === 0;
+      resetRatingState();
+      rankingDone = ratedGameEntryCount < 5 ? true : finalizedGames.length === 0;
       randomGame1 = null;
       randomGame2 = null;
       randomGame3 = null;
@@ -1249,23 +1330,18 @@ worseBtn.off('click').on('click', function(){
       compareGameInput2.val('');
       compareGameInput3.val('');
       if(ratingGroup){
-        if(gameEntryCount < 5){
-          ratingGroup.show();
-          ratingRange && ratingRange.setAttribute('required','');
-        } else {
-          ratingGroup.hide();
-          ratingRange && ratingRange.removeAttribute('required');
-        }
+        ratingGroup.show();
+        applyRatingInteractivity({ multiSelected: false });
       }
       if(nextBtn){
-        if(gameEntryCount < 5){
+        if(ratedGameEntryCount < 5){
           nextBtn.hide();
         } else {
           nextBtn.show();
         }
       }
       if(submitBtn){
-        if(gameEntryCount < 5){
+        if(ratedGameEntryCount < 5){
           submitBtn.removeClass('d-none');
         } else {
           submitBtn.addClass('d-none');
