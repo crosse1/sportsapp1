@@ -23,7 +23,88 @@
 </head>
 <body class="d-flex flex-column min-vh-100">
     <%- include('partials/header') %>
-    <%- include('partials/_profileHeader', { user, isCurrentUser, isFollowing, canMessage, viewer, activeTab: 'badges', useInlineTabs: true }) %>
+    <%- include('partials/profileHeader', { user, isCurrentUser, isFollowing, canMessage, viewer, activeTab: 'badges' }) %>
+
+    <div class="profile-header pt-5 pb-0 text-white">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-3 text-center mb-4 mb-md-0">
+                    <div class="profile-avatar-wrapper d-inline-block">
+                        <img src="/users/<%= user._id %>/profile-image" class="avatar avatar-lg profile-avatar" alt="Profile Photo">
+                        
+                        <% if (user.favoriteTeams && user.favoriteTeams.length > 0) { %>
+                            <% user.favoriteTeams.forEach(function(t){ %>
+                                <a href="/teams/<%= t._id %>" class="chain-logo">
+                                    <img src="<%= t.logos && t.logos[0] ? t.logos[0] : '' %>" alt="<%= t.school %>">
+                                </a>
+                            <% }) %>
+                        <% } %>
+                    </div>
+                </div>
+                <div class="col-md-6 text-center text-md-start">
+                    <div class="d-flex flex-column flex-md-row align-items-center">
+                        <h2 class="fw-bold mb-1 me-md-3">@<%= user.username %></h2>
+                        <% if(!isCurrentUser){ %>
+                            <% if(canMessage){ %>
+                                <button class="btn btn-outline-light btn-sm ms-md-2 message-btn" data-user="<%= user._id %>">Message</button>
+                            <% } else { %>
+                                <button class="btn btn-outline-light btn-sm ms-md-2" disabled title="Messaging requires a mutual follow">Message</button>
+                            <% } %>
+                        <% } %>
+                    </div>
+                    
+                    <div class="d-flex justify-content-center justify-content-md-start pb-2">
+                        <div class="me-4">
+                            <a href="/users/<%= user._id %>/followers" class="text-decoration-none text-white">
+                                <div id="followersCount" class="fw-bold text-primary"><%= user.followersCount %></div>
+                                <small class="text-white-50">Followers</small>
+                            </a>
+                        </div>
+                        <div>
+                            <a href="/users/<%= user._id %>/following" class="text-decoration-none text-white">
+                                <div class="fw-bold text-info"><%= user.followingCount %></div>
+                                <small class="text-white-50">Following</small>
+                            </a>
+                        </div>
+                    </div>
+                    <% if (isCurrentUser) { %>
+                    <div class="mt-3">
+                        <button id="openUserModal" class="btn btn-primary rounded-pill follow-users-btn px-4" data-bs-toggle="modal" data-bs-target="#userSearchModal">Follow Users</button>
+                    </div>
+                    <% } %>
+                </div>
+                <div class="col-md-3 text-center text-md-end">
+                    <% if (isCurrentUser) { %>
+                        <a href="/profile/edit" class="btn btn-primary rounded-pill px-4">Edit Profile</a>
+                    <% } else if (viewer) { %>
+                        <button id="followBtn" data-user="<%= user._id %>" class="btn btn-<%= isFollowing ? 'secondary' : 'primary' %> rounded-pill px-4 follow-btn"><%= isFollowing ? 'Following' : 'Follow' %></button>
+                    <% } %>
+                </div>
+                
+            </div>
+
+            
+    </div>
+    <br>
+    
+
+    <div class="container mt-4 pb-0">
+        <ul class="nav nav-tabs profile-tabs" id="profileTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active profile-tab" id="badges-tab" data-bs-toggle="tab" data-bs-target="#badges" type="button" role="tab" aria-controls="badges" aria-selected="true">Badges</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link profile-tab" id="games-tab" data-bs-toggle="tab" data-bs-target="#gamesTab" type="button" role="tab" aria-controls="gamesTab" aria-selected="false">Games</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link profile-tab" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button" role="tab" aria-controls="stats" aria-selected="false">Stats</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link profile-tab" id="wishlist-tab" data-bs-toggle="tab" data-bs-target="#wishlist" type="button" role="tab" aria-controls="wishlist" aria-selected="false">Wishlist</button>
+            </li>
+        </ul>
+    </div>
+</div>
 
     <div class="container my-4">
         <div class="d-flex justify-content-end mb-3">
