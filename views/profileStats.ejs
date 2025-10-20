@@ -1003,11 +1003,12 @@
   window.visitedStateData = Array.isArray(userStateData) ? userStateData : [];
 
   let statesMapInitialized = false;
+  let statesMapInitializing = false;
   let statesMapRoot = null;
   let statesPolygonSeries = null;
 
   function initializeStatesMap() {
-    if (statesMapInitialized) {
+    if (statesMapInitialized || statesMapInitializing) {
       if (statesPolygonSeries) {
         const data = Array.isArray(window.visitedStateData) ? window.visitedStateData : [];
         statesPolygonSeries.data.setAll(data);
@@ -1019,74 +1020,89 @@
 
     if (typeof am5 === 'undefined' || typeof am5map === 'undefined' || typeof am5geodata_usaLow === 'undefined') {
       console.error('[states-map] amCharts libraries missing');
+      statesMapInitializing = false;
       return;
     }
 
+    statesMapInitializing = true;
+
     am5.ready(function() {
-      if (statesMapInitialized) return;
-
-      statesMapRoot = am5.Root.new('chartdiv');
-      statesMapRoot.setThemes([am5themes_Animated.new(statesMapRoot)]);
-
-      const chart = statesMapRoot.container.children.push(am5map.MapChart.new(statesMapRoot, {
-        projection: am5map.geoAlbersUsa(),
-        layout: statesMapRoot.horizontalLayout
-      }));
-
-      statesPolygonSeries = chart.series.push(am5map.MapPolygonSeries.new(statesMapRoot, {
-        geoJSON: am5geodata_usaLow
-      }));
-
-      const tooltip = am5.Tooltip.new(statesMapRoot, {
-        getFillFromSprite: false,
-        autoTextColor: false,
-        pointerOrientation: 'horizontal',
-        labelText: '{name}\nGames Seen: {value}'
-      });
-
-      tooltip.get('background').setAll({
-        fill: am5.color(0x000000),
-        fillOpacity: 0.75,
-        strokeOpacity: 0,
-        cornerRadius: 8
-      });
-
-      tooltip.label.setAll({
-        fill: am5.color(0xffffff),
-        fontWeight: '600'
-      });
-
-      statesPolygonSeries.mapPolygons.template.setAll({
-        tooltipText: '{name}\nGames Seen: {value}',
-        tooltip,
-        interactive: true,
-        fill: am5.color(0xd1d5db),
-        stroke: am5.color(0xffffff),
-        strokeWidth: 0.5
-      });
-
-      const data = Array.isArray(window.visitedStateData) ? window.visitedStateData : [];
-      statesPolygonSeries.data.setAll(data);
-
-      statesPolygonSeries.mapPolygons.template.adapters.add('fill', function(fill, target) {
-        const dataItem = target.dataItem;
-        const context = dataItem && dataItem.dataContext;
-        if (context && context.value > 0) {
-          return am5.color(0x14b8a6);
+      try {
+        if (statesMapInitialized) {
+          if (statesPolygonSeries) {
+            const data = Array.isArray(window.visitedStateData) ? window.visitedStateData : [];
+            statesPolygonSeries.data.setAll(data);
+          }
+          return;
         }
-        return am5.color(0xd1d5db);
-      });
 
-      statesPolygonSeries.mapPolygons.template.adapters.add('tooltipText', function(text, target) {
-        const dataItem = target.dataItem;
-        const context = dataItem && dataItem.dataContext;
-        if (context && context.value > 0) {
-          return '{name}\nGames Seen: {value}';
-        }
-        return '';
-      });
+        statesMapRoot = am5.Root.new('chartdiv');
+        statesMapRoot.setThemes([am5themes_Animated.new(statesMapRoot)]);
 
-      statesMapInitialized = true;
+        const chart = statesMapRoot.container.children.push(am5map.MapChart.new(statesMapRoot, {
+          projection: am5map.geoAlbersUsa(),
+          layout: statesMapRoot.horizontalLayout
+        }));
+
+        statesPolygonSeries = chart.series.push(am5map.MapPolygonSeries.new(statesMapRoot, {
+          geoJSON: am5geodata_usaLow
+        }));
+
+        const tooltip = am5.Tooltip.new(statesMapRoot, {
+          getFillFromSprite: false,
+          autoTextColor: false,
+          pointerOrientation: 'horizontal',
+          labelText: '{name}\nGames Seen: {value}'
+        });
+
+        tooltip.get('background').setAll({
+          fill: am5.color(0x000000),
+          fillOpacity: 0.75,
+          strokeOpacity: 0,
+          cornerRadius: 8
+        });
+
+        tooltip.label.setAll({
+          fill: am5.color(0xffffff),
+          fontWeight: '600'
+        });
+
+        statesPolygonSeries.mapPolygons.template.setAll({
+          tooltipText: '{name}\nGames Seen: {value}',
+          tooltip,
+          interactive: true,
+          fill: am5.color(0xd1d5db),
+          stroke: am5.color(0xffffff),
+          strokeWidth: 0.5
+        });
+
+        const data = Array.isArray(window.visitedStateData) ? window.visitedStateData : [];
+        statesPolygonSeries.data.setAll(data);
+
+        statesPolygonSeries.mapPolygons.template.adapters.add('fill', function(fill, target) {
+          const dataItem = target.dataItem;
+          const context = dataItem && dataItem.dataContext;
+          if (context && context.value > 0) {
+            return am5.color(0x14b8a6);
+          }
+          return am5.color(0xd1d5db);
+        });
+
+        statesPolygonSeries.mapPolygons.template.adapters.add('tooltipText', function(text, target) {
+          const dataItem = target.dataItem;
+          const context = dataItem && dataItem.dataContext;
+          if (context && context.value > 0) {
+            return '{name}\nGames Seen: {value}';
+          }
+          return '{name}\nNo games yet';
+        });
+
+        statesMapInitialized = true;
+      } catch (err) {
+        console.error('[states-map] initialization failed', err);
+      } finally {
+        statesMapInitializing = false;
+      }
     });
   }
 
