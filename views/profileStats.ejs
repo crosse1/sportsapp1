@@ -1050,11 +1050,6 @@
 
     <script>
 (function () {
-  // guard: make sure Bootstrap JS is present
-  if (!window.bootstrap || !bootstrap.Modal) {
-    console.error('[modal] Bootstrap bundle not loaded');
-  }
-
   // ---- Data from server-side template ----
   const gameEntries = <%- JSON.stringify(gameEntries || []) %>;
   const topRatedGames = <%- JSON.stringify(topRatedGames || []) %>;
@@ -1072,6 +1067,19 @@
   const VISITED_HOVER_FILL = '#2dd4bf';
   const UNVISITED_FILL = '#1f2937';
   const UNVISITED_HOVER_FILL = '#4b5563';
+
+  let bootstrapMissingLogged = false;
+  function getBootstrapModal(element) {
+    if (!element) return null;
+    if (!window.bootstrap || !bootstrap.Modal) {
+      if (!bootstrapMissingLogged) {
+        console.error('[modal] Bootstrap bundle not loaded');
+        bootstrapMissingLogged = true;
+      }
+      return null;
+    }
+    return bootstrap.Modal.getOrCreateInstance(element);
+  }
 
   const STATE_NAME_TO_ABBR = {
     'Alabama': 'AL',
@@ -1777,35 +1785,94 @@
 
     if (hGames && mGames) {
       hGames.addEventListener('click', () => {
-        bootstrap.Modal.getOrCreateInstance(mGames).show();
+        const instance = getBootstrapModal(mGames);
+        if (instance) instance.show();
       });
     }
     if (hVenues && mVenues) {
       hVenues.addEventListener('click', () => {
         const body = document.getElementById('venuesModalBody');
         if (body) body.innerHTML = buildVenueModalRows();
-        bootstrap.Modal.getOrCreateInstance(mVenues).show();
+        const instance = getBootstrapModal(mVenues);
+        if (instance) instance.show();
       });
     }
     if (hTeams && mTeams) {
       hTeams.addEventListener('click', () => {
         const body = document.getElementById('teamsModalBody');
         if (body) body.innerHTML = buildTeamRows(window.allRankedTeams || []);
-        bootstrap.Modal.getOrCreateInstance(mTeams).show();
+        const instance = getBootstrapModal(mTeams);
+        if (instance) instance.show();
       });
     }
     if (hStates && mStates) {
       hStates.addEventListener('click', () => {
         fillStatesModalList();
         ensureStatesMap();
-        bootstrap.Modal.getOrCreateInstance(mStates).show();
+        const instance = getBootstrapModal(mStates);
+        if (instance) instance.show();
       });
     }
+  }
+
+  function bindFollowButton() {
+    const followBtn = document.getElementById('followBtn');
+    if (!followBtn) return;
+
+    followBtn.addEventListener('click', async function () {
+      const targetId = this.dataset.user;
+      const isFollowing = this.classList.contains('btn-secondary');
+      const action = isFollowing ? 'unfollow' : 'follow';
+      this.disabled = true;
+      try {
+        const res = await fetch(`/users/${targetId}/${action}`, { method: 'POST' });
+        if (!res.ok) throw new Error('Request failed');
+        const countEl = document.querySelector('#followersCount');
+        if (isFollowing) {
+          this.classList.remove('btn-secondary');
+          this.classList.add('btn-primary');
+          this.textContent = 'Follow';
+          if (countEl) countEl.textContent = parseInt(countEl.textContent, 10) - 1;
+        } else {
+          this.classList.remove('btn-primary');
+          this.classList.add('btn-secondary');
+          this.textContent = 'Following';
+          if (countEl) countEl.textContent = parseInt(countEl.textContent, 10) + 1;
+        }
+      } catch (err) {
+        console.error('[follow] action failed', err);
+        alert('Action failed');
+      } finally {
+        this.disabled = false;
+      }
+    });
+  }
+
+  function positionProfileChainLogos() {
+    const wrapper = document.querySelector('.profile-avatar-wrapper');
+    if (!wrapper) return;
+    const logos = wrapper.querySelectorAll('.chain-logo');
+    if (!logos.length) return;
+
+    const radius = wrapper.offsetWidth * 0.6;
+    const centerX = wrapper.offsetWidth / 2;
+    const centerY = wrapper.offsetHeight / 2;
+    const angleStep = Math.PI / (logos.length + 1);
+
+    logos.forEach((logo, idx) => {
+      const angle = Math.PI - angleStep * (idx + 1);
+      const x = centerX + radius * Math.cos(angle) - logo.offsetWidth / 2;
+      const y = centerY + radius * Math.sin(angle) - logo.offsetHeight / 2;
+      logo.style.left = `${x}px`;
+      logo.style.top = `${y}px`;
+    });
   }
 
   document.addEventListener('DOMContentLoaded', () => {
     try { renderStats(); } catch (e) { console.error('renderStats error', e); }
     bindModals();
+    bindFollowButton();
+    positionProfileChainLogos();
     console.log('[modals] bound');
   });
 })();
@@ -1827,106 +1894,5 @@
         window.eloGamesData = <%- JSON.stringify(eloGames || []) %>;
     </script>
     <script src="/js/addGameModal.js"></script>
-    <script>
-        const followBtn = document.getElementById('followBtn');
-        if(followBtn){
-            followBtn.addEventListener('click', async function(){
-                const targetId = this.dataset.user;
-                const isFollowing = this.classList.contains('btn-secondary');
-                const action = isFollowing ? 'unfollow' : 'follow';
-                this.disabled = true;
-                try {
-                    const res = await fetch(`/users/${targetId}/${action}`, { method: 'POST' });
-                    if(!res.ok) throw new Error();
-                    const countEl = document.querySelector('#followersCount');
-                    if(isFollowing){
-                        this.classList.remove('btn-secondary');
-                        this.classList.add('btn-primary');
-                        this.textContent = 'Follow';
-                        if(countEl) countEl.textContent = parseInt(countEl.textContent) - 1;
-                    } else {
-                        this.classList.remove('btn-primary');
-                        this.classList.add('btn-secondary');
-                        this.textContent = 'Following';
-                        if(countEl) countEl.textContent = parseInt(countEl.textContent) + 1;
-                    }
-                } catch (err) {
-                    alert('Action failed');
-                } finally {
-                    this.disabled = false;
-                }
-            });
-        }
-        const wrapper = document.querySelector('.profile-avatar-wrapper');
-        if(wrapper){
-            const logos = wrapper.querySelectorAll('.chain-logo');
-            if(logos.length){
-                const radius = wrapper.offsetWidth * 0.6;
-                const centerX = wrapper.offsetWidth / 2;
-                const centerY = wrapper.offsetHeight / 2;
-                const angleStep = Math.PI / (logos.length + 1);
-                logos.forEach((logo, idx) => {
-                    const angle = Math.PI - angleStep * (idx + 1);
-                    const x = centerX + radius * Math.cos(angle) - logo.offsetWidth / 2;
-                    const y = centerY + radius * Math.sin(angle) - logo.offsetHeight / 2;
-                    logo.style.left = x + 'px';
-                    logo.style.top = y + 'px';
-                });
-            }
-        }
-        
-        const gamesHeader = document.getElementById('gamesHeader');
-        const venuesHeader = document.getElementById('venuesHeader');
-        const teamsHeader = document.getElementById('teamsHeader');
-        const statesHeader = document.getElementById('statesHeader');
-        const gamesModal = document.getElementById('gamesModal');
-        const venuesModal = document.getElementById('venuesModal');
-        const teamsModal = document.getElementById('teamsModal');
-        const statesModal = document.getElementById('statesModal');
-        if(statesModal){
-            statesModal.addEventListener('show.bs.modal', () => {
-                fillStatesModalList();
-            });
-            statesModal.addEventListener('shown.bs.modal', () => {
-                ensureStatesMap();
-            });
-        }
-        if(gamesHeader && gamesModal){
-            gamesHeader.addEventListener('click', () => {
-                const body = document.getElementById('gamesModalBody');
-                if(body){
-                    body.innerHTML = buildGameRows(window.allRankedGames);
-                }
-                bootstrap.Modal.getOrCreateInstance(gamesModal).show();
-            });
-        }
-        if(venuesHeader && venuesModal){
-            venuesHeader.addEventListener('click', () => {
-                const body = document.getElementById('venuesModalBody');
-                if(body){
-                    body.innerHTML = buildVenueModalRows();
-                }
-                bootstrap.Modal.getOrCreateInstance(venuesModal).show();
-            });
-        }
-        if(teamsHeader && teamsModal){
-            teamsHeader.addEventListener('click', () => {
-                const body = document.getElementById('teamsModalBody');
-                if(body){
-                    body.innerHTML = buildTeamRows(window.allRankedTeams);
-                }
-                bootstrap.Modal.getOrCreateInstance(teamsModal).show();
-            });
-        }
-        if(statesHeader && statesModal){
-            statesHeader.addEventListener('click', () => {
-                fillStatesModalList();
-                ensureStatesMap();
-                bootstrap.Modal.getOrCreateInstance(statesModal).show();
-            });
-        }
-            
-
-    </script>
 </body>
 </html>
