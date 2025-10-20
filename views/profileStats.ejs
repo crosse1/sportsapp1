@@ -8,8 +8,6 @@
     <link rel="stylesheet" href="/css/custom.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
     <style>
 
         #gamesModal, #teamsModal, #statesModal { color: #fff; }
@@ -165,49 +163,12 @@
         }
 
         .states-modal-body {
-            padding: 0.5rem 0;
-        }
-
-        .states-modal-layout {
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
+            gap: 1rem;
         }
 
-        @media (min-width: 992px) {
-            .states-modal-layout {
-                flex-direction: row;
-            }
-            .states-modal-map-column {
-                flex: 3;
-            }
-            .states-modal-list-column {
-                flex: 2;
-            }
-        }
-
-        .states-modal-list-title {
-            letter-spacing: 0.08em;
-        }
-
-        #statesModalBody {
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            row-gap: 0.5rem;
-            column-gap: 0.5rem;
-            align-items: center;
-        }
-
-        .states-modal-list {
-            max-height: clamp(200px, 45vh, 420px);
-            overflow-y: auto;
-            padding-right: 0.35rem;
-        }
-
-        .states-map-container {
-            position: relative;
-            width: 100%;
-            padding-top: 65%;
+        .states-map-wrapper {
             border-radius: 1.25rem;
             overflow: hidden;
             background: linear-gradient(135deg, rgba(15, 23, 42, 0.65), rgba(55, 65, 81, 0.55));
@@ -215,47 +176,23 @@
             box-shadow: 0 24px 48px rgba(15, 23, 42, 0.45);
             backdrop-filter: blur(18px);
             -webkit-backdrop-filter: blur(18px);
+            padding: 1rem;
         }
 
-        .states-map-container svg {
-            position: absolute;
-            inset: 0;
+        #chartdiv {
             width: 100%;
-            height: 100%;
+            height: 500px;
         }
 
-        .states-map-icon-layer {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
+        #statesModal .am5-tooltip {
+            background-color: rgba(15, 23, 42, 0.85) !important;
+            color: #fff !important;
+            font-weight: 600 !important;
         }
 
-        .state-venue-icon {
-            position: absolute;
-            width: 1rem;
-            height: 1rem;
-            border-radius: 50%;
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            border: 2px solid rgba(255, 255, 255, 0.9);
-            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.35);
-            pointer-events: none;
-        }
-
-        .states-map-tooltip {
-            position: absolute;
-            padding: 0.4rem 0.8rem;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #fff;
-            border-radius: 999px;
-            background: rgba(15, 23, 42, 0.92);
-            border: 1px solid transparent;
-            border-image: linear-gradient(135deg, #14b8a6, #7e22ce) 1;
-            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.45);
-            pointer-events: none;
-            z-index: 2;
+        #statesModal .am5-tooltip .am5-label {
+            color: #fff !important;
+            font-weight: 600 !important;
         }
 
         .states-modal-empty {
@@ -263,17 +200,6 @@
             border-radius: 0.85rem;
             background: rgba(255, 255, 255, 0.06);
             border: 1px dashed rgba(255, 255, 255, 0.2);
-        }
-
-        @media (max-width: 576px) {
-            #statesModalBody {
-                grid-template-columns: auto 1fr;
-                row-gap: 0.4rem;
-            }
-            #statesModalBody .venue-count {
-                grid-column: span 2;
-                justify-self: end;
-            }
         }
 
         .venue-name-text {
@@ -857,6 +783,11 @@
 }
 
     </style>
+
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/map.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/geodata/usaLow.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
 </head>
 <body class="d-flex flex-column min-vh-100">
     <%- include('partials/header') %>
@@ -1030,19 +961,10 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body states-modal-body">
-                    <div class="states-modal-layout">
-                        <div class="states-modal-map-column">
-                            <div class="states-map-container" id="statesMapContainer">
-                                <div class="states-map-tooltip d-none" id="statesMapTooltip"></div>
-                                <div class="states-map-icon-layer" id="statesMapIconLayer"></div>
-                            </div>
-                            <div class="states-modal-empty text-center text-muted d-none" id="statesModalEmpty">No states visited yet.</div>
-                        </div>
-                        <div class="states-modal-list-column">
-                            <h6 class="states-modal-list-title gradient-text text-uppercase small fw-semibold mb-3">State Totals</h6>
-                            <div id="statesModalBody" class="states-modal-list"></div>
-                        </div>
+                    <div class="states-map-wrapper">
+                        <div id="chartdiv"></div>
                     </div>
+                    <div class="states-modal-empty text-center text-muted <%= (userStateData && userStateData.length) ? 'd-none' : '' %>" id="statesModalEmpty">No states visited yet.</div>
                 </div>
             </div>
         </div>
@@ -1056,6 +978,7 @@
   const teamEntries = <%- JSON.stringify(teamEntries || []) %>;
   const venueEntries = <%- JSON.stringify(venueEntries || []) %>;
   const stateEntries = <%- JSON.stringify(stateEntries || []) %>;
+  const userStateData = <%- JSON.stringify(userStateData || []) %>;
   const venuesList = <%- JSON.stringify(venuesList || []) %>;
   const conferenceTeamMap = <%- JSON.stringify(conferenceTeamMap || {}) %>;
   const teamsCount = <%- typeof teamsCount !== 'undefined' ? teamsCount : 0 %>;
@@ -1063,10 +986,6 @@
   const statesCount = <%- typeof statesCount !== 'undefined' ? statesCount : 0 %>;
 
   const FALLBACK_VENUE_IMAGE = '/images/stadium.png';
-  const VISITED_FILL = '#0d9488';
-  const VISITED_HOVER_FILL = '#2dd4bf';
-  const UNVISITED_FILL = '#1f2937';
-  const UNVISITED_HOVER_FILL = '#4b5563';
 
   let bootstrapMissingLogged = false;
   function getBootstrapModal(element) {
@@ -1081,77 +1000,118 @@
     return bootstrap.Modal.getOrCreateInstance(element);
   }
 
-  const STATE_NAME_TO_ABBR = {
-    'Alabama': 'AL',
-    'Alaska': 'AK',
-    'Arizona': 'AZ',
-    'Arkansas': 'AR',
-    'California': 'CA',
-    'Colorado': 'CO',
-    'Connecticut': 'CT',
-    'Delaware': 'DE',
-    'District of Columbia': 'DC',
-    'Florida': 'FL',
-    'Georgia': 'GA',
-    'Hawaii': 'HI',
-    'Idaho': 'ID',
-    'Illinois': 'IL',
-    'Indiana': 'IN',
-    'Iowa': 'IA',
-    'Kansas': 'KS',
-    'Kentucky': 'KY',
-    'Louisiana': 'LA',
-    'Maine': 'ME',
-    'Maryland': 'MD',
-    'Massachusetts': 'MA',
-    'Michigan': 'MI',
-    'Minnesota': 'MN',
-    'Mississippi': 'MS',
-    'Missouri': 'MO',
-    'Montana': 'MT',
-    'Nebraska': 'NE',
-    'Nevada': 'NV',
-    'New Hampshire': 'NH',
-    'New Jersey': 'NJ',
-    'New Mexico': 'NM',
-    'New York': 'NY',
-    'North Carolina': 'NC',
-    'North Dakota': 'ND',
-    'Ohio': 'OH',
-    'Oklahoma': 'OK',
-    'Oregon': 'OR',
-    'Pennsylvania': 'PA',
-    'Rhode Island': 'RI',
-    'South Carolina': 'SC',
-    'South Dakota': 'SD',
-    'Tennessee': 'TN',
-    'Texas': 'TX',
-    'Utah': 'UT',
-    'Vermont': 'VT',
-    'Virginia': 'VA',
-    'Washington': 'WA',
-    'West Virginia': 'WV',
-    'Wisconsin': 'WI',
-    'Wyoming': 'WY',
-    'Puerto Rico': 'PR'
-  };
+  window.visitedStateData = Array.isArray(userStateData) ? userStateData : [];
 
-  const STATE_ABBR_TO_NAME = Object.fromEntries(Object.entries(STATE_NAME_TO_ABBR).map(([name, abbr]) => [abbr, name]));
+  let statesMapInitialized = false;
+  let statesMapInitializing = false;
+  let statesMapRoot = null;
+  let statesPolygonSeries = null;
 
-  const stateMapRuntime = {
-    initialized: false,
-    dataPromise: null,
-    container: null,
-    iconLayer: null,
-    tooltip: null,
-    svg: null,
-    path: null,
-    viewBox: [960, 600],
-    abbrToFeature: new Map(),
-    hasError: false
-  };
+  function initializeStatesMap() {
+    if (statesMapInitialized || statesMapInitializing) {
+      if (statesPolygonSeries) {
+        const data = Array.isArray(window.visitedStateData) ? window.visitedStateData : [];
+        statesPolygonSeries.data.setAll(data);
+      }
+      return;
+    }
+    const container = document.getElementById('chartdiv');
+    if (!container) return;
 
-  let stateMapResizeHandle = null;
+    if (typeof am5 === 'undefined' || typeof am5map === 'undefined' || typeof am5geodata_usaLow === 'undefined') {
+      console.error('[states-map] amCharts libraries missing');
+      statesMapInitializing = false;
+      return;
+    }
+
+    statesMapInitializing = true;
+
+    am5.ready(function() {
+      try {
+        if (statesMapInitialized) {
+          if (statesPolygonSeries) {
+            const data = Array.isArray(window.visitedStateData) ? window.visitedStateData : [];
+            statesPolygonSeries.data.setAll(data);
+          }
+          return;
+        }
+
+        statesMapRoot = am5.Root.new('chartdiv');
+        statesMapRoot.setThemes([am5themes_Animated.new(statesMapRoot)]);
+
+        const chart = statesMapRoot.container.children.push(am5map.MapChart.new(statesMapRoot, {
+          projection: am5map.geoAlbersUsa(),
+          layout: statesMapRoot.horizontalLayout
+        }));
+
+        statesPolygonSeries = chart.series.push(am5map.MapPolygonSeries.new(statesMapRoot, {
+          geoJSON: am5geodata_usaLow
+        }));
+
+        const tooltip = am5.Tooltip.new(statesMapRoot, {
+          getFillFromSprite: false,
+          autoTextColor: false,
+          pointerOrientation: 'horizontal',
+          labelText: '{name}\nGames Seen: {value}'
+        });
+
+        tooltip.get('background').setAll({
+          fill: am5.color(0x000000),
+          fillOpacity: 0.75,
+          strokeOpacity: 0,
+          cornerRadius: 8
+        });
+
+        tooltip.label.setAll({
+          fill: am5.color(0xffffff),
+          fontWeight: '600'
+        });
+
+        statesPolygonSeries.mapPolygons.template.setAll({
+          tooltipText: '{name}\nGames Seen: {value}',
+          tooltip,
+          interactive: true,
+          fill: am5.color(0xd1d5db),
+          stroke: am5.color(0xffffff),
+          strokeWidth: 0.5
+        });
+
+        const data = Array.isArray(window.visitedStateData) ? window.visitedStateData : [];
+        statesPolygonSeries.data.setAll(data);
+
+        statesPolygonSeries.mapPolygons.template.adapters.add('fill', function(fill, target) {
+          const dataItem = target.dataItem;
+          const context = dataItem && dataItem.dataContext;
+          if (context && context.value > 0) {
+            return am5.color(0x14b8a6);
+          }
+          return am5.color(0xd1d5db);
+        });
+
+        statesPolygonSeries.mapPolygons.template.adapters.add('tooltipText', function(text, target) {
+          const dataItem = target.dataItem;
+          const context = dataItem && dataItem.dataContext;
+          if (context && context.value > 0) {
+            return '{name}\nGames Seen: {value}';
+          }
+          return '{name}\nNo games yet';
+        });
+
+        statesMapInitialized = true;
+      } catch (err) {
+        console.error('[states-map] initialization failed', err);
+      } finally {
+        statesMapInitializing = false;
+      }
+    });
+  }
+
+  function updateStatesModalMessage() {
+    const messageEl = document.getElementById('statesModalEmpty');
+    if (!messageEl) return;
+    const hasVisits = Array.isArray(window.visitedStateData) && window.visitedStateData.some(item => item && item.value > 0);
+    messageEl.classList.toggle('d-none', hasVisits);
+  }
 
   let allGamesByRating = [];
   let allGamesByChron = [];
@@ -1264,306 +1224,6 @@
       `;
     }).join('');
   }
-
-  function buildStateRows(entries){
-    let prevCount = null, rank = 0, displayStateRank = 0;
-    return entries.map(([name,count]) => {
-      rank++;
-      if(count !== prevCount) displayStateRank = rank;
-      const prefix = entries.filter(e => e[1] === count).length > 1 ? 'T-' : '';
-      prevCount = count;
-      return `
-        <div class="top-list-item">${prefix}${displayStateRank}.</div>
-        <div class="venue-name"><span class="venue-name-text">${name}</span></div>
-        <div class="venue-count">${count}</div>
-      `;
-    }).join('');
-  }
-
-  function computeStateVisitSummary(entries = []) {
-    const byState = {};
-    for (const entry of entries) {
-      const game = entry && entry.game;
-      const venue = game && game.venue;
-      const fallbackVenue = entry && entry.venue;
-      const stateValue = (venue && (venue.state || venue.State)) || (fallbackVenue && fallbackVenue.state) || null;
-      if (!stateValue) continue;
-      const stateAbbr = String(stateValue).trim().toUpperCase();
-      if (!stateAbbr) continue;
-      if (!byState[stateAbbr]) {
-        byState[stateAbbr] = { count: 0, venues: new Map() };
-      }
-      const stateRecord = byState[stateAbbr];
-      stateRecord.count += 1;
-
-      const venueId = venue && (venue.venueId || venue._id || venue.id);
-      const venueName = (venue && (venue.name || venue.venueName)) || (fallbackVenue && (fallbackVenue.name || fallbackVenue.venueName)) || '';
-      const venueImage = (venue && (venue.imgUrl || venue.image || venue.logoUrl)) || (fallbackVenue && (fallbackVenue.imgUrl || fallbackVenue.image)) || FALLBACK_VENUE_IMAGE;
-      const key = venueId || venueName || `${stateAbbr}-${stateRecord.venues.size}`;
-      if (!stateRecord.venues.has(key)) {
-        stateRecord.venues.set(key, {
-          id: key,
-          name: venueName,
-          image: venueImage || FALLBACK_VENUE_IMAGE
-        });
-      }
-    }
-
-    const result = {};
-    Object.entries(byState).forEach(([abbr, data]) => {
-      result[abbr] = {
-        count: data.count,
-        venues: Array.from(data.venues.values())
-      };
-    });
-
-    return {
-      byState: result,
-      visitedStateCount: Object.keys(result).length
-    };
-  }
-
-  function updateStatesModalEmptyState() {
-    const container = document.getElementById('statesMapContainer');
-    const messageEl = document.getElementById('statesModalEmpty');
-    if (!container || !messageEl) return;
-    if (stateMapRuntime.hasError) {
-      container.classList.add('d-none');
-      messageEl.classList.remove('d-none');
-      return;
-    }
-    const summary = window.stateVisitSummary;
-    const hasVisits = summary && summary.visitedStateCount > 0;
-    container.classList.toggle('d-none', !hasVisits);
-    messageEl.classList.toggle('d-none', hasVisits);
-  }
-
-  async function ensureStatesMap() {
-    updateStatesModalEmptyState();
-    const summary = window.stateVisitSummary;
-    if (!summary || summary.visitedStateCount === 0) return;
-
-    if (typeof d3 === 'undefined' || typeof topojson === 'undefined') {
-      console.error('[states-map] Required libraries missing');
-      return;
-    }
-
-    if (!stateMapRuntime.initialized) {
-      if (!stateMapRuntime.dataPromise) {
-        stateMapRuntime.dataPromise = fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json')
-          .then(res => {
-            if (!res.ok) throw new Error('Failed to load US atlas');
-            return res.json();
-          });
-      }
-
-      try {
-        const us = await stateMapRuntime.dataPromise;
-        renderStateMap(us, summary);
-      } catch (err) {
-        console.error('[states-map] Unable to render map', err);
-        stateMapRuntime.hasError = true;
-        stateMapRuntime.dataPromise = null;
-        const messageEl = document.getElementById('statesModalEmpty');
-        if (messageEl) {
-          messageEl.textContent = 'Unable to load map.';
-          messageEl.classList.remove('d-none');
-        }
-        updateStatesModalEmptyState();
-        return;
-      }
-    } else {
-      updateStatePathFills();
-      renderStateVenueIcons();
-    }
-  }
-
-  function renderStateMap(us, summary) {
-    const container = document.getElementById('statesMapContainer');
-    const iconLayer = document.getElementById('statesMapIconLayer');
-    const tooltip = document.getElementById('statesMapTooltip');
-    if (!container || !iconLayer || !tooltip) return;
-
-    stateMapRuntime.hasError = false;
-    stateMapRuntime.container = container;
-    stateMapRuntime.iconLayer = iconLayer;
-    stateMapRuntime.tooltip = tooltip;
-
-    const [width, height] = stateMapRuntime.viewBox;
-    const svg = d3.select(container)
-      .append('svg')
-      .attr('class', 'states-map-svg')
-      .attr('viewBox', `0 0 ${width} ${height}`)
-      .attr('preserveAspectRatio', 'xMidYMid meet');
-
-    const path = d3.geoPath();
-    stateMapRuntime.path = path;
-    stateMapRuntime.svg = svg;
-    stateMapRuntime.abbrToFeature = new Map();
-
-    const states = topojson.feature(us, us.objects.states).features;
-    stateMapRuntime.features = states;
-
-    const visitedStates = summary.byState || {};
-
-    svg.append('g')
-      .attr('class', 'states-path-group')
-      .selectAll('path')
-      .data(states)
-      .join('path')
-      .attr('class', 'state-path')
-      .attr('data-state', d => {
-        const name = d && d.properties ? d.properties.name : '';
-        const abbr = STATE_NAME_TO_ABBR[name] || '';
-        if (abbr) stateMapRuntime.abbrToFeature.set(abbr, d);
-        return abbr;
-      })
-      .attr('d', path)
-      .attr('fill', d => {
-        const name = d && d.properties ? d.properties.name : '';
-        const abbr = STATE_NAME_TO_ABBR[name];
-        return (abbr && visitedStates[abbr]) ? VISITED_FILL : UNVISITED_FILL;
-      })
-      .attr('stroke', 'rgba(255, 255, 255, 0.35)')
-      .attr('stroke-width', 0.6)
-      .on('mouseenter', function(event, d) {
-        const name = d && d.properties ? d.properties.name : '';
-        const abbr = STATE_NAME_TO_ABBR[name];
-        const data = abbr ? visitedStates[abbr] : null;
-        if (data) {
-          d3.select(this).attr('fill', VISITED_HOVER_FILL);
-          showStatesTooltip(event, abbr, data.count);
-        } else {
-          d3.select(this).attr('fill', UNVISITED_HOVER_FILL);
-          hideStatesTooltip();
-        }
-      })
-      .on('mousemove', function(event, d) {
-        const name = d && d.properties ? d.properties.name : '';
-        const abbr = STATE_NAME_TO_ABBR[name];
-        const data = abbr ? visitedStates[abbr] : null;
-        if (data) {
-          showStatesTooltip(event, abbr, data.count);
-        }
-      })
-      .on('mouseleave', function(event, d) {
-        const name = d && d.properties ? d.properties.name : '';
-        const abbr = STATE_NAME_TO_ABBR[name];
-        const data = abbr ? visitedStates[abbr] : null;
-        d3.select(this).attr('fill', data ? VISITED_FILL : UNVISITED_FILL);
-        hideStatesTooltip();
-      });
-
-    svg.append('path')
-      .datum(topojson.mesh(us, us.objects.states, (a, b) => a !== b))
-      .attr('class', 'states-border')
-      .attr('fill', 'none')
-      .attr('stroke', 'rgba(255, 255, 255, 0.55)')
-      .attr('stroke-width', 0.7)
-      .attr('d', path);
-
-    stateMapRuntime.initialized = true;
-    updateStatesModalEmptyState();
-    renderStateVenueIcons();
-  }
-
-  function updateStatePathFills() {
-    if (!stateMapRuntime.svg) return;
-    const visited = (window.stateVisitSummary && window.stateVisitSummary.byState) || {};
-    stateMapRuntime.svg.selectAll('.state-path').attr('fill', function() {
-      const abbr = this.getAttribute('data-state');
-      return abbr && visited[abbr] ? VISITED_FILL : UNVISITED_FILL;
-    });
-  }
-
-  function renderStateVenueIcons() {
-    const summary = window.stateVisitSummary;
-    if (!summary || summary.visitedStateCount === 0) return;
-    const iconLayer = stateMapRuntime.iconLayer;
-    const container = stateMapRuntime.container;
-    const path = stateMapRuntime.path;
-    if (!iconLayer || !container || !path) return;
-
-    iconLayer.innerHTML = '';
-    const bounds = container.getBoundingClientRect();
-    if (!bounds.width || !bounds.height) return;
-
-    const visitedStates = summary.byState || {};
-    const [baseWidth, baseHeight] = stateMapRuntime.viewBox;
-
-    stateMapRuntime.abbrToFeature.forEach((feature, abbr) => {
-      const stateData = visitedStates[abbr];
-      if (!stateData || !stateData.venues || stateData.venues.length === 0) return;
-      const centroid = path.centroid(feature);
-      if (!centroid || centroid.some(val => !Number.isFinite(val))) return;
-      const [cx, cy] = centroid;
-      const baseX = (cx / baseWidth) * bounds.width;
-      const baseY = (cy / baseHeight) * bounds.height;
-      const venues = stateData.venues;
-      const radius = venues.length > 1 ? 18 : 0;
-
-      venues.forEach((venue, index) => {
-        const icon = document.createElement('div');
-        icon.className = 'state-venue-icon';
-        icon.dataset.state = abbr;
-        icon.title = venue.name || STATE_ABBR_TO_NAME[abbr] || '';
-        icon.style.left = `${baseX}px`;
-        icon.style.top = `${baseY}px`;
-        const angle = venues.length > 1 ? (index / venues.length) * Math.PI * 2 : 0;
-        const dx = radius ? Math.cos(angle) * radius : 0;
-        const dy = radius ? Math.sin(angle) * radius : 0;
-        icon.style.transform = `translate(-50%, -50%) translate(${dx}px, ${dy}px)`;
-        const imageSrc = (venue.image || FALLBACK_VENUE_IMAGE);
-        const safeImage = String(imageSrc).replace(/"/g, '\"');
-        icon.style.backgroundImage = `url("${safeImage}")`;
-        iconLayer.appendChild(icon);
-      });
-    });
-  }
-
-  function showStatesTooltip(event, stateAbbr, count) {
-    const tooltip = stateMapRuntime.tooltip;
-    const container = stateMapRuntime.container;
-    if (!tooltip || !container) return;
-    tooltip.textContent = `Games Seen: ${count}`;
-    tooltip.classList.remove('d-none');
-
-    const containerRect = container.getBoundingClientRect();
-    const tooltipWidth = tooltip.offsetWidth;
-    const tooltipHeight = tooltip.offsetHeight;
-
-    let left = event.clientX - containerRect.left + 12;
-    let top = event.clientY - containerRect.top + 12;
-
-    if (left + tooltipWidth > containerRect.width) {
-      left = containerRect.width - tooltipWidth - 8;
-    }
-    if (top + tooltipHeight > containerRect.height) {
-      top = containerRect.height - tooltipHeight - 8;
-    }
-
-    tooltip.style.left = `${Math.max(8, left)}px`;
-    tooltip.style.top = `${Math.max(8, top)}px`;
-  }
-
-  function hideStatesTooltip() {
-    const tooltip = stateMapRuntime.tooltip;
-    if (!tooltip) return;
-    tooltip.classList.add('d-none');
-  }
-
-  function fillStatesModalList() {
-    const body = document.getElementById('statesModalBody');
-    if (body) body.innerHTML = buildStateRows(window.allRankedStates || []);
-  }
-
-  window.addEventListener('resize', () => {
-    if (!stateMapRuntime.initialized) return;
-    if (stateMapResizeHandle) clearTimeout(stateMapResizeHandle);
-    stateMapResizeHandle = setTimeout(() => {
-      renderStateVenueIcons();
-    }, 150);
-  });
 
   function ordinal(n){ const s=["th","st","nd","rd"],v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
   function formatGameDate(d){
@@ -1717,14 +1377,13 @@
     }).join('');
 
     // States
-    window.allRankedStates = stateEntries;
-    window.stateVisitSummary = computeStateVisitSummary(gameEntries);
+    window.visitedStateData = Array.isArray(userStateData) ? userStateData : [];
     document.getElementById('statesCount').textContent = statesCount;
     const statesTopEl = document.getElementById('statesTop');
     statesTopEl.style.borderRadius = '0.5rem';
     statesTopEl.style.color = '#333';
 
-    updateStatesModalEmptyState();
+    updateStatesModalMessage();
 
     if (stateEntries.length === 0) {
       statesTopEl.style.background = 'none';
@@ -1777,10 +1436,10 @@
     }
     if (mStates) {
       mStates.addEventListener('show.bs.modal', () => {
-        fillStatesModalList();
+        updateStatesModalMessage();
       });
       mStates.addEventListener('shown.bs.modal', () => {
-        ensureStatesMap();
+        initializeStatesMap();
       });
     }
 
@@ -1808,8 +1467,8 @@
     }
     if (hStates && mStates) {
       hStates.addEventListener('click', () => {
-        fillStatesModalList();
-        ensureStatesMap();
+        updateStatesModalMessage();
+        initializeStatesMap();
         const instance = getBootstrapModal(mStates);
         if (instance) instance.show();
       });
