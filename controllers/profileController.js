@@ -870,8 +870,104 @@ exports.profileStats = async (req, res, next) => {
                 stateFrequencyMap[state] = (stateFrequencyMap[state] || 0) + 1;
             }
         }
-        const stateEntries = Object.entries(stateFrequencyMap).sort((a, b) => b[1] - a[1]);
+        const STATE_NAME_TO_ABBR = {
+            'Alabama': 'AL',
+            'Alaska': 'AK',
+            'Arizona': 'AZ',
+            'Arkansas': 'AR',
+            'California': 'CA',
+            'Colorado': 'CO',
+            'Connecticut': 'CT',
+            'Delaware': 'DE',
+            'District of Columbia': 'DC',
+            'Florida': 'FL',
+            'Georgia': 'GA',
+            'Hawaii': 'HI',
+            'Idaho': 'ID',
+            'Illinois': 'IL',
+            'Indiana': 'IN',
+            'Iowa': 'IA',
+            'Kansas': 'KS',
+            'Kentucky': 'KY',
+            'Louisiana': 'LA',
+            'Maine': 'ME',
+            'Maryland': 'MD',
+            'Massachusetts': 'MA',
+            'Michigan': 'MI',
+            'Minnesota': 'MN',
+            'Mississippi': 'MS',
+            'Missouri': 'MO',
+            'Montana': 'MT',
+            'Nebraska': 'NE',
+            'Nevada': 'NV',
+            'New Hampshire': 'NH',
+            'New Jersey': 'NJ',
+            'New Mexico': 'NM',
+            'New York': 'NY',
+            'North Carolina': 'NC',
+            'North Dakota': 'ND',
+            'Ohio': 'OH',
+            'Oklahoma': 'OK',
+            'Oregon': 'OR',
+            'Pennsylvania': 'PA',
+            'Rhode Island': 'RI',
+            'South Carolina': 'SC',
+            'South Dakota': 'SD',
+            'Tennessee': 'TN',
+            'Texas': 'TX',
+            'Utah': 'UT',
+            'Vermont': 'VT',
+            'Virginia': 'VA',
+            'Washington': 'WA',
+            'West Virginia': 'WV',
+            'Wisconsin': 'WI',
+            'Wyoming': 'WY',
+            'Puerto Rico': 'PR'
+        };
+
+        const STATE_NAME_TO_ABBR_LOOKUP = Object.entries(STATE_NAME_TO_ABBR).reduce((acc, [name, abbr]) => {
+            acc[name.toUpperCase()] = abbr;
+            return acc;
+        }, {});
+
+        const STATE_ABBR_TO_NAME = Object.entries(STATE_NAME_TO_ABBR).reduce((acc, [name, abbr]) => {
+            acc[abbr] = name;
+            return acc;
+        }, {});
+
+        const ALT_STATE_KEYS = {
+            'WASHINGTON, DC': 'DC',
+            'WASHINGTON DC': 'DC'
+        };
+
+        const normalizedStateMap = {};
+        Object.entries(stateFrequencyMap).forEach(([stateKey, count]) => {
+            if (!stateKey) return;
+            const trimmed = String(stateKey).trim();
+            if (!trimmed) return;
+            const upperValue = trimmed.toUpperCase();
+            let abbr = null;
+
+            if (/^[A-Z]{2}$/.test(upperValue)) {
+                abbr = upperValue;
+            } else {
+                const normalizedKey = upperValue.replace(/\./g, '');
+                abbr = ALT_STATE_KEYS[normalizedKey] || STATE_NAME_TO_ABBR_LOOKUP[normalizedKey] || null;
+            }
+
+            if (abbr) {
+                normalizedStateMap[abbr] = (normalizedStateMap[abbr] || 0) + count;
+            }
+        });
+
+        const sortedStates = Object.entries(normalizedStateMap).sort((a, b) => b[1] - a[1]);
+        const stateEntries = sortedStates.map(([abbr, count]) => [STATE_ABBR_TO_NAME[abbr] || abbr, count]);
         console.log('[profileStats] Top state frequency:', stateEntries.slice(0, 3));
+
+        const userStateData = sortedStates.map(([abbr, count]) => ({
+            id: `US-${abbr}`,
+            value: count
+        }));
 
         // Unique counts
         const teamsCount = teamEntries.length;
@@ -904,6 +1000,7 @@ exports.profileStats = async (req, res, next) => {
             teamEntries,
             venueEntries,
             stateEntries,
+            userStateData,
             eloGames
         });
 
