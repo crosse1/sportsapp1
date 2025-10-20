@@ -1300,7 +1300,7 @@ worseBtn.off('click').on('click', function(){
               photoInput.attr('name', photoFieldName);
             }
           }
-        }, 0);
+        , 0);
         if(multiSubmitBtn && multiSubmitBtn.length && !multiSubmitBtn.prop('disabled')){
           submitMultipleGames();
         }
