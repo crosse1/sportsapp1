@@ -956,87 +956,93 @@ worseBtn.off('click').on('click', function(){
       return container;
     }
 
-    teamSelect.select2({
-      dropdownParent: modal,
-      placeholder:'Select Team',
-      width:'100%',
-      containerCssClass:'glass-select2',
-      dropdownCssClass:'glass-select2',
-      templateResult: formatTeam,
-      templateSelection: formatTeam,
-      ajax:{
-        url:'/pastGames/teams',
-        dataType:'json',
-        delay:250,
-        data:function(params){
-          return { leagueId: leagueSelect.val(), season: seasonSelect.val(), q: params.term };
-        },
-        processResults:function(data){
-          return { results:data.map(t=>({ id:t.teamId, text:t.school, logo:(t.logos&&t.logos[0]) })) };
-        }
-      }
-    });
+    const isSelect2Ready = typeof $ === 'function' && $.fn && typeof $.fn.select2 === 'function';
 
-    gameSelect.select2({
-      dropdownParent: modal,
-      placeholder:'Select Game',
-      width:'100%',
-      templateResult: formatGame,
-      tags:false,
-      multiple:true,
-      selectionAdapter: MinimalSelectionAdapter || undefined,
-      containerCssClass:'glass-select2',
-      dropdownCssClass:'glass-select2',
-      closeOnSelect:false,
-      ajax:{
-        url:'/pastGames/search',
-        dataType:'json',
-        delay:250,
-        beforeSend:function(){
-          if(gameSpinner){ gameSpinner.show(); }
-        },
-        data:function(params){
-          return {
-            leagueId: leagueSelect.val(),
-            season: seasonSelect.val(),
-            teamId: teamSelect.val(),
-            q: params.term
-          };
-        },
-        processResults:function(data){
-          const results = data.map(g=>{
-            const parts = g.score.split('-');
-            const home = parts[0] || '';
-            const away = parts[1] || '';
-            const option = {
-              id:g.id,
-              homeTeamName:g.homeTeamName,
-              awayTeamName:g.awayTeamName,
-              homeLogo:g.homeLogo,
-              awayLogo:g.awayLogo,
-              homeTeamId:g.homeTeamId,
-              awayTeamId:g.awayTeamId,
-              homeColor:g.homeColor,
-              homeAlternateColor:g.homeAlternateColor,
-              awayColor:g.awayColor,
-              awayAlternateColor:g.awayAlternateColor,
-              score:g.score,
-              homePoints:g.homePoints,
-              awayPoints:g.awayPoints,
-              gameDate:g.gameDate,
-              scoreDisplay:`${away}-${home}`,
-              text:`${g.awayTeamName} vs ${g.homeTeamName}`
-            };
-            upsertGameOption(option);
-            return option;
-          });
-          return { results };
-        },
-        complete:function(){
-          if(gameSpinner){ gameSpinner.hide(); }
+    if(isSelect2Ready && teamSelect && teamSelect.length){
+      teamSelect.select2({
+        dropdownParent: modal,
+        placeholder:'Select Team',
+        width:'100%',
+        containerCssClass:'glass-select2',
+        dropdownCssClass:'glass-select2',
+        templateResult: formatTeam,
+        templateSelection: formatTeam,
+        ajax:{
+          url:'/pastGames/teams',
+          dataType:'json',
+          delay:250,
+          data:function(params){
+            return { leagueId: leagueSelect.val(), season: seasonSelect.val(), q: params.term };
+          },
+          processResults:function(data){
+            return { results:data.map(t=>({ id:t.teamId, text:t.school, logo:(t.logos&&t.logos[0]) })) };
+          }
         }
-      }
-    });
+      });
+    }
+
+    if(isSelect2Ready && gameSelect && gameSelect.length){
+      gameSelect.select2({
+        dropdownParent: modal,
+        placeholder:'Select Game',
+        width:'100%',
+        templateResult: formatGame,
+        tags:false,
+        multiple:true,
+        selectionAdapter: MinimalSelectionAdapter || undefined,
+        containerCssClass:'glass-select2',
+        dropdownCssClass:'glass-select2',
+        closeOnSelect:false,
+        ajax:{
+          url:'/pastGames/search',
+          dataType:'json',
+          delay:250,
+          beforeSend:function(){
+            if(gameSpinner){ gameSpinner.show(); }
+          },
+          data:function(params){
+            return {
+              leagueId: leagueSelect.val(),
+              season: seasonSelect.val(),
+              teamId: teamSelect.val(),
+              q: params.term
+            };
+          },
+          processResults:function(data){
+            const results = data.map(g=>{
+              const parts = g.score.split('-');
+              const home = parts[0] || '';
+              const away = parts[1] || '';
+              const option = {
+                id:g.id,
+                homeTeamName:g.homeTeamName,
+                awayTeamName:g.awayTeamName,
+                homeLogo:g.homeLogo,
+                awayLogo:g.awayLogo,
+                homeTeamId:g.homeTeamId,
+                awayTeamId:g.awayTeamId,
+                homeColor:g.homeColor,
+                homeAlternateColor:g.homeAlternateColor,
+                awayColor:g.awayColor,
+                awayAlternateColor:g.awayAlternateColor,
+                score:g.score,
+                homePoints:g.homePoints,
+                awayPoints:g.awayPoints,
+                gameDate:g.gameDate,
+                scoreDisplay:`${away}-${home}`,
+                text:`${g.awayTeamName} vs ${g.homeTeamName}`
+              };
+              upsertGameOption(option);
+              return option;
+            });
+            return { results };
+          },
+          complete:function(){
+            if(gameSpinner){ gameSpinner.hide(); }
+          }
+        }
+      });
+    }
 
     initSelectionElements();
     updateSelectionPlaceholder();
