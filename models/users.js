@@ -83,6 +83,12 @@ const userSchema = new mongoose.Schema({
         }],
         default: []
       },
+    settings: {
+        notifyWaitlist: {
+            type: Boolean,
+            default: false
+        }
+    },
     invites: { type: [userInviteSchema], default: [] }
 });
 

@@ -22,7 +22,18 @@
         <a href="<%= navProfileSlug ? `/profile/${navProfileSlug}/stats` : '/profile' %>" class="me-3 <%= currentPath.startsWith('/profile') ? 'active-profile' : '' %>">
           <img src="<%= navImg %>" alt="Profile" class="nav-profile-icon">
         </a>
-        <a href="/logout" class="btn btn-outline-secondary">Log Out</a>
+        <button id="settingsButton" class="btn btn-light rounded-circle shadow-sm settings-gear-btn" aria-label="Open settings">
+          <svg class="settings-gear-icon" width="24" height="24" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+            <defs>
+              <linearGradient id="settingsGearGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#14b8a6" />
+                <stop offset="100%" stop-color="#7c3aed" />
+              </linearGradient>
+            </defs>
+            <path fill="url(#settingsGearGradient)" d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492ZM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0Z" />
+            <path fill="url(#settingsGearGradient)" d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.901-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.433 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.892 3.433-.901 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.892-1.64-.901-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319Zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 9.87l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 5.317l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159A1.873 1.873 0 0 0 7.23 1.945l.094-.319Z" />
+          </svg>
+        </button>
       <% } else { %>
         <a href="/login" class="btn btn-outline-primary me-2">Sign In</a>
         <a href="/signup" class="btn btn-primary">Register</a>
@@ -30,6 +41,59 @@
     </div>
   </nav>
 </header>
+<div id="settingsDrawerOverlay" class="settings-overlay"></div>
+<aside id="settingsDrawer" class="settings-drawer">
+  <div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+      <h5 class="mb-1">Settings</h5>
+      <p class="text-muted mb-0">Manage your preferences</p>
+    </div>
+    <button class="btn btn-link text-muted p-0" id="settingsDrawerClose" aria-label="Close settings">
+      <i class="bi bi-x-lg fs-5"></i>
+    </button>
+  </div>
+  <div id="settingsStatus" class="alert alert-dismissible fade d-none" role="alert"></div>
+  <div class="settings-stack">
+    <div class="settings-card">
+      <div class="d-flex align-items-center justify-content-between gap-3">
+        <div>
+          <div class="fw-semibold">Get friends game notifications</div>
+          <div class="text-muted small">Receive waitlist notifications for followed users</div>
+        </div>
+        <label class="toggle-switch mb-0" aria-label="Toggle waitlist notifications">
+          <input type="checkbox" id="notifyWaitlistToggle" data-initial="<%= userSettings?.notifyWaitlist ? 'true' : 'false' %>" <%= userSettings?.notifyWaitlist ? 'checked' : '' %> />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="d-flex flex-column gap-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="fw-semibold">Forgot Password</div>
+          <button id="togglePasswordForm" class="btn btn-outline-primary btn-sm">Reset</button>
+        </div>
+        <form id="passwordChangeForm" class="d-none">
+          <div class="mb-3">
+            <label for="oldPassword" class="form-label">Old password</label>
+            <input type="password" class="form-control" id="oldPassword" name="oldPassword" autocomplete="current-password" required>
+          </div>
+          <div class="mb-3">
+            <label for="newPassword" class="form-label">New password</label>
+            <input type="password" class="form-control" id="newPassword" name="newPassword" autocomplete="new-password" required>
+          </div>
+          <div class="mb-3">
+            <label for="confirmPassword" class="form-label">Confirm new password</label>
+            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" autocomplete="new-password" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Update password</button>
+        </form>
+      </div>
+    </div>
+    <div class="settings-card">
+      <a href="/logout" class="btn btn-outline-danger w-100">Log Out</a>
+    </div>
+  </div>
+</aside>
 <div class="modal fade" id="inboxModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content"></div>
@@ -38,6 +102,7 @@
 <script src="/js/inboxModal.js"></script>
 <script>window.loggedInUser = <%- JSON.stringify(loggedInUser || null) %>;</script>
 <script>window.hasQueuedGameInvites = <%= JSON.stringify(!!hasQueuedGameInvites) %>;</script>
+<script>window.userSettings = <%- JSON.stringify(userSettings || { notifyWaitlist: false }) %>;</script>
 <script src="/js/nearbyCheckin.js"></script>
 
 <%- include('ratePromptModal') %>
@@ -46,3 +111,4 @@
 <script>window.pendingRatings = <%- JSON.stringify(pendingRatings || []) %>;</script>
 <script src="/js/pendingRatingModal.js"></script>
 <script src="/js/gameInviteModal.js"></script>
+<script src="/js/settingsDrawer.js"></script>
