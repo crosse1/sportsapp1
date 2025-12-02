@@ -1,143 +1,208 @@
-const fs = require('fs');
-const csv = require('csv-parser');
-const mongoose = require('mongoose');
+const fs = require("fs");
+const csv = require("csv-parser");
+const mongoose = require("mongoose");
+const Game = require("./models/Game"); // adjust path if needed
 
-// ==== CONFIG (edit these) ====
-const MONGODB_URI = "mongodb+srv://crosse:Zack0018@christiancluster.0ejv5.mongodb.net/appUsers?retryWrites=true&w=majority&appName=ChristianCluster";
-const COLLECTION = "games";
-const CSV_PATH = "public/files/GamesDate3.csv";
-const DRY_RUN = false; // true = log only, don't write
-// Which document fields might hold your external game id?
-const ID_FIELDS = ['gameId', 'id', 'espnId', 'Id']; // add/remove as needed
-// Which date field should be updated / used as fallback?
-const DATE_FIELDS_PREFERENCE = ['startDate', 'gameDate']; // first found wins
-// ============================
+// === CONFIG ===
+const MONGODB_URI =
+  "mongodb+srv://crosse:Zack0018@christiancluster.0ejv5.mongodb.net/appUsers?retryWrites=true&w=majority&appName=ChristianCluster";
 
-// --- helpers ---
+const CSV_PATH = "public/files/GamesDate5.csv";
+const DRY_RUN = false;
+// ===============
+
+// Helpers
+function parseBool(val) {
+  if (val == null) return false;
+  return String(val).trim().toLowerCase() === "true";
+}
+
+function parseNum(val) {
+  if (val == null || val === "") return null;
+  const n = Number(val);
+  return isNaN(n) ? null : n;
+}
+
+function parseLineScores(val) {
+  if (!val) return [];
+  return String(val)
+    .split(",")
+    .map((v) => Number(v.trim()))
+    .filter((v) => !isNaN(v));
+}
+
 function tryParseDate(val) {
-  if (!val) return { ok: false, date: null };
+  if (!val) return null;
   const d = new Date(val);
-  return isNaN(d) ? { ok: false, date: null } : { ok: true, date: d };
+  return isNaN(d) ? null : d;
 }
-function normalizeForCompare(val) {
-  if (val == null) return null;
-  if (val instanceof Date) return val.getTime();
-  if (typeof val === 'string') {
-    const { ok, date } = tryParseDate(val);
-    return ok ? date.getTime() : val.trim();
-  }
+
+function norm(val) {
+  if (!val) return null;
   const d = new Date(val);
-  return isNaN(d) ? String(val) : d.getTime();
-}
-function isObjectIdString(s) {
-  return typeof s === 'string' && /^[a-fA-F0-9]{24}$/.test(s);
-}
-function pickTargetDateField(doc) {
-  for (const f of DATE_FIELDS_PREFERENCE) {
-    if (Object.prototype.hasOwnProperty.call(doc, f)) return f;
-  }
-  return DATE_FIELDS_PREFERENCE[0]; // default to first if none exist
+  return isNaN(d) ? null : d.getTime();
 }
 
 async function run() {
-  await mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 15000, maxPoolSize: 5 });
-  console.log('✅ Connected to MongoDB');
+  await mongoose.connect(MONGODB_URI);
+  console.log("✅ Connected to MongoDB");
 
-  const col = mongoose.connection.db.collection(COLLECTION);
+  const gamesCol = mongoose.connection.db.collection("games");
+  const pastCol = mongoose.connection.db.collection("pastgames");
 
-  // Read + normalize CSV rows (lowercase keys)
+  // Load CSV
   const rows = await new Promise((resolve, reject) => {
     const out = [];
     fs.createReadStream(CSV_PATH)
       .pipe(csv())
-      .on('data', (row) => {
+      .on("data", (row) => {
         const lower = {};
         for (const [k, v] of Object.entries(row)) {
-          lower[String(k).trim().toLowerCase()] = v;
+          lower[String(k).toLowerCase()] = v;
         }
         out.push(lower);
       })
-      .on('end', () => resolve(out))
-      .on('error', reject);
+      .on("end", () => resolve(out))
+      .on("error", reject);
   });
 
-  console.log(`📄 Loaded ${rows.length} rows from ${CSV_PATH}`);
+  console.log(`📄 Loaded ${rows.length} CSV rows.`);
 
-  let examined = 0, updated = 0, notFound = 0, skipped = 0;
+  let examined = 0,
+    updated = 0,
+    inserted = 0;
 
   for (const r of rows) {
     examined++;
 
-    // Your CSV uses Id/StartDate -> after normalization these are id/startdate
-    const rawId = r.gameid ?? r.id ?? r._id ?? r.eventid ?? r.espnid;
-    const rawDate = r.startdate ?? r.gamedate ?? r.date ?? r.start ?? r.start_time;
+    // Id + date from CSV
+    const rawId = r.id;
+    const date = tryParseDate(r.startdate);
 
-    if (!rawId || !rawDate) {
-      console.warn(`⚠️ Skipping malformed row: ${JSON.stringify(r)}`);
-      skipped++;
+    if (!rawId || !date) {
+      console.log("⚠️ Skipping malformed row (missing id/date):", r);
       continue;
     }
 
+    const idNum = parseNum(rawId);
     const idStr = String(rawId).trim();
-    const idNum = Number(idStr);
-    const or = [];
 
-    // Match by _id if it looks like ObjectId
-    if (isObjectIdString(idStr)) {
-      or.push({ _id: new mongoose.Types.ObjectId(idStr) });
+    // Build robust ID query used for BOTH collections
+    const idQueryOr = [];
+    if (idNum !== null) {
+      idQueryOr.push(
+        { gameId: idNum },
+        { gameId: idStr },
+        { id: idNum },
+        { id: idStr },
+        { Id: idNum },
+        { Id: idStr }
+      );
+    } else {
+      idQueryOr.push(
+        { gameId: idStr },
+        { id: idStr },
+        { Id: idStr }
+      );
     }
 
-    // Try each configured ID field as number and as string
-    for (const f of ID_FIELDS) {
-      or.push({ [f]: idStr });
-      if (!Number.isNaN(idNum)) or.push({ [f]: idNum });
+    const query = { $or: idQueryOr };
+
+    const game = await gamesCol.findOne(query);
+    const past = await pastCol.findOne(query);
+
+    // Update startDate in whichever collection has the doc
+    for (const doc of [game, past]) {
+      if (!doc) continue;
+
+      if (norm(doc.startDate) !== norm(date)) {
+        console.log(`🛠️ Updating startDate for external ID ${rawId} (doc _id=${doc._id})`);
+
+        if (!DRY_RUN) {
+          const col = doc === game ? gamesCol : pastCol;
+          await col.updateOne(
+            { _id: doc._id },
+            { $set: { startDate: date } }
+          );
+        }
+
+        updated++;
+      }
     }
 
-    const doc = await col.findOne({ $or: or });
-    if (!doc) {
-      console.warn(`🔎 Not found in DB for id="${idStr}" (tried fields: ${ID_FIELDS.join(', ')})`);
-      notFound++;
+    // 🚫 If this external ID exists in either collection, do NOT create a new Game
+    if (game || past) {
+      // Optional: debugging logs so you can see why it skipped
+      // console.log(`⏭️ Skipping create for external ID ${rawId} (already in ${game ? "games" : ""}${game && past ? " & " : ""}${past ? "pastgames" : ""})`);
       continue;
     }
 
-    const targetField = pickTargetDateField(doc);
-    const current = doc[targetField];
-    const currentNorm = normalizeForCompare(current);
-    const csvNorm = normalizeForCompare(rawDate);
+    // Build Game model object from CSV
+    const gameIdNum = idNum; // For the schema's gameId (Number)
+    const newGame = {
+      gameId: gameIdNum,
+      season: parseNum(r.season),
+      week: parseNum(r.week),
+      seasonType: r.seasontype || null,
+      startDate: date,
+      startTimeTBD: parseBool(r.starttimetbd),
+      completed: parseBool(r.completed),
+      neutralSite: parseBool(r.neutralsite),
+      conferenceGame: parseBool(r.conferencegame),
+      attendance: parseNum(r.attendance),
+      venueId: parseNum(r.venueid),
+      venue: r.venue || null,
 
-    if (currentNorm === csvNorm) {
-      continue; // already matches
-    }
+      // home team data
+      homeTeam: null,
+      homeTeamName: r.hometeam || null,
+      homeClassification: r.homeclassification || null,
+      homeConference: r.homeconference || null,
+      homePoints: parseNum(r.homepoints),
+      homeLineScores: parseLineScores(r.homelinescores),
+      homePostgameWinProbability: parseNum(r.homepostgamewinprobability),
+      homePregameElo: parseNum(r.homepregameelo),
+      homePostgameElo: parseNum(r.homepostgameelo),
 
-    // Respect existing type: if DB has Date and CSV parses, write a Date; else write string
-    const parsed = tryParseDate(rawDate);
-    const newValue = (current instanceof Date && parsed.ok) ? parsed.date : rawDate;
+      // away team data
+      awayTeam: null,
+      awayTeamName: r.awayteam || null,
+      awayClassification: r.awayclassification || null,
+      awayConference: r.awayconference || null,
+      awayPoints: parseNum(r.awaypoints),
+      awayLineScores: parseLineScores(r.awaylinescores),
+      awayPostgameWinProbability: parseNum(r.awaypostgamewinprobability),
+      awayPregameElo: parseNum(r.awaypregameelo),
+      awayPostgameElo: parseNum(r.awaypostgameelo),
 
-    const beforeStr = current instanceof Date ? current.toISOString() : String(current);
-    const afterStr = newValue instanceof Date ? newValue.toISOString() : String(newValue);
+      excitementIndex: parseNum(r.excitementindex),
+      ratings: [],
+      notes: null,
+      highlights: null,
+      homeConferenceId: null,
+      awayConferenceId: null
+    };
 
     if (DRY_RUN) {
-      console.log(`DRY-RUN ✅ Would update _id=${doc._id} ${targetField}: "${beforeStr}" -> "${afterStr}"`);
-      updated++;
-      continue;
+      console.log("🆕 DRY-RUN: Would create Game:", newGame);
+    } else {
+      await Game.create(newGame);
+      console.log(`🆕 Inserted new Game for external ID ${rawId} (gameId=${gameIdNum})`);
     }
 
-    await col.updateOne({ _id: doc._id }, { $set: { [targetField]: newValue } });
-    console.log(`✅ Updated _id=${doc._id} ${targetField}: "${beforeStr}" -> "${afterStr}"`);
-    updated++;
+    inserted++;
   }
 
-  console.log('\n---- Summary ----');
-  console.log(`Examined CSV rows: ${examined}`);
-  console.log(`Updated documents: ${updated}${DRY_RUN ? ' (dry-run)' : ''}`);
-  console.log(`Not found in DB:   ${notFound}`);
-  console.log(`Skipped rows:      ${skipped}`);
+  console.log("\n===== SUMMARY =====");
+  console.log("Examined:", examined);
+  console.log("Updated startDate:", updated);
+  console.log("Inserted new games:", inserted);
+  console.log("===================\n");
 
   await mongoose.disconnect();
 }
 
-run().catch(async (err) => {
-  console.error('💥 Error:', err);
-  try { await mongoose.disconnect(); } catch {}
-  process.exit(1);
+run().catch((err) => {
+  console.error("💥 ERROR:", err);
+  mongoose.disconnect();
 });

@@ -44,15 +44,44 @@ function parseLineScores(val) {
 async function importVenues() {
   return new Promise((resolve, reject) => {
     const rows = [];
-    fs.createReadStream('public/files/Venues.csv')
+
+    fs.createReadStream('public/files/Venues2.csv')
       .pipe(csv())
-      .on('data', row => rows.push(row))
+      .on('data', rawRow => {
+        // ==== FIX BOM + stray quotes ====
+        const row = {};
+        for (let [k, v] of Object.entries(rawRow)) {
+          k = k.replace(/^\uFEFF/, "");        // remove BOM
+          k = k.replace(/^"+|"+$/g, "");       // strip surrounding quotes
+          row[k] = v;
+        }
+
+        rows.push(row);
+      })
+
       .on('end', async () => {
         try {
-          await Venue.deleteMany({});
+          let inserted = 0;
+          let skipped = 0;
+
           for (const row of rows) {
             const id = parseNumber(row.Id);
+            if (!id) {
+              console.warn(`⏭️ Skipping row with invalid venue Id:`, row);
+              continue;
+            }
+
+            // Does this venue already exist?
+            const existing = await Venue.findOne({ venueId: id });
+
+            if (existing) {
+              skipped++;
+              continue; // don't overwrite existing venue
+            }
+
+            // Link team if applicable
             const teamDoc = await Team.findOne({ 'location.id': id });
+
             const venue = new Venue({
               venueId: id,
               name: row.Name,
@@ -66,23 +95,34 @@ async function importVenues() {
               timezone: row.Timezone,
               coordinates: row.Latitude && row.Longitude ? {
                 type: 'Point',
-                coordinates: [parseNumber(row.Longitude), parseNumber(row.Latitude)]
+                coordinates: [
+                  parseNumber(row.Longitude),
+                  parseNumber(row.Latitude)
+                ]
               } : undefined,
               elevation: parseNumber(row.Elevation),
               constructionYear: parseNumber(row.ConstructionYear),
               team: teamDoc ? teamDoc._id : undefined
             });
+
             await venue.save();
+            inserted++;
           }
-          console.log(`Imported ${rows.length} venues`);
+
+          console.log(`🏟️ Venues processed: ${rows.length}`);
+          console.log(`➡️ Inserted: ${inserted}`);
+          console.log(`➡️ Skipped (already existed): ${skipped}`);
+
           resolve();
         } catch (err) {
           reject(err);
         }
       })
+
       .on('error', reject);
   });
 }
+
 
 async function importTeams() {
   return new Promise((resolve, reject) => {
@@ -91,7 +131,7 @@ async function importTeams() {
       .pipe(csv())
       .on('data', (row) => {
         const team = {
-          teamId: parseNumber(row.Id),
+          teamId: parseNumber(row.Id || row['"Id"']),
           school: row.School,
           mascot: row.Mascot,
           abbreviation: row.Abbreviation,
@@ -139,17 +179,43 @@ async function importTeams() {
 async function importGames() {
   return new Promise((resolve, reject) => {
     const rows = [];
-    fs.createReadStream('public/files/Games.csv')
+
+    fs.createReadStream('public/files/Games2.csv')
       .pipe(csv())
-      .on('data', row => rows.push(row))
+      .on('data', raw => {
+        const cleaned = {};
+        for (let [key, value] of Object.entries(raw)) {
+
+          // 🔥 Fix 1: Remove UTF-8 BOM if present
+          key = key.replace(/^\uFEFF/, '');
+
+          // 🔥 Fix 2: Remove accidental leading/trailing quotes
+          key = key.replace(/^"+|"+$/g, '').replace(/^'+|'+$/g, '');
+
+          cleaned[key] = value;
+        }
+
+        rows.push(cleaned);
+      })
       .on('end', async () => {
         try {
           await Game.deleteMany({});
+
           for (const row of rows) {
+
+            // Use cleaned Id
+            const gameId = parseNumber(row.Id);
+
+            if (gameId === undefined || gameId === null) {
+              console.warn(`⏭️ Skipping row with invalid Id: ${JSON.stringify(row, null, 2)}`);
+              continue;
+            }
+
             const homeTeamDoc = await Team.findOne({ teamId: parseNumber(row.HomeId) });
             const awayTeamDoc = await Team.findOne({ teamId: parseNumber(row.AwayId) });
+
             const game = new Game({
-              gameId: parseNumber(row.Id),
+              gameId,
               season: parseNumber(row.Season),
               week: parseNumber(row.Week),
               seasonType: row.SeasonType,
@@ -161,6 +227,7 @@ async function importGames() {
               attendance: parseNumber(row.Attendance),
               venueId: parseNumber(row.VenueId),
               venue: row.Venue,
+
               homeTeam: homeTeamDoc ? homeTeamDoc._id : undefined,
               homeTeamName: row.HomeTeam,
               homeClassification: row.HomeClassification,
@@ -170,6 +237,7 @@ async function importGames() {
               homePostgameWinProbability: parseNumber(row.HomePostgameWinProbability),
               homePregameElo: parseNumber(row.HomePregameElo),
               homePostgameElo: parseNumber(row.HomePostgameElo),
+
               awayTeam: awayTeamDoc ? awayTeamDoc._id : undefined,
               awayTeamName: row.AwayTeam,
               awayClassification: row.AwayClassification,
@@ -179,14 +247,18 @@ async function importGames() {
               awayPostgameWinProbability: parseNumber(row.AwayPostgameWinProbability),
               awayPregameElo: parseNumber(row.AwayPregameElo),
               awayPostgameElo: parseNumber(row.AwayPostgameElo),
+
               excitementIndex: parseNumber(row.ExcitementIndex),
               highlights: row.Highlights,
               notes: row.Notes
             });
+
             await game.save();
           }
+
           console.log(`Imported ${rows.length} games`);
           resolve();
+
         } catch (err) {
           reject(err);
         }
@@ -195,11 +267,14 @@ async function importGames() {
   });
 }
 
+
+
+
 async function run() {
   try {
-    await importTeams();
+    
     await importVenues();
-    await importGames();
+    
     console.log('CSV import completed');
   } catch (err) {
     console.error('Import failed', err);
