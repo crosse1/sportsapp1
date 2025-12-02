@@ -122,20 +122,20 @@
 
     const renderSelectionChips = (target => {
       if(!target || !target.length) return;
-      const selectedIds = getSelectedGameIds();
-      if(!selectedIds.length) return;
-      const selectedTeamId = teamSelect && teamSelect.length ? teamSelect.val() : null;
-      const fragments = [];
-      selectedIds.forEach(id => {
-        let meta = resolveCachedGame(id);
-        if(!meta && gameSelect && gameSelect.length && typeof gameSelect.select2 === 'function'){
-          const currentData = gameSelect.select2('data') || [];
-          const fallbackMeta = currentData.find(item => String(item.id) === String(id));
-          if(fallbackMeta){
-            upsertGameOption(fallbackMeta);
-            meta = fallbackMeta;
+        const selectedIds = getSelectedGameIds();
+        if(!selectedIds.length) return;
+        const selectedTeamId = teamSelect && teamSelect.length ? teamSelect.val() : null;
+        const fragments = [];
+        selectedIds.forEach(id => {
+          let meta = resolveCachedGame(id);
+          if(!meta){
+            const currentData = getGameSelectData();
+            const fallbackMeta = currentData.find(item => String(item.id) === String(id));
+            if(fallbackMeta){
+              upsertGameOption(fallbackMeta);
+              meta = fallbackMeta;
+            }
           }
-        }
         if(!meta) return;
         const opponent = resolveOpponentLogo(meta, selectedTeamId);
         const fallbackLogo = meta.awayLogo || meta.homeLogo || null;
@@ -235,6 +235,14 @@ chip.append(img, closeBtn);
     function getSelectedGameId(){
       const ids = getSelectedGameIds();
       return ids.length ? String(ids[ids.length - 1]) : null;
+    }
+
+    function getGameSelectData(){
+      if(gameSelect && gameSelect.length && typeof gameSelect.select2 === 'function'){
+        const data = gameSelect.select2('data') || [];
+        return Array.isArray(data) ? data : [];
+      }
+      return [];
     }
 
     function ensureRatingHiddenInput(){
@@ -742,21 +750,21 @@ function showComparison3(){
 }
 
 
-    if(nextBtn){
-      nextBtn.on('click', function(){
-        if(getSelectedGameIds().length !== 1){
-          return;
-        }
-        nextBtn.hide();
-        if(infoStep) infoStep.hide();
-        if(eloStep) eloStep.show();
-        if(backBtn) backBtn.removeClass('d-none');
-        const data = gameSelect.select2('data')[0];
-        selectedGameData = {
-          awayLogo: data?.awayLogo,
-          homeLogo: data?.homeLogo,
-          awayPoints: data?.awayPoints,
-          homePoints: data?.homePoints,
+      if(nextBtn){
+        nextBtn.on('click', function(){
+          if(getSelectedGameIds().length !== 1){
+            return;
+          }
+          nextBtn.hide();
+          if(infoStep) infoStep.hide();
+          if(eloStep) eloStep.show();
+          if(backBtn) backBtn.removeClass('d-none');
+          const data = getGameSelectData()[0];
+          selectedGameData = {
+            awayLogo: data?.awayLogo,
+            homeLogo: data?.homeLogo,
+            awayPoints: data?.awayPoints,
+            homePoints: data?.homePoints,
           gameDate: data?.gameDate
         };
         minRange = 1000;
@@ -1360,15 +1368,15 @@ worseBtn.off('click').on('click', function(){
       }
       gameSelect.prop('disabled', !val).val(null).trigger('change');
       updateSubmitState();
-    });
+      });
 
-    gameSelect.on('change', function(){
-      const dataArr = gameSelect.select2('data') || [];
-      if(Array.isArray(dataArr)){
-        dataArr.forEach(upsertGameOption);
-      }
-      if(dataArr.length === 1){
-        const data = dataArr[0];
+      gameSelect.on('change', function(){
+        const dataArr = getGameSelectData();
+        if(Array.isArray(dataArr)){
+          dataArr.forEach(upsertGameOption);
+        }
+        if(dataArr.length === 1){
+          const data = dataArr[0];
         selectedGameData = {
           awayLogo:data.awayLogo,
           homeLogo:data.homeLogo,
