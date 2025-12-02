@@ -22,7 +22,9 @@
         <a href="<%= navProfileSlug ? `/profile/${navProfileSlug}/stats` : '/profile' %>" class="me-3 <%= currentPath.startsWith('/profile') ? 'active-profile' : '' %>">
           <img src="<%= navImg %>" alt="Profile" class="nav-profile-icon">
         </a>
-        <a href="/logout" class="btn btn-outline-secondary">Log Out</a>
+        <button id="settingsButton" class="btn btn-light rounded-circle shadow-sm settings-gear-btn" aria-label="Open settings">
+          ⚙️
+        </button>
       <% } else { %>
         <a href="/login" class="btn btn-outline-primary me-2">Sign In</a>
         <a href="/signup" class="btn btn-primary">Register</a>
@@ -30,6 +32,59 @@
     </div>
   </nav>
 </header>
+<div id="settingsDrawerOverlay" class="settings-overlay"></div>
+<aside id="settingsDrawer" class="settings-drawer">
+  <div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+      <h5 class="mb-1">Settings</h5>
+      <p class="text-muted mb-0">Manage your preferences</p>
+    </div>
+    <button class="btn btn-link text-muted p-0" id="settingsDrawerClose" aria-label="Close settings">
+      <i class="bi bi-x-lg fs-5"></i>
+    </button>
+  </div>
+  <div id="settingsStatus" class="alert alert-dismissible fade d-none" role="alert"></div>
+  <div class="settings-stack">
+    <div class="settings-card">
+      <div class="d-flex align-items-center justify-content-between gap-3">
+        <div>
+          <div class="fw-semibold">Get friends game notifications</div>
+          <div class="text-muted small">Receive waitlist notifications for followed users</div>
+        </div>
+        <label class="toggle-switch mb-0" aria-label="Toggle waitlist notifications">
+          <input type="checkbox" id="notifyWaitlistToggle" data-initial="<%= userSettings?.notifyWaitlist ? 'true' : 'false' %>" <%= userSettings?.notifyWaitlist ? 'checked' : '' %> />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="d-flex flex-column gap-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="fw-semibold">Forgot Password</div>
+          <button id="togglePasswordForm" class="btn btn-outline-primary btn-sm">Reset</button>
+        </div>
+        <form id="passwordChangeForm" class="d-none">
+          <div class="mb-3">
+            <label for="oldPassword" class="form-label">Old password</label>
+            <input type="password" class="form-control" id="oldPassword" name="oldPassword" autocomplete="current-password" required>
+          </div>
+          <div class="mb-3">
+            <label for="newPassword" class="form-label">New password</label>
+            <input type="password" class="form-control" id="newPassword" name="newPassword" autocomplete="new-password" required>
+          </div>
+          <div class="mb-3">
+            <label for="confirmPassword" class="form-label">Confirm new password</label>
+            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" autocomplete="new-password" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Update password</button>
+        </form>
+      </div>
+    </div>
+    <div class="settings-card">
+      <a href="/logout" class="btn btn-outline-danger w-100">Log Out</a>
+    </div>
+  </div>
+</aside>
 <div class="modal fade" id="inboxModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content"></div>
@@ -38,6 +93,7 @@
 <script src="/js/inboxModal.js"></script>
 <script>window.loggedInUser = <%- JSON.stringify(loggedInUser || null) %>;</script>
 <script>window.hasQueuedGameInvites = <%= JSON.stringify(!!hasQueuedGameInvites) %>;</script>
+<script>window.userSettings = <%- JSON.stringify(userSettings || { notifyWaitlist: false }) %>;</script>
 <script src="/js/nearbyCheckin.js"></script>
 
 <%- include('ratePromptModal') %>
@@ -46,3 +102,4 @@
 <script>window.pendingRatings = <%- JSON.stringify(pendingRatings || []) %>;</script>
 <script src="/js/pendingRatingModal.js"></script>
 <script src="/js/gameInviteModal.js"></script>
+<script src="/js/settingsDrawer.js"></script>
