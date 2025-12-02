@@ -1332,8 +1332,8 @@ worseBtn.off('click').on('click', function(){
 
     leagueSelect.on('change', function(){
       const val = $(this).val();
-      seasonSelect.prop('disabled', !val).val(null).trigger('change');
-      teamSelect.prop('disabled', true).val(null).trigger('change');
+      seasonSelect.prop('disabled', true).val(null).trigger('change');
+      teamSelect.prop('disabled', !val).val(null).trigger('change');
       gameSelect.prop('disabled', true).val(null).trigger('change');
       if(val){
         fetch('/pastGames/seasons?leagueId='+val).then(r=>r.json()).then(data=>{
@@ -1348,16 +1348,12 @@ worseBtn.off('click').on('click', function(){
 
     seasonSelect.on('change', function(){
       const val = $(this).val();
-      const hadTeam = Boolean(teamSelect.val());
-      teamSelect.prop('disabled', !val);
-      if(!val){
-        teamSelect.val(null).trigger('change');
-      } else if(hadTeam){
-        teamSelect.trigger('change');
-      } else {
-        teamSelect.val(null).trigger('change');
+      const hasTeam = Boolean(teamSelect.val());
+      if(!hasTeam){
+        seasonSelect.prop('disabled', true).val(null);
+        return;
       }
-      gameSelect.prop('disabled', true).val(null).trigger('change');
+      gameSelect.prop('disabled', !val).val(null).trigger('change');
       updateSubmitState();
     });
 
@@ -1365,6 +1361,11 @@ worseBtn.off('click').on('click', function(){
       const val = $(this).val();
       if(!applyingStoredSelection && e && e.originalEvent){
         clearStoredSelection();
+      }
+      const allowSeason = Boolean(val) && Boolean(leagueSelect.val());
+      seasonSelect.prop('disabled', !allowSeason);
+      if(!val){
+        seasonSelect.val(null).trigger('change');
       }
       gameSelect.prop('disabled', !val).val(null).trigger('change');
       updateSubmitState();
