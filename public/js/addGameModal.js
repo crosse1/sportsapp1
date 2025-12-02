@@ -77,6 +77,48 @@
     let ratingActivated = ratedGameEntryCount >= 5;
     let ratingDirty = ratedGameEntryCount >= 5;
     let ratingHiddenInput = null;
+    const lastSelectionKey = 'addGameModal:lastTeamLeague';
+    let applyingStoredSelection = false;
+
+    function getStoredSelection(){
+      if(typeof window === 'undefined' || !window.localStorage) return null;
+      try{
+        const raw = window.localStorage.getItem(lastSelectionKey);
+        return raw ? JSON.parse(raw) : null;
+      }catch(err){
+        return null;
+      }
+    }
+
+    function clearStoredSelection(){
+      if(typeof window === 'undefined' || !window.localStorage) return;
+      try{
+        window.localStorage.removeItem(lastSelectionKey);
+      }catch(err){
+        /* noop */
+      }
+    }
+
+    function persistSelection(){
+      if(typeof window === 'undefined' || !window.localStorage) return;
+      const leagueId = leagueSelect && leagueSelect.length ? leagueSelect.val() : null;
+      const teamDataArr = teamSelect && typeof teamSelect.select2 === 'function' ? teamSelect.select2('data') : [];
+      const teamData = Array.isArray(teamDataArr) && teamDataArr.length ? teamDataArr[0] : null;
+      const selectedOption = teamSelect && teamSelect.length ? teamSelect.find('option:selected') : null;
+      const teamId = teamData && teamData.id ? teamData.id : (selectedOption ? selectedOption.val() : null);
+      if(!leagueId || !teamId) return;
+      const payload = {
+        leagueId: String(leagueId),
+        teamId: String(teamId),
+        teamName: (teamData && teamData.text) || (selectedOption ? selectedOption.text() : '') || '',
+        teamLogo: (teamData && (teamData.logo || (teamData.logos && teamData.logos[0]))) || (selectedOption ? selectedOption.data('logo') : null) || null
+      };
+      try{
+        window.localStorage.setItem(lastSelectionKey, JSON.stringify(payload));
+      }catch(err){
+        /* noop */
+      }
+    }
 
     const renderSelectionChips = (target => {
       if(!target || !target.length) return;
@@ -257,6 +299,55 @@ chip.append(img, closeBtn);
         }
       } else {
         clearRatingHiddenInput();
+      }
+    }
+
+    function findDefaultLeagueValue(){
+      let fbsVal = null;
+      leagueSelect.find('option').each(function(){
+        const txt = ($(this).text() || '').trim().toLowerCase();
+        if(txt === 'fbs'){
+          fbsVal = $(this).val();
+          return false;
+        }
+        return true;
+      });
+      return fbsVal;
+    }
+
+    function applyStoredTeamSelection(stored){
+      if(!stored || !stored.teamId || !stored.teamName || !teamSelect || !teamSelect.length) return;
+      const optionData = { id: stored.teamId, text: stored.teamName, logo: stored.teamLogo };
+      const existingOption = teamSelect.find(`option[value="${stored.teamId}"]`);
+      if(!existingOption.length){
+        const opt = new Option(stored.teamName, stored.teamId, true, true);
+        if(stored.teamLogo){
+          $(opt).attr('data-logo', stored.teamLogo);
+        }
+        $(opt).data('data', optionData);
+        teamSelect.append(opt);
+      }
+      applyingStoredSelection = true;
+      teamSelect.val(stored.teamId).trigger('change');
+      if(teamSelect.data('select2')){
+        teamSelect.trigger({ type:'select2:select', params:{ data: optionData } });
+      }
+      setTimeout(function(){ applyingStoredSelection = false; }, 0);
+    }
+
+    function applyInitialSelections(){
+      const stored = getStoredSelection();
+      const currentLeague = leagueSelect && leagueSelect.length ? leagueSelect.val() : null;
+      const preferredLeague = stored && stored.leagueId ? stored.leagueId : findDefaultLeagueValue();
+
+      if(preferredLeague && currentLeague !== preferredLeague){
+        applyingStoredSelection = true;
+        leagueSelect.val(preferredLeague).trigger('change');
+        setTimeout(function(){ applyingStoredSelection = false; }, 0);
+      }
+
+      if(stored && stored.teamId && stored.leagueId === (leagueSelect ? leagueSelect.val() : null)){
+        applyStoredTeamSelection(stored);
       }
     }
 
@@ -801,6 +892,7 @@ worseBtn.off('click').on('click', function(){
           const json = await res.json();
           if(autoSubmitOverlay){ autoSubmitOverlay.hide(); }
           if(json && json.entry){
+            persistSelection();
             showConfirmation(json.entry);
             if(window.gameEntriesData){
               window.gameEntriesData.push(json.entry);
@@ -863,6 +955,7 @@ worseBtn.off('click').on('click', function(){
               existingGameIds.push(id);
             }
           });
+          persistSelection();
           const modalInstance = bootstrap.Modal.getInstance(modal[0]);
           if(modalInstance){ modalInstance.hide(); }
           resetForm();
@@ -1247,13 +1340,24 @@ worseBtn.off('click').on('click', function(){
 
     seasonSelect.on('change', function(){
       const val = $(this).val();
-      teamSelect.prop('disabled', !val).val(null).trigger('change');
+      const hadTeam = Boolean(teamSelect.val());
+      teamSelect.prop('disabled', !val);
+      if(!val){
+        teamSelect.val(null).trigger('change');
+      } else if(hadTeam){
+        teamSelect.trigger('change');
+      } else {
+        teamSelect.val(null).trigger('change');
+      }
       gameSelect.prop('disabled', true).val(null).trigger('change');
       updateSubmitState();
     });
 
-    teamSelect.on('change', function(){
+    teamSelect.on('change', function(e){
       const val = $(this).val();
+      if(!applyingStoredSelection && e && e.originalEvent){
+        clearStoredSelection();
+      }
       gameSelect.prop('disabled', !val).val(null).trigger('change');
       updateSubmitState();
     });
@@ -1314,6 +1418,7 @@ worseBtn.off('click').on('click', function(){
       }
 
       applyRatingInteractivity({ multiSelected: false });
+      persistSelection();
       if(commentInput && commentInput.length && commentFieldName && !commentInput.attr('name')){
         commentInput.attr('name', commentFieldName);
       }
@@ -1366,7 +1471,10 @@ worseBtn.off('click').on('click', function(){
         fetch('/pastGames/leagues').then(r=>r.json()).then(data=>{
           const opts = data.map(l=>`<option value="${l.leagueId}">${l.leagueName}</option>`).join('');
           leagueSelect.append('<option value="">Select league</option>'+opts);
+          applyInitialSelections();
         });
+      } else {
+        applyInitialSelections();
       }
     });
     modal.on('hidden.bs.modal', function(){
