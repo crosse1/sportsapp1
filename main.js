@@ -93,6 +93,7 @@ app.use(async (req, res, next) => {
             if (userDoc) {
                 const invites = Array.isArray(userDoc.invites) ? userDoc.invites : [];
                 const hasQueuedInvites = invites.some(invite => invite && invite.modalQueued);
+                const userSettings = userDoc.settings || {};
                 req.user = {
                     id: String(userDoc._id),
                     username: userDoc.username,
@@ -101,9 +102,13 @@ app.use(async (req, res, next) => {
                     venmo: userDoc.venmo || null,
                     profileImage: userDoc.profileImage,
                     newFollowers: userDoc.newFollowers || [],
-                    hasQueuedGameInvites: hasQueuedInvites
+                    hasQueuedGameInvites: hasQueuedInvites,
+                    settings: {
+                        notifyWaitlist: !!userSettings.notifyWaitlist
+                    }
                 };
                 res.locals.hasQueuedGameInvites = hasQueuedInvites;
+                res.locals.userSettings = req.user.settings;
             } else {
                 req.user = null;
             }
@@ -117,6 +122,9 @@ app.use(async (req, res, next) => {
     res.locals.currentPath = req.path;
     if (!res.locals.hasQueuedGameInvites) {
         res.locals.hasQueuedGameInvites = false;
+    }
+    if (!res.locals.userSettings) {
+        res.locals.userSettings = { notifyWaitlist: false };
     }
     if (req.user) {
         const hasUnread = await Message.exists({ participants: req.user.id, unreadBy: req.user.id });
@@ -254,6 +262,50 @@ app.post('/select-teams', requireAuth, profileController.saveFavoriteTeams);
 app.get('/logout', (req, res) => {
     res.clearCookie('token');
     res.redirect('/login');
+});
+app.patch('/settings/notify-waitlist', requireAuthJson, async (req, res) => {
+    const { notifyWaitlist } = req.body || {};
+    if (typeof notifyWaitlist !== 'boolean') {
+        return res.status(400).json({ error: 'Invalid payload' });
+    }
+    try {
+        await User.findByIdAndUpdate(req.user.id, {
+            $set: { 'settings.notifyWaitlist': notifyWaitlist }
+        });
+        req.user.settings = { notifyWaitlist };
+        return res.json({ notifyWaitlist });
+    } catch (err) {
+        console.error('[SETTINGS] failed to update notify waitlist', err);
+        return res.status(500).json({ error: 'Unable to update settings' });
+    }
+});
+app.post('/settings/change-password', requireAuthJson, async (req, res) => {
+    const { oldPassword, newPassword, confirmPassword } = req.body || {};
+    if (!oldPassword || !newPassword || !confirmPassword) {
+        return res.status(400).json({ error: 'All password fields are required.' });
+    }
+    if (newPassword !== confirmPassword) {
+        return res.status(400).json({ error: 'New password and confirmation do not match.' });
+    }
+
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        const isMatch = await user.comparePassword(oldPassword);
+        if (!isMatch) {
+            return res.status(400).json({ error: 'Old password is incorrect.' });
+        }
+
+        user.password = newPassword;
+        await user.save();
+        return res.json({ success: true });
+    } catch (err) {
+        console.error('[SETTINGS] failed to change password', err);
+        return res.status(500).json({ error: 'Unable to change password right now.' });
+    }
 });
 app.get('/thanks', requireAuth, (req, res) => { res.redirect('/profileBadges/' + req.user.id); });
 app.get('/profile', requireAuth, (req, res) => {
