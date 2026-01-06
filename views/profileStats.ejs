@@ -214,6 +214,24 @@
         #statesModal .venue-name-text {
             font-size: 1.75rem;
         }
+
+        #venuesTop,
+        #teamsTop,
+        #statesTop,
+        #venuesTop .gradient-text,
+        #teamsTop .gradient-text,
+        #statesTop .gradient-text {
+            background: none !important;
+            -webkit-background-clip: initial !important;
+            -webkit-text-fill-color: #1f2933 !important;
+            color: #1f2933 !important;
+        }
+
+        #venuesTop .stat-empty,
+        #teamsTop .stat-empty,
+        #statesTop .stat-empty {
+            color: #1f2933;
+        }
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
@@ -966,6 +984,10 @@
 
   const FALLBACK_VENUE_IMAGE = '/images/stadium.png';
 
+  console.log('[stats] venueEntries', venueEntries);
+  console.log('[stats] teamEntries', teamEntries);
+  console.log('[stats] stateEntries', stateEntries);
+
   let bootstrapMissingLogged = false;
   function getBootstrapModal(element) {
     if (!element) return null;
@@ -1141,7 +1163,7 @@
   }
 
   function buildVenueModalRows() {
-    return buildVenueRows(venueEntries || []);
+    return buildVenueRows(window.allRankedVenues || []);
   }
 
   function buildTeamRows(entries){
@@ -1154,7 +1176,7 @@
       if(item.count !== prevCount) displayTeamRank = rank;
       const prefix = entries.filter(e => e.count === item.count).length > 1 ? 'T-' : '';
       prevCount = item.count;
-      const team = item.team;
+      const team = item.team || {};
       const logo = (team.logos && team.logos[0]) ? team.logos[0] : '/images/placeholder.jpg';
       const name = team.school || team.name;
       const teamLink = team._id ? `/team/${team._id}` : '#';
@@ -1180,6 +1202,55 @@
     if (!game || !game.gameDate) return 0;
     const time = new Date(game.gameDate).getTime();
     return Number.isFinite(time) ? time : 0;
+  }
+
+  function normalizeStatsData({ venues, teams, states }) {
+    const normalizedVenues = (Array.isArray(venues) ? venues : [])
+      .map(entry => {
+        if (!entry) return null;
+        const count = Number(entry.count);
+        const venue = entry.venue || entry.Venue || entry.location || {};
+        const name = venue.name || entry.venueName || entry.name || '';
+        if (!name || !Number.isFinite(count) || count <= 0) return null;
+        const imgUrl = venue.imgUrl || venue.image || entry.imgUrl || FALLBACK_VENUE_IMAGE;
+        return { count, venue: { name, imgUrl } };
+      })
+      .filter(Boolean);
+
+    const normalizedTeams = (Array.isArray(teams) ? teams : [])
+      .map(entry => {
+        if (!entry) return null;
+        const count = Number(entry.count);
+        const team = entry.team || entry.school || entry;
+        const school = team.school || team.name || '';
+        if (!school || !Number.isFinite(count) || count <= 0) return null;
+        const logos = Array.isArray(team.logos) ? team.logos : (team.logo ? [team.logo] : []);
+        return {
+          count,
+          team: {
+            _id: team._id || team.id || null,
+            school,
+            logos
+          }
+        };
+      })
+      .filter(Boolean);
+
+    const normalizedStates = (Array.isArray(states) ? states : [])
+      .map(entry => {
+        if (!entry) return null;
+        if (Array.isArray(entry)) {
+          const [abbr, count] = entry;
+          const value = Number(count);
+          return abbr && Number.isFinite(value) && value > 0 ? [abbr, value] : null;
+        }
+        const abbr = entry.state || entry.abbr || entry.code || entry.name;
+        const value = Number(entry.count || entry.value);
+        return abbr && Number.isFinite(value) && value > 0 ? [abbr, value] : null;
+      })
+      .filter(Boolean);
+
+    return { normalizedVenues, normalizedTeams, normalizedStates };
   }
 
   function setGamesToggleLabels(mode){
@@ -1289,19 +1360,25 @@
 
     gamesTopEl.innerHTML = buildGameRows(allGamesByRating.slice(0, 3));
 
+    const { normalizedVenues, normalizedTeams, normalizedStates } = normalizeStatsData({
+      venues: venueEntries,
+      teams: teamEntries,
+      states: stateEntries
+    });
+
     // Venues
-    window.allRankedVenues = venueEntries;
-    document.getElementById('venuesCount').textContent = <%- typeof venuesCount !== 'undefined' ? venuesCount : 0 %>;
+    window.allRankedVenues = normalizedVenues;
+    document.getElementById('venuesCount').textContent = normalizedVenues.length || venuesCount;
     const venuesTopEl = document.getElementById('venuesTop');
-    venuesTopEl.innerHTML = buildVenueRows(venueEntries.slice(0,3));
+    venuesTopEl.innerHTML = buildVenueRows(normalizedVenues.slice(0,3));
 
     // Teams
-    window.allRankedTeams = teamEntries;
-    document.getElementById('teamsCount').textContent = teamEntries.length;
+    window.allRankedTeams = normalizedTeams;
+    document.getElementById('teamsCount').textContent = normalizedTeams.length || teamsCount;
     const teamsTopEl = document.getElementById('teamsTop');
-    const topTeams = teamEntries.slice(0, 3);
+    const topTeams = normalizedTeams.slice(0, 3);
     const colors = topTeams.map(item => {
-      const t = item.team;
+      const t = item.team || {};
       let c = t.alternateColor && t.alternateColor.toLowerCase() !== '#ffffff' ? t.alternateColor : (t.color || '#666');
       if(!c.startsWith('#')) c = '#' + c;
       return c;
@@ -1313,7 +1390,7 @@
       teamsTopEl.style.background = 'none';
     }
     teamsTopEl.innerHTML = topTeams.length ? topTeams.map(item => {
-      const team = item.team;
+      const team = item.team || {};
       const logo = team.logos && team.logos[0] ? team.logos[0] : '/images/placeholder.jpg';
       const teamLink = team._id ? `/team/${team._id}` : '#';
       return `<div class="team-stat-col">
@@ -1326,23 +1403,23 @@
 
     // States
     window.visitedStateData = Array.isArray(userStateData) ? userStateData : [];
-    document.getElementById('statesCount').textContent = statesCount;
+    document.getElementById('statesCount').textContent = normalizedStates.length || statesCount;
     const statesTopEl = document.getElementById('statesTop');
     statesTopEl.style.borderRadius = '0.5rem';
     statesTopEl.style.color = '#333';
 
     updateStatesModalMessage();
 
-    if (stateEntries.length === 0) {
+    if (normalizedStates.length === 0) {
       statesTopEl.style.background = 'none';
       statesTopEl.innerHTML = '<div class="text-muted text-center w-100 py-2">No states yet.</div>';
     } else {
       let gradient;
-      if (stateEntries.length === 1) gradient = `linear-gradient(${stateGradientDirection}, #FFD700, white)`;
-      else if (stateEntries.length === 2) gradient = `linear-gradient(${stateGradientDirection}, #FFD700, #C0C0C0, white)`;
+      if (normalizedStates.length === 1) gradient = `linear-gradient(${stateGradientDirection}, #FFD700, white)`;
+      else if (normalizedStates.length === 2) gradient = `linear-gradient(${stateGradientDirection}, #FFD700, #C0C0C0, white)`;
       else gradient = `linear-gradient(${stateGradientDirection}, #FFD700, #C0C0C0, #CD7F32)`;
       statesTopEl.style.background = gradient;
-      statesTopEl.innerHTML = stateEntries.slice(0, 3).map(s => `
+      statesTopEl.innerHTML = normalizedStates.slice(0, 3).map(s => `
         <div class="state-stat-col">
           <div class="team-count">${s[1]}</div>
           <div class="state-abbr">${s[0]}</div>
