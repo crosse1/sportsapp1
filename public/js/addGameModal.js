@@ -1,5 +1,6 @@
 (function(){
-  window.addEventListener('load', function(){
+  function initAddGameModal(){
+    if(typeof $ !== 'function') return;
     const modal = $('#addGameModal');
     if(!modal.length) return;
     const leagueSelect = $('#leagueSelect');
@@ -79,6 +80,7 @@
     let ratingHiddenInput = null;
     const lastSelectionKey = 'addGameModal:lastTeamLeague';
     let applyingStoredSelection = false;
+    let pendingStoredSelection = null;
 
     function getStoredSelection(){
       if(typeof window === 'undefined' || !window.localStorage) return null;
@@ -102,13 +104,15 @@
     function persistSelection(){
       if(typeof window === 'undefined' || !window.localStorage) return;
       const leagueId = leagueSelect && leagueSelect.length ? leagueSelect.val() : null;
+      const seasonId = seasonSelect && seasonSelect.length ? seasonSelect.val() : null;
       const teamDataArr = teamSelect && typeof teamSelect.select2 === 'function' ? teamSelect.select2('data') : [];
       const teamData = Array.isArray(teamDataArr) && teamDataArr.length ? teamDataArr[0] : null;
       const selectedOption = teamSelect && teamSelect.length ? teamSelect.find('option:selected') : null;
       const teamId = teamData && teamData.id ? teamData.id : (selectedOption ? selectedOption.val() : null);
-      if(!leagueId || !teamId) return;
+      if(!leagueId || !seasonId || !teamId) return;
       const payload = {
         leagueId: String(leagueId),
+        season: String(seasonId),
         teamId: String(teamId),
         teamName: (teamData && teamData.text) || (selectedOption ? selectedOption.text() : '') || '',
         teamLogo: (teamData && (teamData.logo || (teamData.logos && teamData.logos[0]))) || (selectedOption ? selectedOption.data('logo') : null) || null
@@ -345,6 +349,7 @@ chip.append(img, closeBtn);
 
     function applyInitialSelections(){
       const stored = getStoredSelection();
+      pendingStoredSelection = stored;
       const currentLeague = leagueSelect && leagueSelect.length ? leagueSelect.val() : null;
       const preferredLeague = stored && stored.leagueId ? stored.leagueId : findDefaultLeagueValue();
 
@@ -352,9 +357,10 @@ chip.append(img, closeBtn);
         applyingStoredSelection = true;
         leagueSelect.val(preferredLeague).trigger('change');
         setTimeout(function(){ applyingStoredSelection = false; }, 0);
-      }
-
-      if(stored && stored.teamId && stored.leagueId === (leagueSelect ? leagueSelect.val() : null)){
+      } else if(stored && stored.teamId && stored.leagueId === (leagueSelect ? leagueSelect.val() : null)){
+        if(stored.season){
+          seasonSelect.val(stored.season).trigger('change');
+        }
         applyStoredTeamSelection(stored);
       }
     }
@@ -1332,13 +1338,22 @@ worseBtn.off('click').on('click', function(){
 
     leagueSelect.on('change', function(){
       const val = $(this).val();
-      seasonSelect.prop('disabled', true).val(null).trigger('change');
-      teamSelect.prop('disabled', !val).val(null).trigger('change');
+      seasonSelect.prop('disabled', !val).val(null).trigger('change');
+      teamSelect.prop('disabled', true).val(null).trigger('change');
       gameSelect.prop('disabled', true).val(null).trigger('change');
       if(val){
         fetch('/pastGames/seasons?leagueId='+val).then(r=>r.json()).then(data=>{
           const opts = data.map(s=>`<option value="${s}">${s}</option>`).join('');
           seasonSelect.html('<option value="">Select season</option>'+opts);
+          const stored = pendingStoredSelection && pendingStoredSelection.leagueId === String(val)
+            ? pendingStoredSelection
+            : null;
+          const defaultSeason = stored && stored.season ? stored.season : (data.length ? String(data[0]) : '');
+          if(defaultSeason){
+            seasonSelect.val(defaultSeason);
+          }
+          seasonSelect.prop('disabled', false);
+          seasonSelect.trigger('change');
         });
       } else {
         seasonSelect.html('<option value="">Select season</option>');
@@ -1348,12 +1363,14 @@ worseBtn.off('click').on('click', function(){
 
     seasonSelect.on('change', function(){
       const val = $(this).val();
-      const hasTeam = Boolean(teamSelect.val());
-      if(!hasTeam){
-        seasonSelect.prop('disabled', true).val(null);
-        return;
+      teamSelect.prop('disabled', !val).val(null).trigger('change');
+      gameSelect.prop('disabled', true).val(null).trigger('change');
+      if(val && pendingStoredSelection && pendingStoredSelection.leagueId === String(leagueSelect.val())){
+        if(!pendingStoredSelection.season || pendingStoredSelection.season === String(val)){
+          applyStoredTeamSelection(pendingStoredSelection);
+          pendingStoredSelection = null;
+        }
       }
-      gameSelect.prop('disabled', !val).val(null).trigger('change');
       updateSubmitState();
     });
 
@@ -1362,12 +1379,11 @@ worseBtn.off('click').on('click', function(){
       if(!applyingStoredSelection && e && e.originalEvent){
         clearStoredSelection();
       }
-      const allowSeason = Boolean(val) && Boolean(leagueSelect.val());
-      seasonSelect.prop('disabled', !allowSeason);
+      const allowGame = Boolean(val) && Boolean(seasonSelect.val());
       if(!val){
-        seasonSelect.val(null).trigger('change');
+        gameSelect.val(null).trigger('change');
       }
-      gameSelect.prop('disabled', !val).val(null).trigger('change');
+      gameSelect.prop('disabled', !allowGame).val(null).trigger('change');
       updateSubmitState();
       });
 
@@ -1498,5 +1514,11 @@ worseBtn.off('click').on('click', function(){
         window.location.reload();
       });
     }
-  });
+  }
+
+  if(typeof $ === 'function'){
+    $(initAddGameModal);
+  } else {
+    window.addEventListener('load', initAddGameModal);
+  }
 })();
