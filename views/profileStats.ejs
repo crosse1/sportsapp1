@@ -444,6 +444,13 @@
             object-fit: contain;
         }
 
+        .team-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+            line-height: 1.1;
+        }
+
         #statesTop {
     display: flex;
     flex-direction: row;
@@ -1222,15 +1229,20 @@
         if (!entry) return null;
         const count = Number(entry.count);
         const team = entry.team || entry.school || entry;
-        const school = team.school || team.name || '';
-        if (!school || !Number.isFinite(count) || count <= 0) return null;
+        const school = team.school || '';
+        const name = team.name || '';
+        const displayName = school || name;
+        if (!displayName || !Number.isFinite(count) || count <= 0) return null;
         const logos = Array.isArray(team.logos) ? team.logos : (team.logo ? [team.logo] : []);
         return {
           count,
           team: {
             _id: team._id || team.id || null,
             school,
-            logos
+            name,
+            logos,
+            color: team.color,
+            alternateColor: team.alternateColor
           }
         };
       })
@@ -1391,13 +1403,15 @@
     }
     teamsTopEl.innerHTML = topTeams.length ? topTeams.map(item => {
       const team = item.team || {};
+      const teamName = team.school || team.name || '';
       const logo = team.logos && team.logos[0] ? team.logos[0] : '/images/placeholder.jpg';
       const teamLink = team._id ? `/team/${team._id}` : '#';
       return `<div class="team-stat-col">
         <div class="team-count">${item.count}</div>
         <a href="${teamLink}" class="team-link">
-          <img src="${logo}" alt="${team.school || team.name || ''}" class="team-logo" title="${team.school || team.name || ''}">
+          <img src="${logo}" alt="${teamName}" class="team-logo" title="${teamName}">
         </a>
+        <div class="team-name">${teamName}</div>
       </div>`;
     }).join('') : '<div class="text-muted text-center w-100 py-2">No teams yet.</div>';
 
