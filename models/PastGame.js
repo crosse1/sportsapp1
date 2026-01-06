@@ -48,4 +48,4 @@ const pastGameSchema = new mongoose.Schema({
   }
 });
 
-module.exports = mongoose.model('PastGame', pastGameSchema);
+module.exports = mongoose.model('PastGame', pastGameSchema, 'pastgames');
