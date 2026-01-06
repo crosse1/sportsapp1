@@ -1015,7 +1015,21 @@
   let statesMapRoot = null;
   let statesPolygonSeries = null;
 
+  function isStatesMapDisposed() {
+    if (!statesMapRoot) return false;
+    if (typeof statesMapRoot.isDisposed === 'function') {
+      return statesMapRoot.isDisposed();
+    }
+    return Boolean(statesMapRoot._disposed);
+  }
+
   function initializeStatesMap() {
+    if (isStatesMapDisposed()) {
+      statesMapInitialized = false;
+      statesMapInitializing = false;
+      statesMapRoot = null;
+      statesPolygonSeries = null;
+    }
     if (statesMapInitialized || statesMapInitializing) {
       if (statesPolygonSeries) {
         const data = Array.isArray(window.visitedStateData) ? window.visitedStateData : [];
