@@ -715,321 +715,193 @@ exports.profileBadges = async (req, res, next) => {
 };
 
 exports.profileStats = async (req, res, next) => {
-    try {
-        const identifier = req.params.user || req.params.identifier || req.params.id || req.params.venmo || (req.user && req.user.id);
-        console.log('[profileStats] Requested identifier:', identifier);
+  try {
+    const identifier =
+      req.params.user ||
+      req.params.identifier ||
+      req.params.id ||
+      req.params.venmo ||
+      (req.user && req.user.id);
 
-        // Get populated lists for UI rendering
-        const profileUser = await findUserByIdentifier(identifier, ['favoriteTeams', 'teamsList', 'venuesList']);
+    console.log('[profileStats] Requested identifier:', identifier);
 
-        if (!profileUser) {
-            console.warn('[profileStats] No user found, redirecting to self');
-            const fallbackSlug = req.user ? (req.user.venmo || req.user.id) : '';
-            return res.redirect(fallbackSlug ? `/profile/${fallbackSlug}/stats` : '/profile');
-        }
+    const profileUser = await findUserByIdentifier(identifier, [
+      'favoriteTeams',
+      'teamsList',
+      'venuesList'
+    ]);
 
-        console.log('✅ user.favoriteTeams:', profileUser.favoriteTeams);
-
-        console.log(`[profileStats] Loaded user: ${profileUser.username} (${profileUser._id})`);
-        console.log(`[profileStats] Populated teamsList count: ${profileUser.teamsList?.length}`);
-        console.log(`[profileStats] Populated venuesList count: ${profileUser.venuesList?.length}`);
-
-        const userTeams = Array.isArray(profileUser.teams) ? profileUser.teams : [];
-        const userVenues = Array.isArray(profileUser.venues) ? profileUser.venues : [];
-        const userStates = Array.isArray(profileUser.states) ? profileUser.states : [];
-        const userConferences = Array.isArray(profileUser.conferences) ? profileUser.conferences : [];
-
-        const normalizeCount = entry => {
-            if (!entry || typeof entry !== 'object') return 1;
-            const count = entry.count ?? entry.games ?? entry.visits ?? entry.total ?? entry.value ?? entry.times;
-            const parsed = Number(count);
-            return Number.isFinite(parsed) ? parsed : 1;
-        };
-
-        const normalizeTeamEntries = entries => entries
-            .map(item => {
-                const team = item && item.team ? item.team : item;
-                if (!team) return null;
-                return { team, count: normalizeCount(item) };
-            })
-            .filter(Boolean)
-            .sort((a, b) => b.count - a.count);
-
-        const normalizeVenueEntries = entries => entries
-            .map(item => {
-                const venue = item && item.venue ? item.venue : item;
-                if (!venue) return null;
-                return { venue, count: normalizeCount(item) };
-            })
-            .filter(Boolean)
-            .sort((a, b) => b.count - a.count);
-
-        const normalizeConferenceEntries = entries => entries
-            .map(item => {
-                if (!item) return null;
-                const name = item.name || item.conference || item.id;
-                if (!name) return null;
-                const totalTeamsValue = item.totalTeams ?? item.total ?? item.max ?? item.teamsTotal ?? null;
-                const parsedTotalTeams = Number(totalTeamsValue);
-                const totalTeams = Number.isFinite(parsedTotalTeams) ? parsedTotalTeams : null;
-                const count = normalizeCount(item);
-                return { name, count, totalTeams };
-            })
-            .filter(Boolean)
-            .sort((a, b) => b.count - a.count);
-
-        // Get raw, unpopulated list of IDs
-        const rawUser = await User.findById(profileUser._id).lean();
-        const rawTeamIds = rawUser.teamsList || [];
-        const rawVenueIds = rawUser.venuesList || [];
-
-        console.log('[profileStats] Raw teamsList length (with duplicates):', rawTeamIds.length);
-        console.log('[profileStats] Raw venuesList length (with duplicates):', rawVenueIds.length);
-
-        const isCurrentUser = req.user && req.user.id.toString() === profileUser._id.toString();
-
-        let isFollowing = false, canMessage = false;
-        if (req.user && !isCurrentUser) {
-            const viewer = await User.findById(req.user.id);
-            isFollowing = viewer.following.some(f => String(f) === String(profileUser._id));
-            const followsBack = profileUser.following.some(f => String(f) === String(viewer._id));
-            canMessage = isFollowing && followsBack;
-            console.log(`[profileStats] Viewer follows user: ${isFollowing}, Follows back: ${followsBack}`);
-        }
-
-        const enrichedEntries = await mergeUserGames(profileUser);
-        console.log(`[profileStats] Enriched gameEntries count: ${enrichedEntries.length}`);
-
-        const topRatedGames = enrichedEntries
-            .filter(e => e.game && e.game._id)
-            .map(e => {
-                const game = e.game;
-                const rawScore = e.elo ? ((e.elo - 1000) / 1000) * 9 + 1 : 0;
-                const rating = Math.max(1.0, Math.min(10.0, Math.round(rawScore * 10) / 10));
-                const gameDate = game.startDate || game.StartDate || null;
-                const awayLogo = (game.awayTeam?.logos?.[0]) || '/images/placeholder.jpg';
-                const homeLogo = (game.homeTeam?.logos?.[0]) || '/images/placeholder.jpg';
-                return { _id: game._id, gameDate, awayTeamLogoUrl: awayLogo, homeTeamLogoUrl: homeLogo, rating };
-            })
-            .sort((a, b) => b.rating - a.rating)
-            .slice(0, 3);
-
-        console.log('[profileStats] Top 3 rated games:', topRatedGames.map(g => g._id));
-
-        // Frequency: Teams
-        const teamEntries = userTeams.length ? normalizeTeamEntries(userTeams) : (() => {
-            const teamFrequencyMap = {};
-            for (const id of rawTeamIds) {
-                const idStr = String(id);
-                if (!teamFrequencyMap[idStr]) {
-                    teamFrequencyMap[idStr] = { team: null, count: 1 };
-                } else {
-                    teamFrequencyMap[idStr].count++;
-                }
-            }
-            for (const team of profileUser.teamsList || []) {
-                const id = String(team._id || team);
-                if (teamFrequencyMap[id]) {
-                    teamFrequencyMap[id].team = team;
-                }
-            }
-            return Object.values(teamFrequencyMap).filter(e => e.team).sort((a, b) => b.count - a.count);
-        })();
-        console.log('[profileStats] Top team frequency:', teamEntries.slice(0, 3).map(e => ({
-            name: e.team.school,
-            count: e.count
-        })));
-
-        // Frequency: Venues
-        const venueEntries = userVenues.length ? normalizeVenueEntries(userVenues) : (() => {
-            const venueFrequencyMap = {};
-            for (const id of rawVenueIds) {
-                const idStr = String(id);
-                if (!venueFrequencyMap[idStr]) {
-                    venueFrequencyMap[idStr] = { venue: null, count: 1 };
-                } else {
-                    venueFrequencyMap[idStr].count++;
-                }
-            }
-            for (const venue of profileUser.venuesList || []) {
-                const id = String(venue._id || venue);
-                if (venueFrequencyMap[id]) {
-                    venueFrequencyMap[id].venue = venue;
-                }
-            }
-            return Object.values(venueFrequencyMap).filter(e => e.venue).sort((a, b) => b.count - a.count);
-        })();
-        console.log('[profileStats] Top venue frequency:', venueEntries.slice(0, 3).map(e => ({
-            name: e.venue.name,
-            count: e.count
-        })));
-
-        // Frequency: States
-        const stateFrequencyMap = {};
-        if (userStates.length) {
-            for (const entry of userStates) {
-                if (!entry) continue;
-                const stateKey = typeof entry === 'string'
-                    ? entry
-                    : (entry.state || entry.name || entry.abbr || entry.id);
-                if (!stateKey) continue;
-                stateFrequencyMap[stateKey] = (stateFrequencyMap[stateKey] || 0) + normalizeCount(entry);
-            }
-        } else {
-            for (const venue of profileUser.venuesList || []) {
-                let state = venue.state;
-                if (!state && venue.coordinates?.coordinates?.length === 2) {
-                    const [lon, lat] = venue.coordinates.coordinates;
-                    state = getStateFromCoordinates(lat, lon);
-                }
-                if (state) {
-                    stateFrequencyMap[state] = (stateFrequencyMap[state] || 0) + 1;
-                }
-            }
-        }
-        const STATE_NAME_TO_ABBR = {
-            'Alabama': 'AL',
-            'Alaska': 'AK',
-            'Arizona': 'AZ',
-            'Arkansas': 'AR',
-            'California': 'CA',
-            'Colorado': 'CO',
-            'Connecticut': 'CT',
-            'Delaware': 'DE',
-            'District of Columbia': 'DC',
-            'Florida': 'FL',
-            'Georgia': 'GA',
-            'Hawaii': 'HI',
-            'Idaho': 'ID',
-            'Illinois': 'IL',
-            'Indiana': 'IN',
-            'Iowa': 'IA',
-            'Kansas': 'KS',
-            'Kentucky': 'KY',
-            'Louisiana': 'LA',
-            'Maine': 'ME',
-            'Maryland': 'MD',
-            'Massachusetts': 'MA',
-            'Michigan': 'MI',
-            'Minnesota': 'MN',
-            'Mississippi': 'MS',
-            'Missouri': 'MO',
-            'Montana': 'MT',
-            'Nebraska': 'NE',
-            'Nevada': 'NV',
-            'New Hampshire': 'NH',
-            'New Jersey': 'NJ',
-            'New Mexico': 'NM',
-            'New York': 'NY',
-            'North Carolina': 'NC',
-            'North Dakota': 'ND',
-            'Ohio': 'OH',
-            'Oklahoma': 'OK',
-            'Oregon': 'OR',
-            'Pennsylvania': 'PA',
-            'Rhode Island': 'RI',
-            'South Carolina': 'SC',
-            'South Dakota': 'SD',
-            'Tennessee': 'TN',
-            'Texas': 'TX',
-            'Utah': 'UT',
-            'Vermont': 'VT',
-            'Virginia': 'VA',
-            'Washington': 'WA',
-            'West Virginia': 'WV',
-            'Wisconsin': 'WI',
-            'Wyoming': 'WY',
-            'Puerto Rico': 'PR'
-        };
-
-        const STATE_NAME_TO_ABBR_LOOKUP = Object.entries(STATE_NAME_TO_ABBR).reduce((acc, [name, abbr]) => {
-            acc[name.toUpperCase()] = abbr;
-            return acc;
-        }, {});
-
-        const STATE_ABBR_TO_NAME = Object.entries(STATE_NAME_TO_ABBR).reduce((acc, [name, abbr]) => {
-            acc[abbr] = name;
-            return acc;
-        }, {});
-
-        const ALT_STATE_KEYS = {
-            'WASHINGTON, DC': 'DC',
-            'WASHINGTON DC': 'DC'
-        };
-
-        const normalizedStateMap = {};
-        Object.entries(stateFrequencyMap).forEach(([stateKey, count]) => {
-            if (!stateKey) return;
-            const trimmed = String(stateKey).trim();
-            if (!trimmed) return;
-            const upperValue = trimmed.toUpperCase();
-            let abbr = null;
-
-            if (/^[A-Z]{2}$/.test(upperValue)) {
-                abbr = upperValue;
-            } else {
-                const normalizedKey = upperValue.replace(/\./g, '');
-                abbr = ALT_STATE_KEYS[normalizedKey] || STATE_NAME_TO_ABBR_LOOKUP[normalizedKey] || null;
-            }
-
-            if (abbr) {
-                normalizedStateMap[abbr] = (normalizedStateMap[abbr] || 0) + count;
-            }
-        });
-
-        const sortedStates = Object.entries(normalizedStateMap).sort((a, b) => b[1] - a[1]);
-        const stateEntries = sortedStates.map(([abbr, count]) => [STATE_ABBR_TO_NAME[abbr] || abbr, count]);
-        console.log('[profileStats] Top state frequency:', stateEntries.slice(0, 3));
-
-        const userStateData = sortedStates.map(([abbr, count]) => ({
-            id: `US-${abbr}`,
-            value: count
-        }));
-
-        // Unique counts
-        const teamsCount = teamEntries.length;
-        const venuesCount = venueEntries.length;
-        const statesCount = stateEntries.length;
-        const conferenceEntries = normalizeConferenceEntries(userConferences);
-        const conferencesCount = conferenceEntries.length;
-
-        console.log(`[profileStats] Unique counts — Teams: ${teamsCount}, Venues: ${venuesCount}, States: ${statesCount}`);
-
-        const eloGames = await enrichEloGames(profileUser.gameElo || []);
-        console.log(`[profileStats] Loaded eloGames: ${eloGames.length}`);
-
-        res.render('profileStats', {
-            user: profileUser,
-            userTeams,
-            userVenues,
-            userStates,
-            userConferences,
-            isCurrentUser,
-            isFollowing,
-            canMessage,
-            viewer: req.user,
-            activeTab: 'stats',
-            gameEntries: enrichedEntries,
-            topRatedGames,
-            teamsList: profileUser.teamsList || [],
-            venuesList: profileUser.venuesList || [],
-            teamsCount,
-            venuesCount,
-            statesCount,
-            conferenceEntries,
-            conferencesCount,
-            teamEntries,
-            venueEntries,
-            stateEntries,
-            userStateData,
-            eloGames
-        });
-
-    } catch (err) {
-        console.error('[profileStats] Error occurred:', err);
-        next(err);
+    if (!profileUser) {
+      const fallbackSlug = req.user ? (req.user.venmo || req.user.id) : '';
+      return res.redirect(fallbackSlug ? `/profile/${fallbackSlug}/stats` : '/profile');
     }
+
+    const isCurrentUser =
+      req.user && String(req.user.id) === String(profileUser._id);
+
+    let isFollowing = false;
+    let canMessage = false;
+
+    if (req.user && !isCurrentUser) {
+      const viewer = await User.findById(req.user.id);
+      isFollowing = viewer.following.some(
+        f => String(f) === String(profileUser._id)
+      );
+      const followsBack = profileUser.following.some(
+        f => String(f) === String(viewer._id)
+      );
+      canMessage = isFollowing && followsBack;
+    }
+
+    // -----------------------------
+    // SOURCE OF TRUTH: GAME ENTRIES
+    // -----------------------------
+    const enrichedEntries = await mergeUserGames(profileUser);
+    console.log('[profileStats] Enriched gameEntries:', enrichedEntries.length);
+
+    // -----------------------------
+    // Frequency maps
+    // -----------------------------
+    const teamMap = {};
+    const venueMap = {};
+    const stateMap = {};
+    const conferenceMap = {};
+
+    for (const entry of enrichedEntries) {
+      const game = entry?.game;
+      if (!game) continue;
+
+      // Teams
+      for (const team of [game.homeTeam, game.awayTeam]) {
+        if (!team || !team._id) continue;
+        const id = String(team._id);
+        if (!teamMap[id]) teamMap[id] = { team, count: 0 };
+        teamMap[id].count++;
+      }
+
+      // Venues
+      if (game.venue && game.venue._id) {
+        const id = String(game.venue._id);
+        if (!venueMap[id]) venueMap[id] = { venue: game.venue, count: 0 };
+        venueMap[id].count++;
+      }
+
+      // States
+      const state = game.venue?.state;
+      if (state) {
+        stateMap[state] = (stateMap[state] || 0) + 1;
+      }
+
+      // Conferences
+      for (const conf of [
+        game.homeConference,
+        game.awayConference
+      ]) {
+        if (!conf) continue;
+        if (!conferenceMap[conf]) {
+          conferenceMap[conf] = { name: conf, count: 0 };
+        }
+        conferenceMap[conf].count++;
+      }
+    }
+
+    // -----------------------------
+    // Normalize & sort
+    // -----------------------------
+    const teamEntries = Object.values(teamMap).sort(
+      (a, b) => b.count - a.count
+    );
+
+    const venueEntries = Object.values(venueMap).sort(
+      (a, b) => b.count - a.count
+    );
+
+    const stateEntries = Object.entries(stateMap)
+      .sort((a, b) => b[1] - a[1])
+      .map(([state, count]) => [state, count]);
+
+    const userStateData = Object.entries(stateMap).map(
+      ([abbr, count]) => ({
+        id: `US-${abbr}`,
+        value: count
+      })
+    );
+
+    const conferenceEntries = Object.values(conferenceMap).sort(
+      (a, b) => b.count - a.count
+    );
+
+    // -----------------------------
+    // Counts
+    // -----------------------------
+    const teamsCount = teamEntries.length;
+    const venuesCount = venueEntries.length;
+    const statesCount = stateEntries.length;
+    const conferencesCount = conferenceEntries.length;
+
+    // -----------------------------
+    // Top rated games
+    // -----------------------------
+    const topRatedGames = enrichedEntries
+      .filter(e => e.game && e.game._id)
+      .map(e => {
+        const game = e.game;
+        const rawScore = e.elo
+          ? ((e.elo - 1000) / 1000) * 9 + 1
+          : 0;
+        const rating = Math.max(
+          1,
+          Math.min(10, Math.round(rawScore * 10) / 10)
+        );
+        return {
+          _id: game._id,
+          gameDate: game.startDate || null,
+          awayTeamLogoUrl:
+            game.awayTeam?.logos?.[0] || '/images/placeholder.jpg',
+          homeTeamLogoUrl:
+            game.homeTeam?.logos?.[0] || '/images/placeholder.jpg',
+          rating
+        };
+      })
+      .sort((a, b) => b.rating - a.rating)
+      .slice(0, 3);
+
+    const eloGames = await enrichEloGames(profileUser.gameElo || []);
+
+    // -----------------------------
+    // Render
+    // -----------------------------
+    res.render('profileStats', {
+      user: profileUser,
+      isCurrentUser,
+      isFollowing,
+      canMessage,
+      viewer: req.user,
+      activeTab: 'stats',
+
+      gameEntries: enrichedEntries,
+      topRatedGames,
+
+      teamEntries,
+      venueEntries,
+      stateEntries,
+      userStateData,
+      conferenceEntries,
+
+      teamsCount,
+      venuesCount,
+      statesCount,
+      conferencesCount,
+
+      eloGames
+    });
+
+  } catch (err) {
+    console.error('[profileStats] Error:', err);
+    next(err);
+  }
 };
+
 
 
 
