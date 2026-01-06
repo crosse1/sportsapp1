@@ -32,6 +32,10 @@ const userSchema = new mongoose.Schema({
     // `PastGame` without losing the association.
     teamsList: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Team' }], default: [] },
     venuesList: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Venue' }], default: [] },
+    teams: { type: [mongoose.Schema.Types.Mixed], default: [] },
+    venues: { type: [mongoose.Schema.Types.Mixed], default: [] },
+    states: { type: [mongoose.Schema.Types.Mixed], default: [] },
+    conferences: { type: [mongoose.Schema.Types.Mixed], default: [] },
     badges: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Badge' }],
     points: { type: Number, default: 0 },
     gameEntries: [{
@@ -111,4 +115,3 @@ userSchema.methods.comparePassword = async function(candidate) {
 
 
 module.exports = mongoose.model('User', userSchema);
-
