@@ -1242,11 +1242,19 @@
       .map(entry => {
         if (!entry) return null;
         const count = Number(entry.count);
-        const team = entry.team || entry.school || entry;
-        const school = team.school || '';
-        const name = team.name || '';
-        const displayName = school || name;
-        if (!displayName || !Number.isFinite(count) || count <= 0) return null;
+        const team = entry.team || entry;
+if (!team || !Number.isFinite(count) || count <= 0) return null;
+
+return {
+  count,
+  team: {
+    _id: team._id || null,
+    logos: Array.isArray(team.logos) ? team.logos : [],
+    color: team.color,
+    alternateColor: team.alternateColor,
+    name: team.school || team.name || `Team ${team.teamId || ''}`
+  }
+};
         const logos = Array.isArray(team.logos) ? team.logos : (team.logo ? [team.logo] : []);
         return {
           count,
