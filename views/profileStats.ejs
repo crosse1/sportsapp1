@@ -840,53 +840,34 @@
               <!-- Left block with count and label -->
               <div class="stat-left">
                 <div id="conferencesCount" class="stat-number">
-                  <%= conferenceStats.filter(c => c.percentage > 0).length %>
+                  <%= typeof conferencesCount !== 'undefined' ? conferencesCount : 0 %>
                 </div>
                 <h3 class="stat-label">Conferences</h3>
               </div>
               
               <!-- Right block that holds all rows vertically -->
               <div class="stat-right-column">
-                <% conferenceStats
-                  .filter(c => c.percentage > 0)
-                  .sort((a, b) => b.percentage - a.percentage)
-                  .forEach(function(conf) { %>
-                  
-                  <div class="stat-row">
-                    <div class="stat-name-col conference-name-text"><%= conf.name %></div>
-                    <div class="stat-middle conference-dots-row">
-                        <%
-                          const teamIdsInConf = conferenceTeamMap[conf.name] || [];
-                          const unlockedTeams = teamIdsInConf.filter(id => userTeamIds.includes(String(id)));
-                          const lockedCount = conf.totalTeams - unlockedTeams.length;
-                          const visitedCount = typeof conf.teamsVisited === 'number' ? conf.teamsVisited : unlockedTeams.length;
-                          const completedConference = visitedCount === conf.totalTeams;
-
-                          // First show unlocked teams
-                          unlockedTeams.forEach(teamId => {
-                            const team = teamMap[teamId];
-                            if (team && team.logos?.[0]) {
-                        %>
-                              <span class="team-dot unlocked-team" style="background-color: <%= team.alternateColor || '#ccc' %>;">
-                                <img src="<%= team.logos[0] %>" alt="Team Logo" />
-                              </span>
-                        <%   }
-                          });
-                      
-                          // Then pad with gray dots
-                          for (let i = 0; i < lockedCount; i++) { 
-                        %>
-                          <span class="team-dot"></span>
+                <% if (conferenceEntries && conferenceEntries.length) { %>
+                  <% conferenceEntries.forEach(function(conf) { %>
+                    <div class="stat-row">
+                      <div class="stat-name-col conference-name-text"><%= conf.name %></div>
+                      <div class="stat-middle conference-dots-row">
+                        <span class="conference-percentage-text">
+                          <%= conf.totalTeams ? `${conf.count}/${conf.totalTeams}` : conf.count %>
+                        </span>
+                      </div>
+                      <div class="stat-percent-col conference-percentage-text">
+                        <% if (conf.totalTeams) { %>
+                          <%= Math.round((conf.count / conf.totalTeams) * 100) %>%
                         <% } %>
                       </div>
-                      
-                    <div class="stat-percent-col conference-percentage-text">
-                      <span class="<%= completedConference ? 'gold-text' : '' %>">
-                        <%= visitedCount %>/<%= conf.totalTeams %>
-                      </span>
                     </div>
+                  <% }) %>
+                <% } else { %>
+                  <div class="stat-row">
+                    <div class="stat-name-col conference-name-text text-muted">No conferences yet.</div>
                   </div>
-                <% }) %>
+                <% } %>
               </div>
           
             </div>
@@ -979,8 +960,6 @@
   const venueEntries = <%- JSON.stringify(venueEntries || []) %>;
   const stateEntries = <%- JSON.stringify(stateEntries || []) %>;
   const userStateData = <%- JSON.stringify(userStateData || []) %>;
-  const venuesList = <%- JSON.stringify(venuesList || []) %>;
-  const conferenceTeamMap = <%- JSON.stringify(conferenceTeamMap || {}) %>;
   const teamsCount = <%- typeof teamsCount !== 'undefined' ? teamsCount : 0 %>;
   const venuesCount = <%- typeof venuesCount !== 'undefined' ? venuesCount : 0 %>;
   const statesCount = <%- typeof statesCount !== 'undefined' ? statesCount : 0 %>;
@@ -1141,6 +1120,9 @@
   }
 
   function buildVenueRows(entries){
+    if (!entries.length) {
+      return '<div class="text-muted text-center w-100 py-2">No venues yet.</div>';
+    }
     let prevCount = null, rank = 0, displayVenueRank = 0;
     return entries.map(item => {
       rank++;
@@ -1159,52 +1141,13 @@
   }
 
   function buildVenueModalRows() {
-    const venueByTeam = {};
-    (venuesList || []).forEach(v => {
-      if (v && v.team) {
-        const tid = typeof v.team === 'object' && v.team._id ? v.team._id : v.team;
-        venueByTeam[String(tid)] = v;
-      }
-    });
-
-    return Object.entries(conferenceTeamMap).map(([conf, teamIds]) => {
-
-      const unlockedIds = teamIds.filter(tid => venueByTeam[String(tid)]);
-      if (unlockedIds.length === 0) return '';
-
-      const sortedIds = [...teamIds].sort((a, b) => {
-        const aUnlocked = venueByTeam[String(a)] ? 0 : 1;
-        const bUnlocked = venueByTeam[String(b)] ? 0 : 1;
-        return aUnlocked - bUnlocked;
-      });
-
-      const dots = sortedIds.map(tid => {
-
-        const ven = venueByTeam[String(tid)];
-        if (ven) {
-          const img = ven.imgUrl || '/images/stadium.png';
-          const name = ven.name || '';
-          return `<span class="team-dot unlocked-venue" title="${name}"><img src="${img}" alt="${name}"></span>`;
-        }
-        return '<span class="team-dot locked-venue"></span>';
-      }).join('');
-
-
-      const pct = Math.round((unlockedIds.length / teamIds.length) * 100);
-
-
-      return `
-        <div class="stat-row">
-          <div class="stat-name-col conference-name-text">${conf}</div>
-          <div class="stat-middle conference-dots-row">${dots}</div>
-          <div class="stat-percent-col conference-percentage-text">${pct}%</div>
-        </div>`;
-
-    }).filter(Boolean).join('');
-
+    return buildVenueRows(venueEntries || []);
   }
 
   function buildTeamRows(entries){
+    if (!entries.length) {
+      return '<div class="text-muted text-center w-100 py-2">No teams yet.</div>';
+    }
     let prevCount = null, rank = 0, displayTeamRank = 0;
     return entries.map(item => {
       rank++;
@@ -1214,9 +1157,10 @@
       const team = item.team;
       const logo = (team.logos && team.logos[0]) ? team.logos[0] : '/images/placeholder.jpg';
       const name = team.school || team.name;
+      const teamLink = team._id ? `/team/${team._id}` : '#';
       return `
         <div class="top-list-item">${prefix}${displayTeamRank}.</div>
-        <a href="/team/${team._id}" class="team-link">
+        <a href="${teamLink}" class="team-link">
           <img src="${logo}" alt="${name}" class="game-logo-sm">
         </a>
         <div class="venue-name"><span class="venue-name-text">${name}</span></div>
@@ -1348,7 +1292,8 @@
     // Venues
     window.allRankedVenues = venueEntries;
     document.getElementById('venuesCount').textContent = <%- typeof venuesCount !== 'undefined' ? venuesCount : 0 %>;
-    document.getElementById('venuesTop').innerHTML = buildVenueRows(venueEntries.slice(0,3));
+    const venuesTopEl = document.getElementById('venuesTop');
+    venuesTopEl.innerHTML = buildVenueRows(venueEntries.slice(0,3));
 
     // Teams
     window.allRankedTeams = teamEntries;
@@ -1364,17 +1309,20 @@
     if(colors.length){
       teamsTopEl.style.background = `linear-gradient(${teamGradientDirection}, ${colors.join(',')})`;
       teamsTopEl.style.borderRadius = '0.5rem';
+    } else {
+      teamsTopEl.style.background = 'none';
     }
-    teamsTopEl.innerHTML = topTeams.map(item => {
+    teamsTopEl.innerHTML = topTeams.length ? topTeams.map(item => {
       const team = item.team;
       const logo = team.logos && team.logos[0] ? team.logos[0] : '/images/placeholder.jpg';
+      const teamLink = team._id ? `/team/${team._id}` : '#';
       return `<div class="team-stat-col">
         <div class="team-count">${item.count}</div>
-        <a href="/team/${team._id}" class="team-link">
-          <img src="${logo}" alt="${team.school}" class="team-logo" title="${team.school}">
+        <a href="${teamLink}" class="team-link">
+          <img src="${logo}" alt="${team.school || team.name || ''}" class="team-logo" title="${team.school || team.name || ''}">
         </a>
       </div>`;
-    }).join('');
+    }).join('') : '<div class="text-muted text-center w-100 py-2">No teams yet.</div>';
 
     // States
     window.visitedStateData = Array.isArray(userStateData) ? userStateData : [];
@@ -1387,7 +1335,7 @@
 
     if (stateEntries.length === 0) {
       statesTopEl.style.background = 'none';
-      statesTopEl.innerHTML = '';
+      statesTopEl.innerHTML = '<div class="text-muted text-center w-100 py-2">No states yet.</div>';
     } else {
       let gradient;
       if (stateEntries.length === 1) gradient = `linear-gradient(${stateGradientDirection}, #FFD700, white)`;

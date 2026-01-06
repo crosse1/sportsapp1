@@ -734,6 +734,50 @@ exports.profileStats = async (req, res, next) => {
         console.log(`[profileStats] Populated teamsList count: ${profileUser.teamsList?.length}`);
         console.log(`[profileStats] Populated venuesList count: ${profileUser.venuesList?.length}`);
 
+        const userTeams = Array.isArray(profileUser.teams) ? profileUser.teams : [];
+        const userVenues = Array.isArray(profileUser.venues) ? profileUser.venues : [];
+        const userStates = Array.isArray(profileUser.states) ? profileUser.states : [];
+        const userConferences = Array.isArray(profileUser.conferences) ? profileUser.conferences : [];
+
+        const normalizeCount = entry => {
+            if (!entry || typeof entry !== 'object') return 1;
+            const count = entry.count ?? entry.games ?? entry.visits ?? entry.total ?? entry.value ?? entry.times;
+            const parsed = Number(count);
+            return Number.isFinite(parsed) ? parsed : 1;
+        };
+
+        const normalizeTeamEntries = entries => entries
+            .map(item => {
+                const team = item && item.team ? item.team : item;
+                if (!team) return null;
+                return { team, count: normalizeCount(item) };
+            })
+            .filter(Boolean)
+            .sort((a, b) => b.count - a.count);
+
+        const normalizeVenueEntries = entries => entries
+            .map(item => {
+                const venue = item && item.venue ? item.venue : item;
+                if (!venue) return null;
+                return { venue, count: normalizeCount(item) };
+            })
+            .filter(Boolean)
+            .sort((a, b) => b.count - a.count);
+
+        const normalizeConferenceEntries = entries => entries
+            .map(item => {
+                if (!item) return null;
+                const name = item.name || item.conference || item.id;
+                if (!name) return null;
+                const totalTeamsValue = item.totalTeams ?? item.total ?? item.max ?? item.teamsTotal ?? null;
+                const parsedTotalTeams = Number(totalTeamsValue);
+                const totalTeams = Number.isFinite(parsedTotalTeams) ? parsedTotalTeams : null;
+                const count = normalizeCount(item);
+                return { name, count, totalTeams };
+            })
+            .filter(Boolean)
+            .sort((a, b) => b.count - a.count);
+
         // Get raw, unpopulated list of IDs
         const rawUser = await User.findById(profileUser._id).lean();
         const rawTeamIds = rawUser.teamsList || [];
@@ -772,87 +816,49 @@ exports.profileStats = async (req, res, next) => {
 
         console.log('[profileStats] Top 3 rated games:', topRatedGames.map(g => g._id));
 
-        const uniqueTeamIds = [...new Set((profileUser.teamsList || []).map(t => String(t._id || t)))];
-        console.log('[profileStats] Unique team IDs:', uniqueTeamIds);
-
-        // Load conference team map
-        const mapPath = path.join(__dirname, '../conferenceTeamMap.json');
-        const mapRaw = fs.readFileSync(mapPath, 'utf8');
-        const conferenceTeamMap = JSON.parse(mapRaw);
-        console.log('[profileStats] Loaded conferenceTeamMap with', Object.keys(conferenceTeamMap).length, 'conferences');
-
-        const conferenceStats = Object.entries(conferenceTeamMap).map(([name, teamIds]) => {
-            const teamsUnlocked = [];
-            const teamDots = [];
-
-            teamIds.forEach(id => {
-                const team = (profileUser.teamsList || []).find(t => String(t._id || t) === String(id));
-                if (team) {
-                    teamsUnlocked.push(team);
-                    teamDots.push({
-                        unlocked: true,
-                        logo: team.logos?.[0] || '/images/placeholder.jpg',
-                        altColor: team.alternateColor || '#bbb'
-                    });
-                } else {
-                    teamDots.push({ unlocked: false });
-                }
-            });
-
-            const percentage = Math.round((teamsUnlocked.length / teamIds.length) * 100);
-            return { name, percentage, totalTeams: teamIds.length, teamDots };
-        });
-
-        console.log('[profileStats] Built conferenceStats:', conferenceStats.filter(c => c.percentage > 0).map(c => c.name));
-
-        const teamMap = {};
-        for (const team of profileUser.teamsList || []) {
-            const id = String(team._id || team);
-            teamMap[id] = {
-                logos: team.logos || [],
-                alternateColor: team.alternateColor || '#bbb'
-            };
-        }
-
         // Frequency: Teams
-        const teamFrequencyMap = {};
-        for (const id of rawTeamIds) {
-            const idStr = String(id);
-            if (!teamFrequencyMap[idStr]) {
-                teamFrequencyMap[idStr] = { team: null, count: 1 };
-            } else {
-                teamFrequencyMap[idStr].count++;
+        const teamEntries = userTeams.length ? normalizeTeamEntries(userTeams) : (() => {
+            const teamFrequencyMap = {};
+            for (const id of rawTeamIds) {
+                const idStr = String(id);
+                if (!teamFrequencyMap[idStr]) {
+                    teamFrequencyMap[idStr] = { team: null, count: 1 };
+                } else {
+                    teamFrequencyMap[idStr].count++;
+                }
             }
-        }
-        for (const team of profileUser.teamsList || []) {
-            const id = String(team._id || team);
-            if (teamFrequencyMap[id]) {
-                teamFrequencyMap[id].team = team;
+            for (const team of profileUser.teamsList || []) {
+                const id = String(team._id || team);
+                if (teamFrequencyMap[id]) {
+                    teamFrequencyMap[id].team = team;
+                }
             }
-        }
-        const teamEntries = Object.values(teamFrequencyMap).filter(e => e.team).sort((a, b) => b.count - a.count);
+            return Object.values(teamFrequencyMap).filter(e => e.team).sort((a, b) => b.count - a.count);
+        })();
         console.log('[profileStats] Top team frequency:', teamEntries.slice(0, 3).map(e => ({
             name: e.team.school,
             count: e.count
         })));
 
         // Frequency: Venues
-        const venueFrequencyMap = {};
-        for (const id of rawVenueIds) {
-            const idStr = String(id);
-            if (!venueFrequencyMap[idStr]) {
-                venueFrequencyMap[idStr] = { venue: null, count: 1 };
-            } else {
-                venueFrequencyMap[idStr].count++;
+        const venueEntries = userVenues.length ? normalizeVenueEntries(userVenues) : (() => {
+            const venueFrequencyMap = {};
+            for (const id of rawVenueIds) {
+                const idStr = String(id);
+                if (!venueFrequencyMap[idStr]) {
+                    venueFrequencyMap[idStr] = { venue: null, count: 1 };
+                } else {
+                    venueFrequencyMap[idStr].count++;
+                }
             }
-        }
-        for (const venue of profileUser.venuesList || []) {
-            const id = String(venue._id || venue);
-            if (venueFrequencyMap[id]) {
-                venueFrequencyMap[id].venue = venue;
+            for (const venue of profileUser.venuesList || []) {
+                const id = String(venue._id || venue);
+                if (venueFrequencyMap[id]) {
+                    venueFrequencyMap[id].venue = venue;
+                }
             }
-        }
-        const venueEntries = Object.values(venueFrequencyMap).filter(e => e.venue).sort((a, b) => b.count - a.count);
+            return Object.values(venueFrequencyMap).filter(e => e.venue).sort((a, b) => b.count - a.count);
+        })();
         console.log('[profileStats] Top venue frequency:', venueEntries.slice(0, 3).map(e => ({
             name: e.venue.name,
             count: e.count
@@ -860,14 +866,25 @@ exports.profileStats = async (req, res, next) => {
 
         // Frequency: States
         const stateFrequencyMap = {};
-        for (const venue of profileUser.venuesList || []) {
-            let state = venue.state;
-            if (!state && venue.coordinates?.coordinates?.length === 2) {
-                const [lon, lat] = venue.coordinates.coordinates;
-                state = getStateFromCoordinates(lat, lon);
+        if (userStates.length) {
+            for (const entry of userStates) {
+                if (!entry) continue;
+                const stateKey = typeof entry === 'string'
+                    ? entry
+                    : (entry.state || entry.name || entry.abbr || entry.id);
+                if (!stateKey) continue;
+                stateFrequencyMap[stateKey] = (stateFrequencyMap[stateKey] || 0) + normalizeCount(entry);
             }
-            if (state) {
-                stateFrequencyMap[state] = (stateFrequencyMap[state] || 0) + 1;
+        } else {
+            for (const venue of profileUser.venuesList || []) {
+                let state = venue.state;
+                if (!state && venue.coordinates?.coordinates?.length === 2) {
+                    const [lon, lat] = venue.coordinates.coordinates;
+                    state = getStateFromCoordinates(lat, lon);
+                }
+                if (state) {
+                    stateFrequencyMap[state] = (stateFrequencyMap[state] || 0) + 1;
+                }
             }
         }
         const STATE_NAME_TO_ABBR = {
@@ -973,6 +990,8 @@ exports.profileStats = async (req, res, next) => {
         const teamsCount = teamEntries.length;
         const venuesCount = venueEntries.length;
         const statesCount = stateEntries.length;
+        const conferenceEntries = normalizeConferenceEntries(userConferences);
+        const conferencesCount = conferenceEntries.length;
 
         console.log(`[profileStats] Unique counts — Teams: ${teamsCount}, Venues: ${venuesCount}, States: ${statesCount}`);
 
@@ -981,22 +1000,24 @@ exports.profileStats = async (req, res, next) => {
 
         res.render('profileStats', {
             user: profileUser,
+            userTeams,
+            userVenues,
+            userStates,
+            userConferences,
             isCurrentUser,
             isFollowing,
             canMessage,
-            conferenceStats,
             viewer: req.user,
             activeTab: 'stats',
             gameEntries: enrichedEntries,
             topRatedGames,
-            userTeamIds: uniqueTeamIds,
             teamsList: profileUser.teamsList || [],
             venuesList: profileUser.venuesList || [],
-            teamMap,
             teamsCount,
             venuesCount,
             statesCount,
-            conferenceTeamMap,
+            conferenceEntries,
+            conferencesCount,
             teamEntries,
             venueEntries,
             stateEntries,
@@ -2385,4 +2406,3 @@ exports.deleteGameEntry = async (req, res, next) => {
         next(err);
     }
 };
-
