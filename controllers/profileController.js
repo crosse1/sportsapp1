@@ -733,7 +733,9 @@ exports.profileStats = async (req, res, next) => {
 
     if (!profileUser) {
       const fallbackSlug = req.user ? (req.user.venmo || req.user.id) : '';
-      return res.redirect(fallbackSlug ? `/profile/${fallbackSlug}/stats` : '/profile');
+      return res.redirect(
+        fallbackSlug ? `/profile/${fallbackSlug}/stats` : '/profile'
+      );
     }
 
     const isCurrentUser =
@@ -768,10 +770,13 @@ exports.profileStats = async (req, res, next) => {
     const conferenceMap = {};
 
     for (const entry of enrichedEntries) {
+        
       const game = entry?.game;
       if (!game) continue;
 
+      // -----------------------------
       // Teams
+      // -----------------------------
       for (const team of [game.homeTeam, game.awayTeam]) {
         if (!team || !team._id) continue;
         const id = String(team._id);
@@ -779,29 +784,50 @@ exports.profileStats = async (req, res, next) => {
         teamMap[id].count++;
       }
 
+      // -----------------------------
       // Venues
+      // -----------------------------
       if (game.venue && game.venue._id) {
         const id = String(game.venue._id);
         if (!venueMap[id]) venueMap[id] = { venue: game.venue, count: 0 };
         venueMap[id].count++;
       }
 
+      // -----------------------------
       // States
+      // -----------------------------
       const state = game.venue?.state;
       if (state) {
         stateMap[state] = (stateMap[state] || 0) + 1;
       }
 
-      // Conferences
-      for (const conf of [
-        game.homeConference,
-        game.awayConference
-      ]) {
+      // -----------------------------
+      // Conferences (FIXED)
+      // -----------------------------
+      const conferences = [
+        game.homeConference || game.homeConferenceId,
+        game.awayConference || game.awayConferenceId
+      ];
+
+      for (const conf of conferences) {
+        console.log('[conference-debug]', {
+  homeConference: game.homeConference,
+  awayConference: game.awayConference,
+  homeTeamConference: game.homeTeam?.conference,
+  awayTeamConference: game.awayTeam?.conference
+});
         if (!conf) continue;
-        if (!conferenceMap[conf]) {
-          conferenceMap[conf] = { name: conf, count: 0 };
+
+        const key = String(conf);
+
+        if (!conferenceMap[key]) {
+          conferenceMap[key] = {
+            name: key,
+            count: 0
+          };
         }
-        conferenceMap[conf].count++;
+
+        conferenceMap[key].count++;
       }
     }
 
@@ -901,6 +927,7 @@ exports.profileStats = async (req, res, next) => {
     next(err);
   }
 };
+
 
 
 

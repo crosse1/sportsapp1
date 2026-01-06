@@ -852,19 +852,29 @@
               
               <!-- Right block that holds all rows vertically -->
               <div class="stat-right-column">
-                <% if (conferenceEntries && conferenceEntries.length) { %>
-                  <% conferenceEntries.forEach(function(conf) { %>
-                    <div class="stat-row">
-                      <div class="stat-name-col conference-name-text"><%= conf.name %></div>
-                      <div class="conference-percentage-text"><%= conf.count %></div>
-                    </div>
-                  <% }) %>
-                <% } else { %>
-                  <div class="stat-row">
-                    <div class="stat-name-col conference-name-text text-muted">No conferences yet.</div>
-                  </div>
-                <% } %>
-              </div>
+               
+  <% if (conferenceEntries && conferenceEntries.length) { %>
+    
+    <% conferenceEntries.forEach(function(conf) { %>
+      <div class="stat-row">
+        <div class="stat-name-col conference-name-text">
+          <%= conf.name %>
+        </div>
+
+        <div class="stat-percent-col conference-percentage-text">
+          <%= conf.count %>
+        </div>
+      </div>
+    <% }) %>
+  <% } else { %>
+    <div class="stat-row">
+      <div class="stat-name-col conference-name-text text-muted">
+        No conferences yet.
+      </div>
+    </div>
+  <% } %>
+</div>
+
           
             </div>
           </div>
