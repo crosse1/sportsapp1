@@ -1243,25 +1243,15 @@
         if (!entry) return null;
         const count = Number(entry.count);
         const team = entry.team || entry;
-if (!team || !Number.isFinite(count) || count <= 0) return null;
-
-return {
-  count,
-  team: {
-    _id: team._id || null,
-    logos: Array.isArray(team.logos) ? team.logos : [],
-    color: team.color,
-    alternateColor: team.alternateColor,
-    name: team.school || team.name || `Team ${team.teamId || ''}`
-  }
-};
+        if (!team || !Number.isFinite(count) || count <= 0) return null;
+        const school = team.school || team.name || '';
         const logos = Array.isArray(team.logos) ? team.logos : (team.logo ? [team.logo] : []);
         return {
           count,
           team: {
             _id: team._id || team.id || null,
             school,
-            name,
+            name: team.name || school,
             logos,
             color: team.color,
             alternateColor: team.alternateColor
