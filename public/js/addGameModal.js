@@ -1,5 +1,6 @@
 (function(){
-  window.addEventListener('load', function(){
+  function initAddGameModal(){
+    if(typeof $ !== 'function') return;
     const modal = $('#addGameModal');
     if(!modal.length) return;
     const leagueSelect = $('#leagueSelect');
@@ -1498,5 +1499,11 @@ worseBtn.off('click').on('click', function(){
         window.location.reload();
       });
     }
-  });
+  }
+
+  if(typeof $ === 'function'){
+    $(initAddGameModal);
+  } else {
+    window.addEventListener('load', initAddGameModal);
+  }
 })();
