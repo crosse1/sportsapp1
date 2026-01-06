@@ -571,19 +571,6 @@
   flex: 2;
   text-align: left;
 }
-.stat-middle {
-  flex: 4;
-  display: flex;
-  gap: 4px;
-  justify-content: flex-start;
-  align-items: center;
-}
-.stat-percent-col {
-  flex: 1;
-  text-align: right;
-}
-
-
 .team-dot {
   display: flex;
   align-items: center;
@@ -655,18 +642,11 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-#conferenceBlock .stat-percent-col {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-}
 
 #conferenceBlock .conference-percentage-text {
   margin-right: 0;
-  text-align: center;
+  text-align: right;
 }
-
 .gold-text {
   background: linear-gradient(to right, #ffd700, #ffcc00);
   -webkit-background-clip: text;
@@ -876,16 +856,7 @@
                   <% conferenceEntries.forEach(function(conf) { %>
                     <div class="stat-row">
                       <div class="stat-name-col conference-name-text"><%= conf.name %></div>
-                      <div class="stat-middle conference-dots-row">
-                        <span class="conference-percentage-text">
-                          <%= conf.totalTeams ? `${conf.count}/${conf.totalTeams}` : conf.count %>
-                        </span>
-                      </div>
-                      <div class="stat-percent-col conference-percentage-text">
-                        <% if (conf.totalTeams) { %>
-                          <%= Math.round((conf.count / conf.totalTeams) * 100) %>%
-                        <% } %>
-                      </div>
+                      <div class="conference-percentage-text"><%= conf.count %></div>
                     </div>
                   <% }) %>
                 <% } else { %>
